@@ -3,19 +3,14 @@
 App personale (memoria, stanze, agenti, skill, controllo del lavoro) pensata per il telefono Android.
 Vincolo: 0 € oltre all'abbonamento Claude.
 
-## Stato attuale: v1 (vedi `docs/v1.md`)
+## Stato attuale: app Android 1.0 (vedi `docs/android.md`)
 
-- App: artifact privato https://claude.ai/artifact/FixFdEmbd31YEYpuNbE4za, sorgente `app/index.html`
-- Stato degli agenti: su richiesta, scrivendo «aggiorna stato» in Claude Code (procedura in `CLAUDE.md`, script `strumenti/istantanea.mjs`)
-- Backup: `strumenti/backup.mjs` (stessa impronta SHA-256 della pagina)
-- Prototipo di verifica e risultati: `prototipo/`, `docs/verifica-prototipo.md`
+- App: `android/` – identificativo `it.secondbrain.app`, dati sul telefono, sincronizzazione con questo repository (ramo `dati`)
+- Firma: chiave nel Google Drive privato (cartella «Second Brain - firma app"), password nel gestore di password; mai nel repository
+- Compilazione: `strumenti/compila-apk.sh` (riproducibile, dipendenze verificate)
+- Stato degli agenti: «aggiorna stato» in Claude Code scrive `dati/stato/` sul ramo `dati` (procedura in `CLAUDE.md`)
+- Migrazione: `backup/migrazione-artifact-2026-11-13.json` (copia dei dati dell'artifact della v1, che resta intatto)
+- Test: `node --test test/motore.test.mjs`, `node test/interfaccia.test.mjs`
+- Storico: v1 web in `app/`, prototipo in `prototipo/`, report in `docs/`
 
-Nessun token o credenziale è presente nel codice o nel repository.
-
-## Backup manuale (da una sessione Claude Code)
-
-1. `ArtifactData list` di ogni collezione (agenti, collegamenti, memoria, skill, stanze, stato_lavoro) con `out_dir` → cartella
-2. `node strumenti/backup.mjs componi <cartella> backup/backup-AAAA-MM-GG.json`
-3. commit nel repository privato
-
-Ripristino: dalla pagina (sezione Dati) oppure `node strumenti/backup.mjs scomponi <backup.json> <cartella>` e `ArtifactData batch` con `file_path`.
+Nessun token, chiave o password è presente nel codice o nel repository.
