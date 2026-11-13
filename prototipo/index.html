@@ -1,0 +1,358 @@
+<title>Second Brain Banco Prova</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: banco di prova a colonna singola; ogni prova è una scheda numerata (l'ordine è quello del protocollo di test). */
+:root{
+  --bg:#f3f5f4; --surface:#ffffff; --fg:#17201d; --muted:#5a6863; --line:#d5ddd9;
+  --accent:#1f6f5c; --accent-fg:#ffffff;
+  --ok:#1d7a3e; --warn:#9a6200; --err:#b3261e; --chip:#e7ecea;
+  --f-sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#111715; --surface:#18201d; --fg:#e4ebe8; --muted:#97a6a0; --line:#2b3632;
+  --accent:#5cc4a7; --accent-fg:#0b1512; --ok:#5ccf86; --warn:#e3a94a; --err:#ff8a80; --chip:#222c29; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#111715; --surface:#18201d; --fg:#e4ebe8; --muted:#97a6a0; --line:#2b3632;
+  --accent:#5cc4a7; --accent-fg:#0b1512; --ok:#5ccf86; --warn:#e3a94a; --err:#ff8a80; --chip:#222c29; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--f-sans);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+main{max-width:720px;margin:0 auto;display:grid;gap:16px}
+header{display:grid;gap:6px}
+h1{font-size:1.45rem;margin:0;text-wrap:balance;font-weight:600}
+h2{font-size:1.05rem;margin:0;font-weight:600;text-wrap:balance}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;display:grid;gap:12px;min-width:0}
+.card-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.num{font-family:var(--f-mono);font-size:.8rem;color:var(--muted);letter-spacing:.04em}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{font-family:var(--f-mono);font-size:.78rem;padding:2px 8px;border-radius:999px;background:var(--chip);color:var(--muted);border:1px solid var(--line)}
+.pill.ok{color:var(--ok);border-color:currentColor}
+.pill.err{color:var(--err);border-color:currentColor}
+.pill.warn{color:var(--warn);border-color:currentColor}
+.banner{font-size:.85rem;padding:8px 10px;border-radius:8px;border:1px dashed var(--line);color:var(--muted)}
+form{display:grid;gap:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row > *{flex:1 1 180px;min-width:0}
+label{font-size:.8rem;color:var(--muted);display:grid;gap:4px}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{min-height:64px;resize:vertical}
+button{font:inherit;font-weight:500;border-radius:8px;padding:8px 14px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+ul.list{list-style:none;margin:0;padding:0;display:grid;gap:6px}
+ul.list li{border-top:1px solid var(--line);padding-top:6px;display:flex;gap:8px;justify-content:space-between;align-items:flex-start}
+ul.list li > div{min-width:0;overflow-wrap:anywhere}
+.x{background:transparent;border:none;color:var(--err);padding:2px 6px;font-size:.85rem}
+pre{font-family:var(--f-mono);font-size:.78rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px;margin:0;overflow-x:auto;white-space:pre-wrap;overflow-wrap:anywhere;max-height:320px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.85rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;font-family:var(--f-mono);overflow-wrap:anywhere;min-width:0}
+.mono{font-family:var(--f-mono);font-size:.8rem;overflow-wrap:anywhere}
+.status{font-size:.85rem}
+.status.ok{color:var(--ok)} .status.err{color:var(--err)} .status.warn{color:var(--warn)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<main>
+  <header>
+    <p class="num">SECOND BRAIN · PROTOTIPO 0.1 · SOLO DATI FITTIZI</p>
+    <h1>Banco di prova: memoria e collegamento agli agenti</h1>
+    <p class="muted small">Questa pagina verifica cosa funziona davvero. Non inserire dati personali: ogni elemento creato qui è marcato come fittizio.</p>
+    <div class="pills" id="caps">
+      <span class="pill" id="cap-db">archivio: in attesa</span>
+      <span class="pill" id="cap-mcp">connettori: in attesa</span>
+      <span class="pill" id="cap-dl">download: in attesa</span>
+    </div>
+  </header>
+
+  <section class="card" aria-labelledby="t1">
+    <div class="card-head"><span class="num">PROVA 1</span><h2 id="t1">Dispositivo</h2></div>
+    <dl class="kv">
+      <dt>Sistema</dt><dd id="dev-os">–</dd>
+      <dt>Larghezza</dt><dd id="dev-w">–</dd>
+      <dt>Browser</dt><dd id="dev-ua">–</dd>
+      <dt>Registrazione</dt><dd id="dev-log">–</dd>
+    </dl>
+    <p class="muted small">A ogni apertura la pagina salva nell'archivio sistema, larghezza e quali funzioni erano disponibili, così posso verificarlo dalla conversazione.</p>
+  </section>
+
+  <section class="card" aria-labelledby="t2">
+    <div class="card-head"><span class="num">PROVA 2</span><h2 id="t2">Stanza e memoria persistenti</h2></div>
+    <form id="f-stanza">
+      <div class="row">
+        <label>Nome stanza <input id="st-nome" required maxlength="80" placeholder="Es. Orto sul balcone (fittizio)"></label>
+        <label>Obiettivo <input id="st-obj" maxlength="160" placeholder="Es. Raccolto di pomodori a luglio"></label>
+      </div>
+      <div><button type="submit" id="st-save">Salva stanza</button></div>
+    </form>
+    <ul class="list" id="l-stanze"><li class="muted small">Nessuna stanza ancora. Creane una qui sopra.</li></ul>
+
+    <form id="f-mem">
+      <label>Elemento di memoria <textarea id="m-testo" required maxlength="2000" placeholder="Es. Decisione: usare vasi da 30 cm (fittizio)"></textarea></label>
+      <div class="row">
+        <label>Tipo
+          <select id="m-tipo">
+            <option value="originale">Originale</option>
+            <option value="riassunto">Riassunto</option>
+            <option value="dedotto">Dedotto</option>
+          </select>
+        </label>
+        <label>Fonte <input id="m-fonte" maxlength="120" value="inserimento manuale"></label>
+        <label>Stanza <select id="m-stanza"><option value="">nessuna</option></select></label>
+      </div>
+      <div><button type="submit" id="m-save">Salva memoria</button></div>
+    </form>
+    <ul class="list" id="l-mem"><li class="muted small">Nessun elemento di memoria ancora.</li></ul>
+    <p class="banner">Verifica: salva, chiudi completamente l'app o la scheda, riapri questa pagina. Gli elementi devono comparire di nuovo.</p>
+  </section>
+
+  <section class="card" aria-labelledby="t3">
+    <div class="card-head"><span class="num">PROVA 3–4</span><h2 id="t3">Connettore Claude Code Remote</h2></div>
+    <p class="small muted">Elenca gli strumenti che <strong>questa pagina</strong> può davvero chiamare, poi legge lo stato delle sessioni reali (sola lettura). Nessuna sessione viene creata o modificata.</p>
+    <div class="row">
+      <button type="button" id="b-tools" disabled>Elenca strumenti</button>
+      <button type="button" id="b-sess" class="ghost" disabled>Leggi stato sessioni</button>
+    </div>
+    <p class="status" id="mcp-status">In attesa del connettore…</p>
+    <pre id="mcp-tools" hidden></pre>
+    <ul class="list" id="l-sess" hidden></ul>
+  </section>
+
+  <section class="card" aria-labelledby="t5">
+    <div class="card-head"><span class="num">PROVA 5</span><h2 id="t5">Esportazione e ripristino</h2></div>
+    <p class="small muted">L'esportazione crea un file JSON con impronta SHA-256 dei dati. Il ripristino scrive il file in un'area separata (<span class="mono">ripristino/prova</span>), la rilegge e confronta l'impronta.</p>
+    <div class="row">
+      <button type="button" id="b-exp" disabled>Esporta JSON</button>
+      <label class="ghost">File da ripristinare <input type="file" id="i-imp" accept="application/json,.json" disabled></label>
+    </div>
+    <p class="status" id="exp-status"></p>
+  </section>
+
+  <section class="card" aria-labelledby="t7">
+    <div class="card-head"><span class="num">PROVA 7</span><h2 id="t7">Limiti dell'archivio</h2></div>
+    <dl class="kv">
+      <dt>Documento</dt><dd>max 256 KiB, 32 livelli</dd>
+      <dt>Query</dt><dd>max 1000 documenti per pagina</dd>
+      <dt>Percorso</dt><dd>200 byte per segmento, 16 segmenti</dd>
+      <dt>Totale</dt><dd>tetto non pubblicato → errore quota_exceeded</dd>
+    </dl>
+    <div><button type="button" id="b-lim" class="ghost" disabled>Prova documento da 300 KiB</button></div>
+    <p class="status" id="lim-status"></p>
+  </section>
+</main>
+
+<script>
+(() => {
+  const SERVER = "Claude Code Remote";
+  const $ = (s) => document.querySelector(s);
+  const S = { db: null, mcp: null, dl: null, stanze: [], memoria: [] };
+
+  // ---------- utilità ----------
+  const nowIso = () => new Date().toISOString();
+  const newId = (p) => p + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+  function canon(v) {
+    if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
+    if (v && typeof v === "object") return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+    return JSON.stringify(v);
+  }
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  const rows = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  function setStatus(el, text, kind) { el.textContent = text; el.className = "status" + (kind ? " " + kind : ""); }
+  function pill(id, text, kind) { const el = $(id); el.textContent = text; el.className = "pill" + (kind ? " " + kind : ""); }
+  function errText(e) { return (e && e.code ? e.code + ": " : "") + (e && e.message ? e.message : String(e)); }
+  const use = (n) => (window.claude && typeof window.claude.use === "function" ? window.claude.use(n).catch(() => null) : Promise.resolve(null));
+
+  // ---------- prova 1: dispositivo ----------
+  const ua = navigator.userAgent || "";
+  const android = /Android/i.test(ua);
+  $("#dev-os").textContent = android ? "Android" : (/iPhone|iPad/i.test(ua) ? "iOS" : (/CrOS/i.test(ua) ? "ChromeOS" : "altro"));
+  $("#dev-w").textContent = window.innerWidth + " px";
+  $("#dev-ua").textContent = ua;
+
+  // ---------- render ----------
+  function renderStanze() {
+    const ul = $("#l-stanze"); ul.textContent = "";
+    const sel = $("#m-stanza"); const keep = sel.value; sel.length = 1;
+    if (!S.stanze.length) { const li = document.createElement("li"); li.className = "muted small"; li.textContent = "Nessuna stanza ancora. Creane una qui sopra."; ul.append(li); }
+    for (const s of S.stanze) {
+      const li = document.createElement("li");
+      const d = document.createElement("div");
+      const t = document.createElement("strong"); t.textContent = s.nome;
+      const m = document.createElement("div"); m.className = "muted small"; m.textContent = (s.obiettivi && s.obiettivi[0] ? "Obiettivo: " + s.obiettivi[0] + " · " : "") + "creata " + (s.creato_il || "").slice(0, 16).replace("T", " ");
+      d.append(t, m);
+      const x = document.createElement("button"); x.className = "x"; x.type = "button"; x.textContent = "Elimina"; x.onclick = () => del("stanze", s.id, x);
+      li.append(d, x); ul.append(li);
+      const o = document.createElement("option"); o.value = s.id; o.textContent = s.nome; sel.append(o);
+    }
+    sel.value = keep;
+  }
+  function renderMem() {
+    const ul = $("#l-mem"); ul.textContent = "";
+    if (!S.memoria.length) { const li = document.createElement("li"); li.className = "muted small"; li.textContent = "Nessun elemento di memoria ancora."; ul.append(li); return; }
+    const nomi = Object.fromEntries(S.stanze.map((s) => [s.id, s.nome]));
+    for (const m of S.memoria) {
+      const li = document.createElement("li");
+      const d = document.createElement("div");
+      const t = document.createElement("div"); t.textContent = m.testo;
+      const meta = document.createElement("div"); meta.className = "muted small";
+      meta.textContent = [m.tipo, "fonte: " + m.fonte, (m.data || "").slice(0, 16).replace("T", " "), m.stanza_id ? "stanza: " + (nomi[m.stanza_id] || m.stanza_id) : null].filter(Boolean).join(" · ");
+      d.append(t, meta);
+      const x = document.createElement("button"); x.className = "x"; x.type = "button"; x.textContent = "Elimina"; x.onclick = () => del("memoria", m.id, x);
+      li.append(d, x); ul.append(li);
+    }
+  }
+  async function del(col, id, btn) {
+    btn.disabled = true;
+    try { await S.db.collection(col).doc(id).delete(); } catch (e) { btn.disabled = false; btn.textContent = "Errore: " + (e.code || "?"); }
+  }
+
+  // ---------- avvio ----------
+  (async () => {
+    const [db, mcp, dl] = await Promise.all([use("db"), use("mcp"), use("downloads")]);
+    S.db = db; S.mcp = mcp; S.dl = dl;
+    pill("#cap-db", db ? "archivio: disponibile" : "archivio: non disponibile", db ? "ok" : "err");
+    pill("#cap-mcp", mcp ? "connettori: disponibili" : "connettori: non disponibili", mcp ? "ok" : "err");
+    pill("#cap-dl", dl ? "download: disponibile" : "download: non disponibile", dl ? "ok" : "warn");
+
+    if (db) {
+      ["#st-save", "#m-save", "#b-exp", "#i-imp", "#b-lim"].forEach((s) => ($(s).disabled = false));
+      if (!dl) $("#b-exp").disabled = true;
+      let loaded = false;
+      const timer = setTimeout(() => { if (!loaded) setStatus($("#exp-status"), "L'archivio non risponde dopo 10 secondi. Ricarica la pagina.", "warn"); }, 10000);
+      db.collection("stanze").onSnapshot((snap) => { loaded = true; clearTimeout(timer); S.stanze = rows(snap); renderStanze(); renderMem(); }, (e) => setStatus($("#exp-status"), "Lettura stanze: " + errText(e), "err"));
+      db.collection("memoria").onSnapshot((snap) => { S.memoria = rows(snap); renderMem(); }, (e) => setStatus($("#exp-status"), "Lettura memoria: " + errText(e), "err"));
+      // registro visita (prova 1)
+      try {
+        await db.collection("visite").add({ quando: nowIso(), sistema: $("#dev-os").textContent, android, larghezza_px: window.innerWidth, user_agent: ua.slice(0, 400), capacita: { db: !!db, mcp: !!mcp, downloads: !!dl } });
+        $("#dev-log").textContent = "salvata nell'archivio";
+      } catch (e) { $("#dev-log").textContent = "non salvata (" + (e.code || "errore") + ")"; }
+    } else {
+      $("#dev-log").textContent = "archivio non disponibile";
+    }
+
+    if (mcp) { $("#b-tools").disabled = false; $("#b-sess").disabled = false; setStatus($("#mcp-status"), "Connettore pronto. Il primo uso può chiederti il consenso."); }
+    else setStatus($("#mcp-status"), "Questa vista non può usare connettori. Collegamento agli agenti: NON DISPONIBILE qui.", "err");
+  })();
+
+  // ---------- prova 2: salvataggi ----------
+  $("#f-stanza").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); if (!S.db) return;
+    const btn = $("#st-save"); btn.disabled = true;
+    const id = newId("st");
+    try {
+      await S.db.collection("stanze").doc(id).set({ nome: $("#st-nome").value.trim(), obiettivi: $("#st-obj").value.trim() ? [$("#st-obj").value.trim()] : [], archiviata: false, creato_il: nowIso(), fittizio: true });
+      $("#st-nome").value = ""; $("#st-obj").value = "";
+    } catch (e) { setStatus($("#exp-status"), "Salvataggio stanza non riuscito: " + errText(e), "err"); }
+    btn.disabled = false;
+  });
+  $("#f-mem").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); if (!S.db) return;
+    const btn = $("#m-save"); btn.disabled = true;
+    try {
+      await S.db.collection("memoria").doc(newId("mem")).set({ testo: $("#m-testo").value.trim(), tipo: $("#m-tipo").value, fonte: $("#m-fonte").value.trim() || "inserimento manuale", data: nowIso(), stanza_id: $("#m-stanza").value || null, fittizio: true });
+      $("#m-testo").value = "";
+    } catch (e) { setStatus($("#exp-status"), "Salvataggio memoria non riuscito: " + errText(e), "err"); }
+    btn.disabled = false;
+  });
+
+  // ---------- prova 3-4: connettore ----------
+  function payloadOf(r) { const p = r && (r.payload !== undefined ? r.payload : r); return p && p.ccr ? p.ccr : p; }
+  async function salvaProva(doc) { if (!S.db) return; try { await S.db.collection("prove_connettore").add({ quando: nowIso(), ...doc }); } catch (_) {} }
+
+  $("#b-tools").addEventListener("click", async () => {
+    const out = $("#mcp-tools"); setStatus($("#mcp-status"), "Lettura degli strumenti…");
+    try {
+      const res = await S.mcp.listTools();
+      const servers = (res.servers || []).map((s) => ({ server: s.server, tipo: s.kind || "connector", stato: s.authStatus, strumenti: (s.tools || []).map((t) => t.name + (t.annotations && t.annotations.readOnlyHint ? " (sola lettura)" : "")) }));
+      out.hidden = false;
+      out.textContent = servers.length ? servers.map((s) => `${s.server} [${s.tipo}, ${s.stato}] — ${s.strumenti.length} strumenti\n  ` + (s.strumenti.join("\n  ") || "(nessuno)")).join("\n\n") : "Nessun server raggiungibile da questa pagina.";
+      const ccr = servers.find((s) => s.server === SERVER);
+      setStatus($("#mcp-status"), ccr ? `${SERVER}: ${ccr.strumenti.length} strumenti elencati (stato ${ccr.stato}).` : `${SERVER} non compare: collegamento non disponibile per questa vista.`, ccr ? "ok" : "err");
+      await salvaProva({ tipo: "elenco_strumenti", servers });
+    } catch (e) {
+      setStatus($("#mcp-status"), "Elenco strumenti non riuscito: " + errText(e), "err");
+      await salvaProva({ tipo: "elenco_strumenti", errore: e.code || String(e) });
+    }
+  });
+
+  $("#b-sess").addEventListener("click", async () => {
+    const ul = $("#l-sess"); setStatus($("#mcp-status"), "Lettura delle sessioni reali…");
+    try {
+      const r = await S.mcp.callTool(SERVER, "list_sessions", { limit: 5 }, { cache: false });
+      const p = payloadOf(r); const list = (p && p.data) || [];
+      ul.hidden = false; ul.textContent = "";
+      for (const s of list) {
+        const li = document.createElement("li"); const d = document.createElement("div");
+        const t = document.createElement("strong"); t.textContent = s.title || s.id;
+        const m = document.createElement("div"); m.className = "muted small mono";
+        m.textContent = [(s.status_bucket || "").replace("SESSION_STATUS_BUCKET_", ""), (s.session_status || "").replace("SESSION_STATUS_", ""), "agg. " + (s.updated_at || "").slice(0, 16).replace("T", " ")].join(" · ");
+        d.append(t, m); li.append(d); ul.append(li);
+      }
+      let dettaglio = null;
+      if (list[0]) {
+        try { const g = payloadOf(await S.mcp.callTool(SERVER, "get_session", { session_id: list[0].id }, { cache: false })); dettaglio = { campi: Object.keys(g || {}).sort(), status_bucket: g && (g.status_bucket || (g.data && g.data.status_bucket)) || null }; }
+        catch (e) { dettaglio = { errore: e.code || String(e) }; }
+      }
+      setStatus($("#mcp-status"), `Lette ${list.length} sessioni reali dal connettore.` + (dettaglio && dettaglio.errore ? ` Dettaglio: errore ${dettaglio.errore}.` : ""), list.length ? "ok" : "warn");
+      // salva solo la forma della risposta, non titoli o contenuti
+      await salvaProva({ tipo: "lettura_sessioni", numero: list.length, stati: list.map((s) => s.status_bucket || null), campi_sessione: list[0] ? Object.keys(list[0]).sort() : [], get_session: dettaglio });
+    } catch (e) {
+      setStatus($("#mcp-status"), "Lettura sessioni non riuscita: " + errText(e) + (e.code === "not_in_manifest" ? " (consenso negato o strumento non dichiarato)" : ""), "err");
+      await salvaProva({ tipo: "lettura_sessioni", errore: e.code || String(e) });
+    }
+  });
+
+  // ---------- prova 5: esporta / ripristina ----------
+  const datiCorrenti = () => ({ memoria: S.memoria, stanze: S.stanze });
+  $("#b-exp").addEventListener("click", async () => {
+    const st = $("#exp-status");
+    try {
+      const dati = datiCorrenti(); const hash = await sha256(canon(dati));
+      const file = { formato: "second-brain-backup", versione: 1, esportato_il: nowIso(), hash_sha256: hash, dati };
+      await S.dl.save({ filename: "second-brain-fittizio-" + nowIso().slice(0, 10) + ".json", data: JSON.stringify(file, null, 2) });
+      setStatus(st, `Esportati ${dati.stanze.length} stanze e ${dati.memoria.length} memorie. Impronta ${hash.slice(0, 16)}…`, "ok");
+    } catch (e) { setStatus(st, "Esportazione non completata: " + errText(e), e.code === "declined" ? "warn" : "err"); }
+  });
+  $("#i-imp").addEventListener("change", async (ev) => {
+    const st = $("#exp-status"); const f = ev.target.files && ev.target.files[0]; if (!f) return;
+    try {
+      const file = JSON.parse(await f.text());
+      if (file.formato !== "second-brain-backup" || !file.dati) throw new Error("Il file non è un backup di Second Brain.");
+      const hFile = await sha256(canon(file.dati));
+      if (file.hash_sha256 && file.hash_sha256 !== hFile) throw new Error("Il file è stato alterato: l'impronta non corrisponde.");
+      const base = "ripristino/prova/";
+      for (const col of ["stanze", "memoria"]) {
+        const ref = S.db.collection(base + col);
+        const old = await ref.get(); for (const d of old.docs) await ref.doc(d.id).delete();
+        for (const r of file.dati[col] || []) { const { id, ...rest } = r; await ref.doc(id).set(rest); }
+      }
+      const back = { memoria: rows(await S.db.collection(base + "memoria").get()), stanze: rows(await S.db.collection(base + "stanze").get()) };
+      const hBack = await sha256(canon(back));
+      const same = hBack === hFile;
+      setStatus(st, same ? `Ripristino identico: impronta ${hBack.slice(0, 16)}… coincide.` : `Ripristino DIVERSO: file ${hFile.slice(0, 12)}…, archivio ${hBack.slice(0, 12)}…`, same ? "ok" : "err");
+      try { await S.db.collection("prove_ripristino").add({ quando: nowIso(), hash_file: hFile, hash_ripristinato: hBack, identico: same, origine: "pagina" }); } catch (_) {}
+    } catch (e) { setStatus(st, "Ripristino non riuscito: " + errText(e), "err"); }
+    ev.target.value = "";
+  });
+
+  // ---------- prova 7: limite documento ----------
+  $("#b-lim").addEventListener("click", async () => {
+    const st = $("#lim-status"); setStatus(st, "Scrittura di prova in corso…");
+    const ref = S.db.collection("prove_limiti").doc("pagina-300kib");
+    try {
+      await ref.set({ riempitivo: "x".repeat(300 * 1024), fittizio: true });
+      setStatus(st, "Inatteso: il documento da 300 KiB è stato accettato. Lo elimino.", "warn");
+      try { await ref.delete(); } catch (_) {}
+    } catch (e) { setStatus(st, "Rifiutato come previsto: " + errText(e), "ok"); }
+  });
+})();
+</script>

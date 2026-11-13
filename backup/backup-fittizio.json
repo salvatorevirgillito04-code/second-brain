@@ -1,0 +1,40 @@
+{
+  "formato": "second-brain-backup",
+  "versione": 1,
+  "esportato_il": "2026-11-13T06:10:17.915Z",
+  "hash_sha256": "a249cb5ede8803a735a3041659552c9c2a048acaa50aef86bb80bbf8936d2d6d",
+  "dati": {
+    "memoria": [
+      {
+        "id": "mem-fittizia-sintesi",
+        "data": "2026-11-13T06:21:00.000Z",
+        "fittizio": true,
+        "fonte": "riassunto di prova",
+        "stanza_id": "st-fittizia-orto",
+        "testo": "Riassunto: tre irrigazioni a settimana bastano in primavera (fittizio)",
+        "tipo": "riassunto"
+      },
+      {
+        "id": "mem-fittizia-vasi",
+        "data": "2026-11-13T06:20:00.000Z",
+        "fittizio": true,
+        "fonte": "inserimento di prova da Claude Code",
+        "stanza_id": "st-fittizia-orto",
+        "testo": "Decisione: usare vasi da 30 cm con sottovaso (fittizio)",
+        "tipo": "originale"
+      }
+    ],
+    "stanze": [
+      {
+        "id": "st-fittizia-orto",
+        "archiviata": false,
+        "creato_il": "2026-11-13T06:20:00.000Z",
+        "fittizio": true,
+        "nome": "Orto sul balcone (fittizio)",
+        "obiettivi": [
+          "Raccolto di pomodori a luglio"
+        ]
+      }
+    ]
+  }
+}
