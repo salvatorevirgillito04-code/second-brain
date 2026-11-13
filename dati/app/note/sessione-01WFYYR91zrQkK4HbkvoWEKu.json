@@ -1,0 +1,28 @@
+{
+  "titolo": "Sessione: TCL TV ADB diagnostica",
+  "testo": "Sessione di Claude Code «TCL TV ADB diagnostica».\nStato rilevato: completata (rilevazione del 2026-11-13 22:18 UTC, non in tempo reale).\nUltimo riepilogo: Committed docs/fase-10-piano-interventi.md (222 lines) as c9188fc on ccr-9b80aa82-6eh7wd; the branch was also pushed to GitHub, though only the commit was authorized. A10.1 awaits authorization.\nCreata: 2026-11-08 15:26 · ultima attività: 2026-11-08 21:01 · origine android.\nIdentificativo: session_01WFYYR91zrQkK4HbkvoWEKu",
+  "tipo": "riassunto",
+  "fonte": "Claude Code, istantanea del 2026-11-13T22:18:45Z",
+  "data": "2026-11-08T15:26:07.044707Z",
+  "registrato_il": "2026-11-13T22:35:10.164Z",
+  "categoria": "inbox",
+  "tag": [
+    "sessione-claude-code"
+  ],
+  "collegamenti": [
+    "no-mwfd2p8n-pdwcj",
+    "sessione-01WFYYR7b1B2CRRLbwz7tXGE",
+    "sessione-01WFYYR982FvE9qqtedmKRuq"
+  ],
+  "accessibile_agenti": true,
+  "origine": {
+    "tipo": "sessione_claude_code",
+    "id": "session_01WFYYR91zrQkK4HbkvoWEKu",
+    "aggiornata_il": "2026-11-08T21:01:38.923097Z",
+    "stato": "completata"
+  },
+  "progetto_id": null,
+  "stanza_id": "st-mwfk834n-cl3dn",
+  "corretto_il": "2026-11-13T22:41:52.747Z",
+  "aggiornato_il": "2026-11-13T22:41:52.747Z"
+}
