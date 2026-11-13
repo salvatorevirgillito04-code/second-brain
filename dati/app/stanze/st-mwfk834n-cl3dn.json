@@ -1,0 +1,14 @@
+{
+  "nome": "TCL Minimal TV",
+  "descrizione": "",
+  "obiettivi": [
+    "Avere la TV più leggera e fluida"
+  ],
+  "agenti_ids": [
+    "ag-fittizio-archivista",
+    "ag-fittizio-sviluppatore"
+  ],
+  "stato": "attiva",
+  "attivita": [],
+  "creato_il": "2026-11-13T22:40:07.127Z"
+}
