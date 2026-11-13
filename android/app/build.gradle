@@ -1,0 +1,39 @@
+plugins { id "com.android.application" }
+
+// Identificativo e versione: l'identificativo NON va mai cambiato, altrimenti Android la tratta come un'altra app.
+def VERSIONE_CODICE = (project.findProperty("sbVersionCode") ?: "1") as Integer
+def VERSIONE_NOME = (project.findProperty("sbVersionName") ?: "1.0.0") as String
+
+android {
+    namespace "it.secondbrain.app"
+    compileSdk 36
+    buildToolsVersion "36.0.0"
+
+    defaultConfig {
+        applicationId "it.secondbrain.app"
+        minSdk 29
+        targetSdk 36
+        versionCode VERSIONE_CODICE
+        versionName VERSIONE_NOME
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            shrinkResources false
+            // Firma esterna con apksigner (strumenti/compila-apk.sh): nessuna chiave nel progetto.
+            signingConfig null
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    lint { checkReleaseBuilds false; abortOnError false }
+
+    // Niente metadati variabili nell'APK (riproducibilità)
+    dependenciesInfo { includeInApk false; includeInBundle false }
+    packaging { resources { excludes += ["META-INF/*.version", "META-INF/com/android/build/gradle/app-metadata.properties"] } }
+}

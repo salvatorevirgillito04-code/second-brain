@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp" android:viewportWidth="108" android:viewportHeight="108">
+    <!-- collegamenti -->
+    <path android:strokeColor="#FFFFFF" android:strokeWidth="3" android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M54,54 L38,40 M54,54 L72,42 M54,54 L40,70 M54,54 L70,70 M38,40 L54,32 M54,32 L72,42 M40,70 L54,78 M54,78 L70,70" />
+    <!-- nodo centrale -->
+    <path android:fillColor="#FFFFFF" android:pathData="M54,54m-8,0a8,8 0,1 1,16 0a8,8 0,1 1,-16 0" />
+    <path android:fillColor="#1F6F5C" android:pathData="M54,54m-3.5,0a3.5,3.5 0,1 1,7 0a3.5,3.5 0,1 1,-7 0" />
+    <!-- nodi esterni -->
+    <path android:fillColor="#FFFFFF" android:pathData="M38,40m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M72,42m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M40,70m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M70,70m-5,0a5,5 0,1 1,10 0a5,5 0,1 1,-10 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M54,32m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+    <path android:fillColor="#FFFFFF" android:pathData="M54,78m-4,0a4,4 0,1 1,8 0a4,4 0,1 1,-8 0" />
+</vector>

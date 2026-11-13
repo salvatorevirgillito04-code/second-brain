@@ -1,0 +1,221 @@
+{
+  "formato": "second-brain-backup",
+  "versione": 1,
+  "esportato_il": "2026-11-13T17:42:11.493Z",
+  "hash_sha256": "c0406808649c3d9292befe9eafd9f97d55e54022cec5811262d1bb79a9362f29",
+  "dati": {
+    "agenti": [
+      {
+        "id": "ag-fittizio-archivista",
+        "accesso_memoria": "tutta",
+        "creato_il": "2026-11-13T07:00:00.000Z",
+        "fittizio": true,
+        "istruzioni": "Segnala i duplicati, non eliminarli da solo.",
+        "nome": "Archivista (fittizio)",
+        "ruolo": "Mantiene ordinata la memoria",
+        "skill_ids": [
+          "sk-fittizia-riassunto"
+        ],
+        "strumenti": []
+      },
+      {
+        "id": "ag-fittizio-sviluppatore",
+        "accesso_memoria": "stanza",
+        "creato_il": "2026-11-13T07:00:00.000Z",
+        "fittizio": true,
+        "istruzioni": "Lavora su un ramo dedicato, non fare push senza conferma.",
+        "nome": "Sviluppatore (fittizio)",
+        "ruolo": "Implementa e verifica modifiche al codice",
+        "skill_ids": [
+          "sk-fittizia-revisione"
+        ],
+        "strumenti": [
+          "Bash",
+          "GitHub"
+        ]
+      }
+    ],
+    "collegamenti": [
+      {
+        "id": "co-prova-sviluppatore",
+        "agente_id": "ag-fittizio-sviluppatore",
+        "creato_il": "2026-11-13T16:04:30.000Z",
+        "fittizio": true,
+        "nota": "collegamento di prova creato da Claude Code, da rimuovere",
+        "session_id": "session_01WFYYR7s5Za6Fm9Vk2uosiD",
+        "stanza_id": "st-fittizia-orto"
+      }
+    ],
+    "memoria": [
+      {
+        "id": "mem-fittizia-sintesi",
+        "data": "2026-11-13T06:21:00.000Z",
+        "fittizio": true,
+        "fonte": "riassunto di prova",
+        "stanza_id": "st-fittizia-orto",
+        "testo": "Riassunto: tre irrigazioni a settimana bastano in primavera (fittizio)",
+        "tipo": "riassunto"
+      },
+      {
+        "id": "mem-fittizia-vasi",
+        "data": "2026-11-13T06:20:00.000Z",
+        "fittizio": true,
+        "fonte": "inserimento di prova da Claude Code",
+        "stanza_id": "st-fittizia-orto",
+        "testo": "Decisione: usare vasi da 30 cm con sottovaso (fittizio)",
+        "tipo": "originale"
+      },
+      {
+        "id": "mem-mwel8hdu-hn371",
+        "data": "2026-11-13T06:20:39.042Z",
+        "fittizio": true,
+        "fonte": "inserimento manuale",
+        "stanza_id": null,
+        "testo": "Decisione: usare vasi da 50cm",
+        "tipo": "originale"
+      }
+    ],
+    "skill": [
+      {
+        "id": "sk-fittizia-revisione",
+        "creato_il": "2026-11-13T07:00:00.000Z",
+        "descrizione": "Controllo di un diff prima del commit",
+        "fittizio": true,
+        "nome": "Revisione del codice (fittizia)",
+        "procedura": "1. Leggi il diff\n2. Elenca errori e rischi\n3. Proponi correzioni"
+      },
+      {
+        "id": "sk-fittizia-riassunto",
+        "creato_il": "2026-11-13T07:00:00.000Z",
+        "descrizione": "Sintesi delle decisioni della settimana",
+        "fittizio": true,
+        "nome": "Riassunto settimanale (fittizio)",
+        "procedura": "Raccogli le decisioni, indica fonte e data di ciascuna, separa fatti e deduzioni."
+      }
+    ],
+    "stanze": [
+      {
+        "id": "st-fittizia-orto",
+        "archiviata": false,
+        "creato_il": "2026-11-13T06:20:00.000Z",
+        "fittizio": true,
+        "nome": "Orto sul balcone (fittizio)",
+        "obiettivi": [
+          "Raccolto di pomodori a luglio"
+        ]
+      },
+      {
+        "id": "st-mwel7t86-4la8o",
+        "archiviata": false,
+        "creato_il": "2026-11-13T06:20:07.736Z",
+        "fittizio": true,
+        "nome": "Orto sul balcone",
+        "obiettivi": [
+          "Raccolta dei pomodori a giugno"
+        ]
+      }
+    ],
+    "stato_lavoro": [
+      {
+        "id": "istantanea",
+        "fonte": "Claude Code su richiesta («aggiorna stato»), strumento list_sessions",
+        "formato": "istantanea-lavoro",
+        "rilevato_il": "2026-11-13T16:05:34Z",
+        "rilevatore_session_id": "session_01WFYYR7s5Za6Fm9Vk2uosiD",
+        "sessioni": [
+          {
+            "created_at": "2026-11-13T06:10:47.850401Z",
+            "id": "session_01WFYYR7nkraopp1jE9kJ7CY",
+            "origin": "claude_code_mcp_seed",
+            "session_status": "SESSION_STATUS_IDLE",
+            "status_bucket": "SESSION_STATUS_BUCKET_COMPLETED",
+            "titolo": "Second Brain – prova lettura archivio artifact",
+            "updated_at": "2026-11-13T06:11:05.070843Z"
+          },
+          {
+            "created_at": "2026-11-13T05:59:00.269271Z",
+            "id": "session_01WFYYR7s5Za6Fm9Vk2uosiD",
+            "origin": "android",
+            "rilevatore": true,
+            "session_status": "SESSION_STATUS_RUNNING",
+            "status_bucket": "SESSION_STATUS_BUCKET_WORKING",
+            "titolo": "Second Brain app architecture",
+            "updated_at": "2026-11-13T15:58:40.210876Z"
+          },
+          {
+            "created_at": "2026-11-10T03:09:15.833156Z",
+            "id": "session_01WFYYR982FvE9qqtedmKRuq",
+            "origin": "android",
+            "session_status": "SESSION_STATUS_IDLE",
+            "status_bucket": "SESSION_STATUS_BUCKET_BLOCKED",
+            "titolo": "TCL Minimal TV Fase 0",
+            "updated_at": "2026-11-13T16:04:49.972434Z"
+          },
+          {
+            "created_at": "2026-11-08T15:26:07.044707Z",
+            "id": "session_01WFYYR91zrQkK4HbkvoWEKu",
+            "origin": "android",
+            "session_status": "SESSION_STATUS_IDLE",
+            "status_bucket": "SESSION_STATUS_BUCKET_COMPLETED",
+            "titolo": "TCL TV ADB diagnostica",
+            "updated_at": "2026-11-08T21:01:38.923097Z"
+          },
+          {
+            "created_at": "2026-11-02T21:03:42.119464Z",
+            "id": "session_01WFYYRAMd6J9kSqkvf3fBBg",
+            "origin": "android",
+            "session_status": "SESSION_STATUS_IDLE",
+            "status_bucket": "SESSION_STATUS_BUCKET_BLOCKED",
+            "titolo": "Negozio miglioramenti",
+            "updated_at": "2026-11-08T12:29:31.196723Z"
+          },
+          {
+            "created_at": "2026-11-01T23:58:05.593421Z",
+            "id": "session_01WFYYRA5hPQwGUEpnW7GaV6",
+            "origin": "android",
+            "session_status": "SESSION_STATUS_IDLE",
+            "status_bucket": "SESSION_STATUS_BUCKET_BLOCKED",
+            "titolo": "Claude voice assistant setup",
+            "updated_at": "2026-11-03T09:30:37.961802Z"
+          },
+          {
+            "created_at": "2026-10-28T21:17:54.769293Z",
+            "id": "session_01WFYYR9DSvvTxwh33TBDumy",
+            "origin": "android",
+            "session_status": "SESSION_STATUS_IDLE",
+            "status_bucket": "SESSION_STATUS_BUCKET_BLOCKED",
+            "titolo": "Miglioramento sito",
+            "updated_at": "2026-11-02T14:39:18.770817Z"
+          },
+          {
+            "created_at": "2026-10-23T23:53:49.101272Z",
+            "id": "session_01Bxyh3EuJxdX6XaTLeuMMJs",
+            "origin": "android",
+            "session_status": "SESSION_STATUS_IDLE",
+            "status_bucket": "SESSION_STATUS_BUCKET_BLOCKED",
+            "titolo": "Simulatore carrelli elevatori mobile",
+            "updated_at": "2026-11-07T23:17:32.629659Z"
+          },
+          {
+            "created_at": "2026-10-23T17:46:21.395786Z",
+            "id": "session_01Ltx7PqtxPtUV3wpm6SBmhv",
+            "origin": "android",
+            "session_status": "SESSION_STATUS_IDLE",
+            "status_bucket": "SESSION_STATUS_BUCKET_BLOCKED",
+            "titolo": "App budgeting con Netlify",
+            "updated_at": "2026-10-25T14:50:38.637788Z"
+          }
+        ],
+        "totale": 9,
+        "troncato": false,
+        "versione": 1
+      },
+      {
+        "id": "ultimo_tentativo",
+        "esito": "ok",
+        "messaggio": "Lette 9 sessioni.",
+        "quando": "2026-11-13T16:05:34Z"
+      }
+    ]
+  }
+}
