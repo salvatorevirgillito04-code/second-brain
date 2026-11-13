@@ -26,3 +26,8 @@ Causa del problema precedente: il token a grana fine non aveva repository né pe
 (solo `second-brain`, Contents: Read and write). Verifica sul repository: ramo `dati` creato dall'app con 7 file
 (2 agenti, 1 collegamento, 2 skill, 2 stanze) = le 7 modifiche in attesa. Nessun file in `dati/app/note/` né in
 `dati/app/memoria/`: nessuna nota privata inviata.
+
+## Collaudo utente 1.1.1 (13/11/2026)
+Esito dichiarato dall'utente: **superato** su OPPO (Android 16). Aggiornamento 1.1.0 → 1.1.1 con dati conservati,
+versione «1.1.1 (4)» in Avanzate, sincronizzazione completata senza errori.
+APK `54f72ddd…cb75`, certificato `955BD34F…57B4E4D5`.
