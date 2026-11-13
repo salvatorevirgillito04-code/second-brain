@@ -1,0 +1,308 @@
+<title>Second Brain Anteprima</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: guscio da telefono (max 430px) con barra superiore, contenuto scorrevole e barra di navigazione in basso a portata di pollice. Tema scuro unico, scelto. */
+:root{
+  color-scheme:dark;
+  --bg:#141619; --pannello:#1b1e23; --rilievo:#23272e; --linea:#2e333b;
+  --testo:#e6e8eb; --tenue:#9aa1ab; --accento:#a78bfa; --accento-tenue:#2b2540;
+  --progetto:#a78bfa; --area:#5eb5a6; --risorsa:#d4a65a; --inbox:#e07a8a; --archivio:#7d8590;
+  --ok:#6cc58a; --att:#e0a64f; --err:#ef7a7a;
+  --f:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --m:ui-monospace,"Roboto Mono",Menlo,monospace;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--testo);font-family:var(--f);font-size:15px;line-height:1.45}
+.app{max-width:430px;margin:0 auto;min-height:100%;display:flex;flex-direction:column;background:var(--bg);border-inline:1px solid var(--linea)}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--linea)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.top h1{font-size:1.15rem;margin:0;font-weight:650;flex:1;letter-spacing:-.01em}
+.ico{width:40px;height:40px;border-radius:10px;border:none;background:transparent;color:var(--tenue);display:grid;place-items:center;cursor:pointer}
+.ico:active,.ico[aria-pressed="true"]{background:var(--rilievo);color:var(--testo)}
+.ico svg,.nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.demo{font-size:.72rem;color:var(--att);border:1px dashed var(--att);border-radius:999px;padding:1px 8px;white-space:nowrap}
+main{flex:1;padding-block:14px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:18px;align-content:start}
+h2{font-size:.78rem;letter-spacing:.08em;text-transform:uppercase;color:var(--tenue);margin:0 0 8px;font-weight:600}
+p{margin:0}
+.cerca{display:flex;align-items:center;gap:8px;background:var(--rilievo);border:1px solid var(--linea);border-radius:12px;padding:0 12px}
+.cerca svg{width:18px;height:18px;stroke:var(--tenue);fill:none;stroke-width:2}
+.cerca input{flex:1;background:transparent;border:none;color:var(--testo);font:inherit;padding:12px 0;outline:none;min-width:0}
+.rapidi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rapido{background:var(--pannello);border:1px solid var(--linea);border-radius:12px;padding:12px 8px;color:var(--testo);font:inherit;font-size:.85rem;display:grid;gap:4px;justify-items:center;cursor:pointer}
+.rapido b{font-size:1.25rem;font-variant-numeric:tabular-nums}
+.lista{display:grid;gap:2px;background:var(--linea);border:1px solid var(--linea);border-radius:12px;overflow:hidden}
+.riga{background:var(--pannello);padding:12px 14px;display:flex;gap:12px;align-items:center;cursor:pointer;min-width:0;border:none;color:inherit;font:inherit;text-align:left;width:100%}
+.riga:active{background:var(--rilievo)}
+.riga .t{flex:1;min-width:0}
+.riga .t b{display:block;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.riga .t span{font-size:.8rem;color:var(--tenue)}
+.punto{width:10px;height:10px;border-radius:50%;flex:0 0 10px}
+.conta{font-size:.8rem;color:var(--tenue);font-variant-numeric:tabular-nums}
+.bar{height:4px;border-radius:2px;background:var(--rilievo);overflow:hidden;margin-top:6px}.bar i{display:block;height:100%;background:var(--accento)}
+.chip{font-size:.74rem;padding:2px 9px;border-radius:999px;background:var(--rilievo);color:var(--tenue);border:1px solid var(--linea);white-space:nowrap}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.seg button{flex:0 0 auto;font:inherit;font-size:.86rem;padding:7px 12px;border-radius:999px;border:1px solid var(--linea);background:var(--pannello);color:var(--tenue);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accento-tenue);border-color:var(--accento);color:var(--testo)}
+.nota h3{font-size:1.4rem;margin:0 0 4px;font-weight:650;letter-spacing:-.015em;text-wrap:balance}
+.nota .meta{font-size:.8rem;color:var(--tenue);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.corpo{font-size:1rem;line-height:1.6;display:grid;gap:10px}
+.corpo a{color:var(--accento);text-decoration:none;border-bottom:1px solid var(--accento-tenue)}
+.corpo a.manca{color:var(--tenue);border-bottom-style:dashed}
+.blocco{background:var(--pannello);border:1px solid var(--linea);border-radius:12px;padding:12px 14px;display:grid;gap:8px}
+.mappa{position:relative;height:min(62vh,520px);background:var(--pannello);border:1px solid var(--linea);border-radius:14px;overflow:hidden;touch-action:none}
+.mappa canvas{width:100%;height:100%;display:block}
+.zoom{position:absolute;right:10px;bottom:10px;display:grid;gap:6px}
+.zoom button{width:40px;height:40px;border-radius:10px;border:1px solid var(--linea);background:var(--rilievo);color:var(--testo);font-size:1.2rem;cursor:pointer}
+.scheda-nodo{position:absolute;left:10px;right:60px;bottom:10px;background:var(--rilievo);border:1px solid var(--linea);border-radius:12px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+.scheda-nodo b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn{font:inherit;font-weight:550;border-radius:10px;padding:9px 14px;border:1px solid var(--accento);background:var(--accento);color:#17131f;cursor:pointer;min-height:40px}
+.btn.v{background:transparent;color:var(--accento)}
+.legenda{display:flex;gap:10px;flex-wrap:wrap;font-size:.78rem;color:var(--tenue)}
+.legenda span{display:flex;gap:5px;align-items:center}
+.agente{display:flex;gap:10px;align-items:center}
+.avatar{width:34px;height:34px;border-radius:10px;background:var(--accento-tenue);color:var(--accento);display:grid;place-items:center;font-weight:700;font-size:.85rem;flex:0 0 34px}
+.stato-ok{color:var(--ok);border-color:currentColor;background:transparent}
+.stato-att{color:var(--att);border-color:currentColor;background:transparent}
+.stato-vecchio{border-style:dashed}
+.att{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--linea)}
+.att:first-child{border-top:none}
+.att input{width:20px;height:20px;accent-color:var(--accento);margin-top:1px;flex:0 0 20px}
+.att.fatta span{color:var(--tenue);text-decoration:line-through}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--pannello);border-top:1px solid var(--linea);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav div{max-width:430px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.nav a{display:grid;justify-items:center;gap:2px;padding:9px 0 8px;color:var(--tenue);text-decoration:none;font-size:.7rem}
+.nav a[aria-current="page"]{color:var(--accento)}
+.fab{position:fixed;z-index:7;right:max(16px,calc(50% - 215px + 16px));bottom:calc(72px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:16px;border:none;background:var(--accento);color:#17131f;display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.4)}
+.fab svg{width:26px;height:26px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+.foglio{position:fixed;inset:0;z-index:20;background:rgba(8,9,11,.6);display:flex;align-items:flex-end;justify-content:center}
+.foglio form{width:100%;max-width:430px;background:var(--pannello);border-top:1px solid var(--linea);border-radius:18px 18px 0 0;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));display:grid;gap:12px}
+.foglio textarea{background:var(--rilievo);color:var(--testo);border:1px solid var(--linea);border-radius:12px;font:inherit;padding:12px;min-height:96px;resize:vertical}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(140px + env(safe-area-inset-bottom,0px));z-index:30;background:var(--rilievo);border:1px solid var(--linea);border-radius:12px;padding:10px 14px;font-size:.88rem;max-width:min(400px,calc(100% - 32px))}
+.imp .riga{cursor:default}
+details.blocco summary{cursor:pointer;color:var(--tenue);font-size:.9rem}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.84rem}.kv dt{color:var(--tenue)}.kv dd{margin:0;font-family:var(--m);font-size:.78rem;overflow-wrap:anywhere;min-width:0}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible{outline:2px solid var(--accento);outline-offset:2px}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="app">
+  <header class="top">
+    <button class="ico" id="indietro" aria-label="Indietro" hidden><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <h1 id="titolo">Second Brain</h1>
+    <span class="demo">dati dimostrativi</span>
+    <a class="ico" href="#impostazioni" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.5 15H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></a>
+  </header>
+  <main id="vista"></main>
+</div>
+
+<button class="fab" id="fab" aria-label="Aggiunta rapida"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+
+<nav class="nav" aria-label="Sezioni"><div>
+  <a href="#home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+  <a href="#organizza"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/></svg>Organizza</a>
+  <a href="#note"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>Note</a>
+  <a href="#mappa"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7l7.6 1M7.3 8.2l3.6 7.6M16.9 10.2l-3.7 5.8"/></svg>Mappa</a>
+  <a href="#stanze"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg>Stanze</a>
+</div></nav>
+
+<div class="foglio" id="foglio" hidden>
+  <form id="f-rapido">
+    <h2 style="margin:0">Aggiunta rapida</h2>
+    <textarea id="r-testo" placeholder="Scrivi un'idea, un'attività o una nota. Usa [[ ]] per collegare." required></textarea>
+    <div class="seg" id="r-tipo">
+      <button type="button" data-v="Nota" aria-pressed="true">Nota</button><button type="button" data-v="Attività" aria-pressed="false">Attività</button><button type="button" data-v="Idea" aria-pressed="false">Idea</button>
+    </div>
+    <p style="font-size:.82rem;color:var(--tenue)">Finisce in «Da organizzare»: la sistemi dopo, con calma.</p>
+    <div style="display:flex;gap:8px;justify-content:flex-end"><button type="button" class="btn v" id="r-annulla">Annulla</button><button class="btn">Salva</button></div>
+  </form>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  // ---------- dati dimostrativi (non sono i tuoi dati) ----------
+  const TIPI = { inbox: ["Da organizzare", "--inbox"], progetto: ["Progetti", "--progetto"], area: ["Aree", "--area"], risorsa: ["Risorse", "--risorsa"], archivio: ["Archivio", "--archivio"] };
+  const NOTE = [
+    { id: "n1", tipo: "progetto", titolo: "Trasloco a Bologna", agg: "oggi", prog: 0.6, testo: "Scadenza: 15 febbraio. Seguire la [[Checklist trasloco]] e confrontare i preventivi in [[Preventivi ditte]].\nBudget nell'area [[Finanze di casa]]." },
+    { id: "n2", tipo: "progetto", titolo: "Corso di fotografia", agg: "ieri", prog: 0.3, testo: "Esercizi settimanali dal [[Manuale di esposizione]]. Idee di scatto in [[Luce del mattino]]." },
+    { id: "n3", tipo: "progetto", titolo: "Sito del negozio", agg: "3 giorni fa", prog: 0.8, testo: "Pagine prodotto da rifare. Testi con il [[Tono di voce]]; agenti nella stanza Negozio online." },
+    { id: "n4", tipo: "area", titolo: "Finanze di casa", agg: "1 settimana fa", testo: "Bollette, spese ricorrenti, [[Preventivi ditte]] approvati." },
+    { id: "n5", tipo: "area", titolo: "Salute", agg: "2 settimane fa", testo: "Visite e allenamento. Collegata a [[Piano corsa 10 km]]." },
+    { id: "n6", tipo: "risorsa", titolo: "Manuale di esposizione", agg: "5 giorni fa", testo: "Tempo, diaframma, ISO. Esempi in [[Luce del mattino]]." },
+    { id: "n7", tipo: "risorsa", titolo: "Tono di voce", agg: "1 mese fa", testo: "Frasi brevi, niente gergo. Usato da [[Sito del negozio]]." },
+    { id: "n8", tipo: "risorsa", titolo: "Checklist trasloco", agg: "oggi", testo: "Disdire utenze, cambio residenza, scatoloni etichettati per stanza." },
+    { id: "n9", tipo: "inbox", titolo: "Preventivi ditte", agg: "oggi", testo: "Tre preventivi ricevuti: chiedere dettagli sull'assicurazione. Vedi [[Trasloco a Bologna]]." },
+    { id: "n10", tipo: "inbox", titolo: "Luce del mattino", agg: "ieri", testo: "Idea: serie di foto sul balcone tra le 7 e le 8. Per [[Corso di fotografia]]." },
+    { id: "n11", tipo: "inbox", titolo: "Libro da leggere", agg: "2 giorni fa", testo: "Consigliato al corso. Forse va in [[Manuale di esposizione]]." },
+    { id: "n12", tipo: "archivio", titolo: "Piano corsa 10 km", agg: "3 mesi fa", testo: "Completato a settembre. Restano le note sull'[[Salute]] alimentazione." },
+  ];
+  const STANZE = [
+    { id: "s1", nome: "Negozio online", obiettivo: "Nuove pagine prodotto entro fine mese", note: ["n3", "n7"],
+      agenti: [{ nome: "Redattore", ruolo: "Scrive i testi delle pagine", esec: { stato: "in esecuzione", eta: "12 min fa", fresco: true } }, { nome: "Revisore", ruolo: "Controlla coerenza e refusi", esec: null }],
+      attivita: [{ t: "Elenco dei 20 prodotti principali", f: true }, { t: "Bozze testi prime 5 pagine", f: false }, { t: "Revisione tono di voce", f: false }] },
+    { id: "s2", nome: "Casa e trasloco", obiettivo: "Trasloco senza imprevisti", note: ["n1", "n8", "n9"],
+      agenti: [{ nome: "Organizzatore", ruolo: "Tiene la checklist aggiornata", esec: { stato: "in attesa di te", eta: "3 h fa", fresco: false } }],
+      attivita: [{ t: "Confrontare i tre preventivi", f: false }, { t: "Disdire internet", f: false }, { t: "Prenotare furgone", f: true }] },
+  ];
+  const perTitolo = (t) => NOTE.find((n) => n.titolo.toLowerCase() === t.toLowerCase());
+  const linkUscita = (n) => [...n.testo.matchAll(/\[\[([^\]]+)\]\]/g)].map((m) => m[1]);
+  const entrata = (n) => NOTE.filter((x) => x !== n && linkUscita(x).some((t) => t.toLowerCase() === n.titolo.toLowerCase()));
+  const col = (tipo) => getComputedStyle(document.documentElement).getPropertyValue(TIPI[tipo][1]).trim();
+  const esc = (v) => String(v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const $ = (s) => document.querySelector(s);
+  const V = $("#vista");
+  const S = { cerca: "", filtro: "progetto", nota: "n1", stanza: "s1", nodo: null };
+  const pallino = (tipo) => `<span class="punto" style="background:var(${TIPI[tipo][1]})"></span>`;
+  const rigaNota = (n) => `<button class="riga" data-nota="${n.id}">${pallino(n.tipo)}<span class="t"><b>${esc(n.titolo)}</b><span>${TIPI[n.tipo][0]} · ${esc(n.agg)}</span></span><span class="conta">${entrata(n).length}↙</span></button>`;
+
+  function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 2600); }
+
+  // ---------- viste ----------
+  const VISTE = {
+    home() {
+      const q = S.cerca.trim().toLowerCase();
+      const ris = q ? NOTE.filter((n) => (n.titolo + " " + n.testo).toLowerCase().includes(q)) : [];
+      const n = (t) => NOTE.filter((x) => x.tipo === t).length;
+      return `<label class="cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="cerca" type="search" placeholder="Cerca in note, progetti, stanze" value="${esc(S.cerca)}"></label>
+        ${q ? `<section><h2>${ris.length} risultati</h2><div class="lista">${ris.map(rigaNota).join("") || `<p class="riga">Nessun risultato.</p>`}</div></section>` : `
+        <div class="rapidi">
+          <button class="rapido" data-vai="organizza" data-f="inbox"><b style="color:var(--inbox)">${n("inbox")}</b>Da organizzare</button>
+          <button class="rapido" data-vai="organizza" data-f="progetto"><b style="color:var(--progetto)">${n("progetto")}</b>Progetti</button>
+          <button class="rapido" data-vai="stanze"><b style="color:var(--area)">1</b>Agente al lavoro</button>
+        </div>
+        <section><h2>Progetti recenti</h2><div class="lista">${NOTE.filter((x) => x.tipo === "progetto").map((p) => `<button class="riga" data-nota="${p.id}">${pallino("progetto")}<span class="t"><b>${esc(p.titolo)}</b><span>aggiornato ${esc(p.agg)} · ${Math.round(p.prog * 100)}%</span><div class="bar"><i style="width:${p.prog * 100}%"></i></div></span></button>`).join("")}</div></section>
+        <section><h2>Ultime note</h2><div class="lista">${NOTE.filter((x) => x.agg === "oggi" || x.agg === "ieri").map(rigaNota).join("")}</div></section>`}`;
+    },
+    organizza() {
+      const ord = ["inbox", "progetto", "area", "risorsa", "archivio"];
+      return `<div class="seg" role="group" aria-label="Categorie">${ord.map((t) => `<button data-f="${t}" aria-pressed="${S.filtro === t}">${TIPI[t][0]} <span class="conta">${NOTE.filter((n) => n.tipo === t).length}</span></button>`).join("")}</div>
+        <p style="font-size:.84rem;color:var(--tenue)">${{ inbox: "Tutto ciò che hai catturato e non hai ancora sistemato.", progetto: "Lavori con un obiettivo e una fine.", area: "Responsabilità continue, senza scadenza.", risorsa: "Materiale di riferimento utile in futuro.", archivio: "Concluso o in pausa. Resta cercabile." }[S.filtro]}</p>
+        <div class="lista">${NOTE.filter((n) => n.tipo === S.filtro).map(rigaNota).join("")}</div>`;
+    },
+    note() {
+      const n = NOTE.find((x) => x.id === S.nota);
+      const corpo = esc(n.testo).split("\n").map((r) => `<p>${r.replace(/\[\[([^\]]+)\]\]/g, (_, t) => { const d = perTitolo(t); return d ? `<a href="#note" data-nota="${d.id}">${t}</a>` : `<a class="manca" href="#note">${t}</a>`; })}</p>`).join("");
+      const ent = entrata(n), usc = linkUscita(n).map(perTitolo).filter(Boolean);
+      const stanze = STANZE.filter((s) => s.note.includes(n.id));
+      return `<article class="nota"><h3>${esc(n.titolo)}</h3><div class="meta">${pallino(n.tipo)}${TIPI[n.tipo][0]} · aggiornata ${esc(n.agg)}${stanze.map((s) => `<span class="chip">${esc(s.nome)}</span>`).join("")}</div></article>
+        <div class="corpo">${corpo}</div>
+        <section><h2>Riferimenti in entrata · ${ent.length}</h2><div class="lista">${ent.map(rigaNota).join("") || `<p class="riga" style="color:var(--tenue)">Nessuna nota rimanda qui.</p>`}</div></section>
+        <section><h2>Collegamenti in uscita · ${usc.length}</h2><div class="chips">${usc.map((d) => `<button class="chip" data-nota="${d.id}" style="cursor:pointer">${esc(d.titolo)}</button>`).join("")}</div></section>
+        <section><h2>Tutte le note</h2><div class="lista">${NOTE.filter((x) => x.id !== n.id).slice(0, 5).map(rigaNota).join("")}</div></section>`;
+    },
+    mappa() {
+      return `<div class="legenda">${Object.entries(TIPI).map(([k, [l, c]]) => `<span><i class="punto" style="background:var(${c})"></i>${l}</span>`).join("")}</div>
+        <div class="mappa" id="mappa"><canvas id="tela" aria-label="Mappa dei collegamenti tra note"></canvas>
+          <div class="zoom"><button id="zp" aria-label="Avvicina">+</button><button id="zm" aria-label="Allontana">−</button></div>
+          <div class="scheda-nodo" id="scheda" hidden><b id="scheda-t"></b><button class="btn" id="scheda-apri">Apri</button></div></div>
+        <p style="font-size:.84rem;color:var(--tenue)">Trascina per spostarti, tocca un punto per vedere la nota. La dimensione indica quante note la collegano.</p>`;
+    },
+    stanze() {
+      const s = STANZE.find((x) => x.id === S.stanza);
+      return `<div class="seg">${STANZE.map((x) => `<button data-stanza="${x.id}" aria-pressed="${x.id === s.id}">${esc(x.nome)}</button>`).join("")}</div>
+        <div class="blocco"><b style="font-size:1.1rem">${esc(s.nome)}</b><p style="color:var(--tenue);font-size:.9rem">Obiettivo: ${esc(s.obiettivo)}</p></div>
+        <section><h2>Agenti</h2><div class="blocco">${s.agenti.map((a) => `<div class="agente"><span class="avatar">${a.nome.slice(0, 2)}</span><span style="flex:1;min-width:0"><b>${esc(a.nome)}</b><br><span style="font-size:.8rem;color:var(--tenue)">${esc(a.ruolo)}</span></span>
+          ${a.esec ? `<span class="chip ${a.esec.fresco ? "stato-ok" : "stato-att stato-vecchio"}">${esc(a.esec.stato)} · ${esc(a.esec.eta)}</span>` : `<span class="chip">configurato</span>`}</div>`).join("")}
+          <p style="font-size:.78rem;color:var(--tenue)">Lo stato arriva dall'ultima rilevazione di Claude Code, non è in tempo reale.</p></div></section>
+        <section><h2>Attività</h2><div class="blocco">${s.attivita.map((a, i) => `<label class="att${a.f ? " fatta" : ""}"><input type="checkbox" data-att="${i}"${a.f ? " checked" : ""}><span>${esc(a.t)}</span></label>`).join("")}</div></section>
+        <section><h2>Note della stanza</h2><div class="lista">${s.note.map((id) => rigaNota(NOTE.find((n) => n.id === id))).join("")}</div></section>`;
+    },
+    impostazioni() {
+      return `<section><h2>Sincronizzazione</h2><div class="lista imp">
+          <div class="riga"><span class="punto" style="background:var(--ok)"></span><span class="t"><b>Sincronizzato</b><span>10 min fa · nessuna modifica in attesa</span></span></div>
+          <div class="riga"><span class="t"><b>Sincronizza ora</b></span></div></div></section>
+        <section><h2>I tuoi dati</h2><div class="lista imp">
+          <div class="riga"><span class="t"><b>Esporta su file</b><span>Backup completo con impronta di controllo</span></span></div>
+          <div class="riga"><span class="t"><b>Ripristina da file</b></span></div>
+          <div class="riga"><span class="t"><b>Elimina i dati di prova</b></span></div></div></section>
+        <details class="blocco"><summary>Avanzate</summary><dl class="kv">
+          <dt>Accesso GitHub</dt><dd>token configurato · scade tra 82 giorni</dd><dt>Repository</dt><dd>second-brain · ramo dati</dd>
+          <dt>Versione</dt><dd>1.1.0 (anteprima)</dd><dt>Identificativo</dt><dd>it.secondbrain.app</dd><dt>Istantanea agenti</dt><dd>rilevata 12 min fa</dd><dt>Conflitti</dt><dd>nessuno</dd></dl></details>`;
+    },
+  };
+  const TITOLI = { home: "Second Brain", organizza: "Organizza", note: "Nota", mappa: "Mappa", stanze: "Stanze", impostazioni: "Impostazioni" };
+
+  function mostra() {
+    const v = VISTE[location.hash.slice(1)] ? location.hash.slice(1) : "home";
+    V.innerHTML = VISTE[v]();
+    $("#titolo").textContent = TITOLI[v];
+    $("#indietro").hidden = v !== "impostazioni" && v !== "note";
+    $("#fab").hidden = v === "mappa" || v === "impostazioni";
+    document.querySelectorAll(".nav a").forEach((a) => (a.getAttribute("href") === "#" + (v === "impostazioni" ? "" : v) ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
+    if (v === "mappa") disegnaMappa();
+    const c = $("#cerca"); if (c) c.oninput = () => { S.cerca = c.value; const pos = c.selectionStart; mostra(); const n = $("#cerca"); n.focus(); n.setSelectionRange(pos, pos); };
+  }
+  window.addEventListener("hashchange", () => { mostra(); window.scrollTo(0, 0); });
+  $("#indietro").onclick = () => history.back();
+
+  document.addEventListener("click", (e) => {
+    const el = e.target.closest("[data-nota],[data-vai],[data-f],[data-stanza]"); if (!el) return;
+    if (el.dataset.nota) { e.preventDefault(); S.nota = el.dataset.nota; location.hash === "#note" ? (mostra(), scrollTo(0, 0)) : (location.hash = "note"); return; }
+    if (el.dataset.f) S.filtro = el.dataset.f;
+    if (el.dataset.stanza) S.stanza = el.dataset.stanza;
+    if (el.dataset.vai) { location.hash = el.dataset.vai; return; }
+    mostra();
+  });
+  document.addEventListener("change", (e) => { if (e.target.dataset.att != null) { const s = STANZE.find((x) => x.id === S.stanza); s.attivita[e.target.dataset.att].f = e.target.checked; mostra(); } });
+
+  // ---------- aggiunta rapida ----------
+  let tipoRapido = "Nota";
+  $("#fab").onclick = () => { $("#foglio").hidden = false; $("#r-testo").focus(); };
+  $("#r-annulla").onclick = () => ($("#foglio").hidden = true);
+  $("#foglio").onclick = (e) => { if (e.target.id === "foglio") $("#foglio").hidden = true; };
+  $("#r-tipo").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; tipoRapido = b.dataset.v; $("#r-tipo").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); };
+  $("#f-rapido").onsubmit = (e) => {
+    e.preventDefault(); const t = $("#r-testo").value.trim(); if (!t) return;
+    NOTE.unshift({ id: "x" + Date.now(), tipo: "inbox", titolo: t.split("\n")[0].replace(/\[\[|\]\]/g, "").slice(0, 60), agg: "ora", testo: t });
+    $("#r-testo").value = ""; $("#foglio").hidden = true; mostra(); toast(`${tipoRapido} aggiunta a «Da organizzare» (solo in questa anteprima)`);
+  };
+
+  // ---------- mappa ----------
+  function disegnaMappa() {
+    const box = $("#mappa"), tela = $("#tela"), ctx = tela.getContext("2d"), dpr = window.devicePixelRatio || 1;
+    const W = box.clientWidth, H = box.clientHeight; tela.width = W * dpr; tela.height = H * dpr; ctx.scale(dpr, dpr);
+    const nodi = NOTE.map((n, i) => ({ n, x: Math.cos(i * 2.4) * 120, y: Math.sin(i * 2.4) * 120, vx: 0, vy: 0, r: 6 + entrata(n).length * 3 }));
+    const archi = []; nodi.forEach((a) => linkUscita(a.n).forEach((t) => { const b = nodi.find((x) => x.n.titolo.toLowerCase() === t.toLowerCase()); if (b) archi.push([a, b]); }));
+    for (let it = 0; it < 300; it++) { // disposizione a forze, calcolata una volta
+      for (const a of nodi) for (const b of nodi) if (a !== b) { const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01, f = 7000 / d2; a.vx += dx * f / Math.sqrt(d2); a.vy += dy * f / Math.sqrt(d2); }
+      for (const [a, b] of archi) { const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy), f = (d - 120) * 0.02; a.vx += dx / d * f; a.vy += dy / d * f; b.vx -= dx / d * f; b.vy -= dy / d * f; }
+      for (const a of nodi) { a.vx -= a.x * 0.004; a.vy -= a.y * 0.004; a.x += a.vx * 0.5; a.y += a.vy * 0.5; a.vx *= 0.6; a.vy *= 0.6; }
+    }
+    const xs = nodi.map((p) => p.x), ys = nodi.map((p) => p.y), bx = [Math.min(...xs), Math.max(...xs)], by = [Math.min(...ys), Math.max(...ys)];
+    const z0 = Math.min((W - 120) / (bx[1] - bx[0] || 1), (H - 80) / (by[1] - by[0] || 1), 1.4);
+    const vista = { x: W / 2 - (bx[0] + bx[1]) / 2 * z0, y: H / 2 - (by[0] + by[1]) / 2 * z0, z: z0 };
+    const css = getComputedStyle(document.documentElement), linea = css.getPropertyValue("--linea").trim(), testo = css.getPropertyValue("--testo").trim(), acc = css.getPropertyValue("--accento").trim();
+    function disegna() {
+      ctx.clearRect(0, 0, W, H);
+      const sel = S.nodo, vicini = new Set(sel ? archi.filter(([a, b]) => a === sel || b === sel).flatMap((x) => x) : []);
+      ctx.lineWidth = 1.2;
+      for (const [a, b] of archi) { ctx.strokeStyle = sel && (a === sel || b === sel) ? acc : linea; ctx.beginPath(); ctx.moveTo(vista.x + a.x * vista.z, vista.y + a.y * vista.z); ctx.lineTo(vista.x + b.x * vista.z, vista.y + b.y * vista.z); ctx.stroke(); }
+      for (const p of nodi) {
+        const x = vista.x + p.x * vista.z, y = vista.y + p.y * vista.z, spento = sel && p !== sel && !vicini.has(p);
+        ctx.globalAlpha = spento ? 0.3 : 1; ctx.fillStyle = col(p.n.tipo); ctx.beginPath(); ctx.arc(x, y, p.r * Math.sqrt(vista.z), 0, 7); ctx.fill();
+        if (p === sel) { ctx.strokeStyle = testo; ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1.2; }
+        if (vista.z > 0.55 || p === sel) { ctx.fillStyle = testo; ctx.font = "12px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.fillText(p.n.titolo.length > 22 ? p.n.titolo.slice(0, 21) + "…" : p.n.titolo, x, y + p.r * Math.sqrt(vista.z) + 14); }
+        ctx.globalAlpha = 1;
+      }
+    }
+    let tocco = null;
+    tela.onpointerdown = (e) => { tela.setPointerCapture(e.pointerId); tocco = { x: e.clientX, y: e.clientY, vx: vista.x, vy: vista.y, mosso: false }; };
+    tela.onpointermove = (e) => { if (!tocco) return; const dx = e.clientX - tocco.x, dy = e.clientY - tocco.y; if (Math.hypot(dx, dy) > 6) tocco.mosso = true; if (tocco.mosso) { vista.x = tocco.vx + dx; vista.y = tocco.vy + dy; disegna(); } };
+    tela.onpointerup = (e) => {
+      if (tocco && !tocco.mosso) {
+        const r = tela.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+        const p = nodi.find((q) => Math.hypot(vista.x + q.x * vista.z - x, vista.y + q.y * vista.z - y) < q.r * Math.sqrt(vista.z) + 12);
+        S.nodo = p || null; $("#scheda").hidden = !p; if (p) { $("#scheda-t").textContent = p.n.titolo; $("#scheda-apri").onclick = () => { S.nota = p.n.id; location.hash = "note"; }; }
+        disegna();
+      }
+      tocco = null;
+    };
+    $("#zp").onclick = () => { vista.z = Math.min(2.5, vista.z * 1.25); disegna(); };
+    $("#zm").onclick = () => { vista.z = Math.max(0.5, vista.z / 1.25); disegna(); };
+    S.nodo = null; disegna();
+  }
+
+  mostra();
+})();
+</script>
