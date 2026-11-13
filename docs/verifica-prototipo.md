@@ -4,18 +4,23 @@ Artifact privato: https://claude.ai/artifact/FixFdEmbd31YEYpuNbE4za (visibile so
 Capacità dichiarate: `db`, `downloads`, `mcp` → *Claude Code Remote* (13 strumenti dichiarati, la pagina ne chiama solo 2 in lettura).
 Tutti i dati usati sono fittizi e marcati `fittizio: true`.
 
-## Risultati
+## Risultati (aggiornati dopo la prova dal telefono, 06:16–06:25 UTC)
 
 | # | Prova | Risultato | Evidenza | Limite riscontrato |
 |---|---|---|---|---|
 | 0 | Repository privato | ✅ Superata | Metadati GitHub: `"private": true, "visibility": "private"` | — |
-| 1 | Apertura e uso da Android | ⏳ Non verificato | Serve la prova dal telefono. La pagina registra a ogni apertura sistema, larghezza e capacità disponibili nella collezione `visite`, che posso rileggere | Non è noto se l'app Android di Claude mostri gli artifact con capacità; in alternativa Chrome su claude.ai |
-| 2 | Stanza e memoria persistenti | 🟡 Parziale | Scrittura e rilettura dall'archivio riuscite da Claude Code (`stanze` 1 doc, `memoria` 2 doc, versione 1). Una seconda sessione indipendente le ha rilette | Persistenza dopo chiusura/riapertura **dal telefono**: non verificato |
-| 3 | Connettore dall'artifact | ⏳ Non verificato | Manifest accettato alla pubblicazione (`mcp: Claude Code Remote[13 tools]`). I pulsanti "Elenca strumenti" e "Leggi stato sessioni" salvano l'esito in `prove_connettore` | Gli strumenti realmente concessi alla pagina possono essere meno dei 13 dichiarati; il primo uso chiede il consenso |
-| 4 | Strumenti: conversazione vs artifact | 🟡 Parziale | Conversazione: 36 strumenti `claude-code-remote` (elenco sotto). Artifact: 13 dichiarati, quelli effettivi solo dopo la prova 3 | Strumenti legati alla sessione chiamante (`send_later`, `watch_url`…) non valgono per una pagina |
-| 5 | Esportazione e ripristino identici | ✅ Superata (lato Claude Code) | Impronta SHA-256 del backup `a249cb5e…2d6d` = impronta dei dati riletti da `ripristino/claude` dopo il ripristino; `diff -r` senza differenze | Esportazione e ripristino **dalla pagina sul telefono**: non verificato (download con conferma, scelta del file) |
-| 6 | Backup archivio → repository | ✅ Superata (manuale) · 🟡 indiretta (non interattiva) | Questa sessione: `ArtifactData list` → `strumenti/backup.mjs` → `backup/backup-fittizio.json` nel repository. Una sessione separata, avviata via strumento e senza persona collegata, ha letto `stanze` (1 doc) senza richieste di permesso | Una **sessione pianificata** non è stata provata (nessuna pianificazione attivata): resta da confermare |
-| 7 | Limiti dell'archivio | ✅ Superata in parte | 25.000 documenti per artifact (riportato dal servizio); documento da 300 KiB rifiutato ("307233 byte, il limite è 262144"); 250 KiB accettato e poi eliminato | Tetto di dimensione totale non pubblicato; al tetto l'errore documentato è `quota_exceeded` (scritture nuove rifiutate, aggiornamenti che non crescono ammessi). Il rifiuto a 300 KiB è avvenuto lato strumento, non è stato visto l'errore lato server |
+| 1 | Apertura e uso da Android | ✅ Superata | 6 aperture registrate in `visite`: 2 dall'**app Claude per Android** (Android 16, WebView `Claude/1.261106.19`, 360 px) e 4 da **Chrome per Android** (980 px). In tutte: archivio, connettori e download disponibili | In Chrome la larghezza era 980 px, probabile visualizzazione "sito desktop": da controllare la leggibilità |
+| 2 | Stanza e memoria persistenti | ✅ Superata | Stanza creata dal telefono alle 06:20:07 e memoria alle 06:20:39; presenti nelle aperture successive (06:21, 06:22) e ancora nell'archivio | — |
+| 3 | Connettore dall'artifact | ❌ **Lettura sessioni non disponibile** | Prima del consenso: 13 strumenti dichiarati (stato `unknown`). Dopo il consenso: **solo 2** effettivi, `list_environments` e `list_triggers`, entrambi in sola lettura. `list_sessions` rifiutato due volte con `blocked_by_policy` | Dalla pagina non si possono leggere né avviare sessioni. Si può leggere solo l'elenco delle attività pianificate e degli ambienti |
+| 4 | Strumenti: conversazione vs artifact | ✅ Superata | Conversazione: 36 strumenti `claude-code-remote`. Artifact: 13 dichiarati → 2 concessi | La differenza è imposta dalla piattaforma (`blocked_by_policy`), non dalla pagina |
+| 5 | Esportazione e ripristino identici | ✅ Superata | Dalla pagina: impronta file `4e666f21…284c` = impronta dopo il ripristino (`identico: true`). Controllo incrociato in Node sugli stessi dati: stessa impronta, `diff -r` senza differenze. Da Claude Code: `a249cb5e…2d6d` identica | Il download chiede conferma; il ripristino richiede di scegliere il file a mano |
+| 6 | Backup archivio → repository | ✅ Superata (manuale) · 🟡 indiretta (non interattiva) | Questa sessione: `ArtifactData list` → `strumenti/backup.mjs` → `backup/backup-fittizio.json`. Una sessione separata, senza persona collegata, ha letto `stanze` senza richieste di permesso | Una **sessione pianificata** non è stata provata (nessuna pianificazione attivata) |
+| 7 | Limiti dell'archivio | ✅ Superata in parte | 25.000 documenti per artifact (riportato dal servizio); 300 KiB rifiutato dallo strumento ("307233 byte, limite 262144"); 250 KiB accettato e poi eliminato. Dalla pagina: nessun documento di prova rimasto in `prove_limiti` | Tetto di dimensione totale non pubblicato; errore documentato `quota_exceeded`. Esito del pulsante sulla pagina non registrato: non so se è stato premuto |
+
+## Conseguenza per l'architettura
+
+L'opzione A regge per **memoria, stanze, esportazione e ripristino**. Non regge per il **collegamento diretto agli agenti dalla pagina**.
+Alternativa concreta: una sessione Claude Code (che ha tutti gli strumenti) legge lo stato reale delle sessioni e lo scrive nell'archivio dell'artifact; la pagina lo mostra con l'orario dell'ultimo aggiornamento e la scritta "non in tempo reale". La lettura dell'archivio da una sessione senza persona è provata; l'esecuzione pianificata no.
 
 ## Strumenti `claude-code-remote` disponibili in questa conversazione (36)
 
@@ -37,7 +42,7 @@ Azioni (dichiarate per le fasi future, **non chiamate** dal prototipo): create_s
 - `list_events` di una sessione include l'esito del turno e una stima del costo a listino: utile per mostrare risultati ed errori.
 - La sessione di prova creata per il punto 6 ha consumato limiti del piano (stima a listino ≈ 0,58 $, nessun addebito extra).
 
-## Cosa fare dal telefono
+## Prova dal telefono (eseguita)
 
 1. Apri il link dell'artifact da Chrome (e, se possibile, dall'app Claude).
 2. Crea una stanza e una memoria fittizie, chiudi tutto, riapri: devono esserci ancora.
