@@ -1,0 +1,28 @@
+{
+  "titolo": "Sessione: TCL Minimal TV Fase 0",
+  "testo": "Sessione di Claude Code «TCL Minimal TV Fase 0».\nStato rilevato: completata (rilevazione del 2026-11-13 22:18 UTC, non in tempo reale).\nUltimo riepilogo: Git bundle oidc-poc-44f72e2.bundle created and verified (SHA-256 ea7395cb...); download it and the .sha256 file before the session closes.\nCreata: 2026-11-10 03:09 · ultima attività: 2026-11-13 17:55 · origine android.\nIdentificativo: session_01WFYYR982FvE9qqtedmKRuq",
+  "tipo": "riassunto",
+  "fonte": "Claude Code, istantanea del 2026-11-13T22:18:45Z",
+  "data": "2026-11-10T03:09:15.833156Z",
+  "registrato_il": "2026-11-13T22:35:10.164Z",
+  "categoria": "inbox",
+  "tag": [
+    "sessione-claude-code"
+  ],
+  "collegamenti": [
+    "no-mwfd2p8n-pdwcj",
+    "sessione-01WFYYR7b1B2CRRLbwz7tXGE",
+    "sessione-01WFYYR91zrQkK4HbkvoWEKu"
+  ],
+  "accessibile_agenti": true,
+  "origine": {
+    "tipo": "sessione_claude_code",
+    "id": "session_01WFYYR982FvE9qqtedmKRuq",
+    "aggiornata_il": "2026-11-13T17:55:15.736570Z",
+    "stato": "completata"
+  },
+  "progetto_id": null,
+  "stanza_id": "st-mwfk834n-cl3dn",
+  "corretto_il": "2026-11-13T22:40:45.987Z",
+  "aggiornato_il": "2026-11-13T22:40:45.987Z"
+}
