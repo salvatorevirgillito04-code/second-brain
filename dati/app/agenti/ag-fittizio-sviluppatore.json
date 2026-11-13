@@ -1,0 +1,15 @@
+{
+  "accesso_memoria": "stanza",
+  "creato_il": "2026-11-13T07:00:00.000Z",
+  "fittizio": true,
+  "istruzioni": "Lavora su un ramo dedicato, non fare push senza conferma.",
+  "nome": "Sviluppatore (fittizio)",
+  "ruolo": "Implementa e verifica modifiche al codice",
+  "skill_ids": [
+    "sk-fittizia-revisione"
+  ],
+  "strumenti": [
+    "Bash",
+    "GitHub"
+  ]
+}
