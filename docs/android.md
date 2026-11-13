@@ -64,3 +64,4 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.0.0 | 1 | `dc3b15383c24b386f0f612d18a270a927d93d2cf6fc154a7d74342457e2d0443` |
 | 1.0.1 | 2 | `0a90ad9cbc3ca75bd445c7e6e1e2557b73233922aa98cfd9ae3585f5a8ffc5d4` |
 | 1.1.0 | 3 | `766fed3fd2f1d9e18910a2c03686b882982c5c10418d72824d1031e3c554ebbd` (commit 27545a0, riprodotto due volte identico) |
+| 1.1.1 | 4 | `54f72ddd37954482c9ab06c3da3de24dd8f4e7da0d2770fbac43365009e8cb75` (commit 5fbf13b, riprodotto due volte identico) |
