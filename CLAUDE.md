@@ -11,7 +11,7 @@ L'artifact della v1 (https://claude.ai/artifact/FixFdEmbd31YEYpuNbE4za) resta co
 
 ## «aggiorna stato»
 
-Viene eseguito anche in automatico dall'attività pianificata «Second Brain – aggiorna stato» (ogni 2 ore) e dal pulsante «Aggiorna ora» dell'app.
+Viene eseguito anche in automatico dall'attività pianificata «Second Brain – stato (sessione dedicata)» (ogni 2 ore, riprende la sessione «Second Brain-Stato») e dal pulsante «Aggiorna ora» dell'app.
 
 Quando l'utente scrive «aggiorna stato», esegui SOLO questo, senza pianificazioni:
 

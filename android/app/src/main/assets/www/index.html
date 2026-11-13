@@ -590,12 +590,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     routine() {
       foglio(`<h2>«Aggiorna ora» e aggiornamento automatico</h2>
         <ol class="guida"><li>Tocca <b>Apri attività</b>: si apre claude.ai/code/routines (accedi se richiesto).</li>
-          <li>Apri «Second Brain – aggiorna stato» e tocca <b>Modifica</b>.</li>
-          <li>In <b>Repository</b> aggiungi <b>second-brain</b>; in <b>Connettori</b> attiva quello delle sessioni di Claude Code, se presente.</li>
+          <li>Apri «Second Brain – stato (sessione dedicata)» e tocca <b>Modifica</b>.</li>
+          
           <li>In <b>Trigger</b> tocca <b>+</b> → <b>API</b> → <b>Generate token</b>: copia il token (inizia con <span class="mono">sk-ant-oat01-</span>, viene mostrato una sola volta) e l'identificativo (inizia con <span class="mono">trig_</span>).</li>
           <li>Riattiva l'attività, poi incolla qui identificativo e token.</li></ol>
         <div class="azioni"><button type="button" class="btn v" id="b-routines">Apri attività</button>${A && A.haRoutine() ? `<button type="button" class="btn r" id="b-routine-via">Rimuovi dal telefono</button>` : ""}</div>
-        <label>Identificativo attività <input id="ro-id" required autocapitalize="off" spellcheck="false" value="${esc((A && A.idRoutine()) || "trig_01HZXaSzUp1ANbZLwKJ8Gmnm")}"></label>
+        <label>Identificativo attività <input id="ro-id" required autocapitalize="off" spellcheck="false" value="${esc((A && A.idRoutine()) || "trig_01CwcRqCLvB7oBZuW7zn4N72")}"></label>
         <label>Token dell'attività <input id="ro-token" type="password" required autocapitalize="off" spellcheck="false" placeholder="sk-ant-oat01-…"></label>
         <p class="small muted">Il token permette solo di avviare questa attività; viene cifrato nel telefono (Android Keystore) e non compare mai nell'app né nelle esportazioni. Ogni avvio usa i limiti del tuo abbonamento.</p>`, async () => {
         const r = A ? A.impostaRoutine($("#ro-id").value, $("#ro-token").value) : "anteprima"; $("#ro-token").value = "";
