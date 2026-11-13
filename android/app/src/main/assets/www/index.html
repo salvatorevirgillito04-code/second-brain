@@ -252,6 +252,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       const doppi = Object.values(gruppi).filter((g) => g.length > 1).length;
       return `<label class="cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="cerca-note" type="search" placeholder="Cerca nelle note e nei tag" value="${esc(S.cercaNote)}"></label>
         ${doppi ? `<p class="banner att"><b>${doppi} gruppi di possibili duplicati</b><span>Note con lo stesso testo: aprile e decidi tu se eliminarne una.</span></p>` : ""}
+        ${(() => { const c = q ? 0 : M.gruppiSimili(S.stato); return c ? `<p class="banner"><b>${c} coppie di note simili</b><span>Aprendo una nota trovi le simili con la percentuale di somiglianza.</span></p>` : ""; })()}
         <section><h2>${tutte.length} note</h2>${lista(tutte.map(rigaNota), "Nessuna nota trovata.")}</section>`;
     },
     nota() {
@@ -264,12 +265,14 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
           <div class="meta">${pallino(catNota(n))}${esc(CAT[catNota(n)][0])}<span class="chip">${esc(n.tipo || "tipo non indicato")}</span><span class="chip">fonte: ${esc(n.fonte || "non indicata")}</span><span class="chip">del ${esc(giorno(n.data) || "?")}</span>
             ${n.accessibile_agenti === true ? `<span class="chip cfg">accessibile agli agenti</span>` : `<span class="chip">privata, solo sul telefono</span>`}${n.corretto_il ? `<span class="chip att">corretta il ${esc(giorno(n.corretto_il))}</span>` : ""}${n.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("note", n.id)}</div>
           ${(n.tag || []).length ? `<div class="chips">${n.tag.map((t) => `<span class="chip">#${esc(t)}</span>`).join("")}</div>` : ""}
-          <div class="corpo">${esc(n.testo)}</div>
+          <div class="corpo">${testoConLink(n)}</div>
           <div class="chips">${pr ? `<button class="chip cfg" data-apri="progetto" data-id="${esc(pr.id)}">progetto: ${esc(pr.nome)}</button>` : ""}${st ? `<button class="chip cfg" data-apri="stanza" data-id="${esc(st.id)}">stanza: ${esc(st.nome)}</button>` : ""}</div>
           ${doppi.length ? `<p class="banner att"><b>Possibile duplicato</b><span>Stesso testo in: ${doppi.map((d) => esc(titoloNota(d))).join(", ")}</span></p>` : ""}
           <div class="azioni"><button class="btn" data-modifica="nota" data-id="${esc(n.id)}">Modifica</button><button class="btn r" data-elimina="note" data-id="${esc(n.id)}">Elimina</button></div></article>
         <section><h2>Sposta in</h2><div class="chips">${Object.entries(CAT).map(([k, [l]]) => `<button class="chip ${catNota(n) === k ? "cfg" : ""}" data-categoria="${k}">${l}</button>`).join("")}</div></section>
+        ${(() => { const pr = M.collegamentiDaTesto(S.stato, n.testo, n.id).problemi; return pr.length ? `<section><h2>Collegamenti scritti ma non risolti</h2><div class="blocco">${pr.map((x) => `<div class="agente"><span style="flex:1;min-width:0">[[${esc(x.titolo)}]] · ${x.motivo === "ambiguo" ? "più note hanno questo titolo: rendilo unico" : "nessuna nota con questo titolo"}</span>${x.motivo === "mancante" ? `<button class="chip cfg" data-crea-da-link="${esc(x.titolo)}">Crea nota</button>` : ""}</div>`).join("")}</div></section>` : ""; })()}
         <section><h2>Riferimenti in entrata · ${ent.length}</h2>${lista(ent.map(rigaNota), "Nessuna nota rimanda qui.")}</section>
+        ${(() => { const sim = M.noteSimili(S.stato, n.id).filter((x) => norm(T("note", x.id).testo) !== norm(n.testo)); return sim.length ? `<section><h2>Note simili · ${sim.length}</h2><p class="small muted">Possibili doppioni: confrontale e decidi tu. Niente viene unito automaticamente.</p>${lista(sim.map((x) => rigaNota(T("note", x.id)).replace('<span class="conta">', `<span class="conta">${Math.round(x.punteggio * 100)}% · `)), "")}</section>` : ""; })()}
         <section><h2>Collegamenti in uscita · ${usc.length}</h2>${lista(usc.map(rigaNota), "Nessun collegamento. Aggiungili con Modifica.")}</section>`;
     },
     progetto() {
@@ -328,9 +331,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
             <div class="confronto"><div><h2>Sul telefono</h2><pre>${esc(c.locale ? JSON.stringify(c.locale, null, 1) : "(eliminato)")}</pre></div><div><h2>Nel repository</h2><pre>${esc(c.remoto ? JSON.stringify(c.remoto, null, 1) : "(eliminato)")}</pre></div></div>
             <div class="azioni"><button class="btn v" data-risolvi="telefono" data-id="${esc(k)}">Tieni quella del telefono</button><button class="btn v" data-risolvi="repository" data-id="${esc(k)}">Tieni quella del repository</button></div></div>`).join("")}</section>` : ""}
         <section><h2>I tuoi dati</h2><div class="blocco">
-          <div class="azioni"><button class="btn" id="b-exp">Esporta su file</button><button class="btn v" id="b-imp">Ripristina da file</button></div>
+          <div class="azioni"><button class="btn" id="b-exp">Esporta su file</button><button class="btn v" id="b-imp">Ripristina da file</button><button class="btn v" id="b-chat">Importa chat di Claude</button></div>
           <p class="small muted">L'esportazione include tutto, anche le note private, con impronta di controllo. Il ripristino accetta anche i backup della versione 1.0.</p>
-          <p class="stato" id="exp-stato"></p><div id="imp-anteprima"></div><p class="stato" id="imp-stato"></p></div></section>
+          <p class="small muted">Chat di Claude: da claude.ai (web o computer) Impostazioni › Privacy › Esporta dati; scegli qui lo ZIP ricevuto via email o il file conversations.json. Ogni chat diventa una nota originale e privata.</p>
+          <p class="stato" id="exp-stato"></p><div id="imp-anteprima"></div><p class="stato" id="imp-stato"></p><div id="chat-anteprima"></div><p class="stato" id="chat-stato"></p></div></section>
         <section><h2>Dati di prova</h2><div class="blocco"><p class="small">${nf ? `${nf} elementi marcati come dati di prova. Vengono eliminati solo questi e i riferimenti che li usano.` : "Nessun dato di prova."}</p>
           <div class="azioni"><button class="btn r" id="b-fitt"${nf ? "" : " disabled"}>Elimina solo i dati di prova</button></div><p class="stato" id="fitt-stato"></p></div></section>
         <details class="blocco"><summary>Avanzate</summary><dl class="kv">
@@ -345,6 +349,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   const TITOLI = { home: "Second Brain", organizza: "Organizza", note: "Note", nota: "Nota", progetto: "Progetto", mappa: "Mappa", stanze: "Stanze", stanza: "Stanza", impostazioni: "Impostazioni" };
   const NAV = { nota: "note", progetto: "organizza", stanza: "stanze" };
 
+  function testoConLink(n) {
+    return esc(n.testo).replace(/\[\[([^\[\]\n]{1,150})\]\]/g, (tutto, t) => {
+      const r = M.risolviTitolo(S.stato, t.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'"), n.id);
+      return r.id ? `<a href="#nota" data-apri="nota" data-id="${esc(r.id)}" style="color:var(--accento)">${t}</a>` : `<span style="border-bottom:1px dashed var(--tenue);color:var(--tenue)">${t}</span>`;
+    });
+  }
   function campoCerca() { return `<label class="cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="cerca" type="search" placeholder="Cerca in note, progetti, stanze" value="${esc(S.cerca)}"></label>`; }
   function avvisi() {
     let h = "";
@@ -511,7 +521,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       const n = T("note", id) || { tipo: "originale", fonte: "", data: ora(), categoria: "inbox", tag: [], collegamenti: [] };
       foglio(`<h2>${id ? "Modifica nota" : "Nuova nota"}</h2>
         <label>Titolo (facoltativo) <input id="n-titolo" maxlength="150" value="${esc(n.titolo || "")}"></label>
-        <label>Contenuto <textarea id="n-testo" required maxlength="20000">${esc(n.testo || "")}</textarea></label>
+        <label>Contenuto <textarea id="n-testo" required>${esc(n.testo || "")}</textarea></label><p class="small muted">Scrivi [[Titolo di un'altra nota]] per collegarla.</p>
         <div class="riga2"><label>Tipo <select id="n-tipo">${["originale", "riassunto", "dedotto"].map((t) => `<option${n.tipo === t ? " selected" : ""}>${t}</option>`).join("")}</select></label>
           <label>Fonte <input id="n-fonte" required maxlength="200" value="${esc(n.fonte || "")}"></label></div>
         <div class="riga2"><label>Data dell'informazione <input id="n-data" type="date" required value="${esc(String(n.data || ora()).slice(0, 10))}"></label>
@@ -526,7 +536,10 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
         if (id && n.accessibile_agenti === undefined && !campi.accessibile_agenti) delete campi.accessibile_agenti; // assente = privata: non aggiungere il campo
         if (!campi.titolo) delete campi.titolo;
         if (id) campi.corretto_il = ora(); else campi.registrato_il = ora();
+        const daTesto = M.collegamentiDaTesto(S.stato, campi.testo, id || null);
+        campi.collegamenti = [...new Set([...campi.collegamenti, ...daTesto.ids])];
         const nid = await scrivi("note", id, campi); S.nota = nid;
+        if (daTesto.problemi.length) return `Salvata. Non collegati: ${daTesto.problemi.map((p) => "[[" + p.titolo + "]] (" + (p.motivo === "ambiguo" ? "titolo non unico" : "non esiste") + ")").join(", ")}.`;
         const doppio = L("note").find((x) => x.id !== nid && norm(x.testo) === norm(campi.testo));
         return doppio ? "Salvata. Esiste un'altra nota con lo stesso testo (possibile duplicato)." : "Nota salvata";
       });
@@ -603,6 +616,11 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     if (d.vai) { vai(d.vai); return; }
     if (d.modifica) { EDITOR[d.modifica](d.id || ""); return; }
     if (d.elimina) { conferma(b, () => { const blocco = BLOCCHI[d.elimina] && BLOCCHI[d.elimina](d.id); if (blocco) { toast(blocco); return; } elimina(d.elimina, d.id); if (["note", "progetti", "stanze"].includes(d.elimina) && NAV[vistaCorrente()]) history.back(); else render(); }); return; }
+    if (d.creaDaLink) {
+      const nid = await scrivi("note", "", { titolo: d.creaDaLink, testo: d.creaDaLink, tipo: "originale", fonte: "creata da un collegamento", data: ora(), registrato_il: ora(), categoria: "inbox", tag: [], collegamenti: [], accessibile_agenti: false });
+      const corrente = T("note", S.nota); await scrivi("note", S.nota, { collegamenti: [...new Set([...(corrente.collegamenti || []), nid])] });
+      render(); toast("Nota «" + d.creaDaLink + "» creata e collegata"); return;
+    }
     if (d.categoria) { await scrivi("note", S.nota, { categoria: d.categoria }); render(); toast("Spostata in " + CAT[d.categoria][0]); return; }
     if (d.archiviaStanza) { const s = T("stanze", d.archiviaStanza); const arch = statoStanza(s) !== "archiviata"; await scrivi("stanze", s.id, { stato: arch ? "archiviata" : "attiva", archiviata: arch }); render(); return; }
     if (d.archiviaProgetto) { const p = T("progetti", d.archiviaProgetto); await scrivi("progetti", p.id, { stato: p.stato === "archiviato" ? "attivo" : "archiviato" }); render(); return; }
@@ -618,6 +636,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     if (b.id === "b-exp") { esporta(); return; }
     if (b.id === "b-imp") { if (A) { stato("#imp-stato", "Scegli il file…"); A.importa(); } return; }
     if (b.id === "b-imp-ok") { ripristina(b); return; }
+    if (b.id === "b-chat") { if (A) { stato("#chat-stato", "Scegli lo ZIP o conversations.json…"); A.importaFile(); } return; }
+    if (b.id === "b-chat-ok") { importaChat(b); return; }
     if (b.id === "b-fitt") { conferma(b, async () => { const n = await M.eliminaFittizi(S.stato); await salva(); programmaSync(); render(); toast(`Eliminati ${n} elementi di prova; i dati reali sono rimasti.`); }); return; }
   });
   document.addEventListener("change", async (e) => {
@@ -683,6 +703,28 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       stato("#imp-stato", ok ? `Importazione verificata${r.versione === 1 ? " (backup 1.0: memorie importate come note)" : ""}: impronta ${r.hashAtteso.slice(0, 16)}… corrispondente al file, anche dopo il salvataggio.` : `Attenzione: impronta diversa dopo l'importazione (${suDisco.slice(0, 12)}…). Conserva il file di backup.`, ok ? "ok" : "err");
       programmaSync();
     } catch (e) { stato("#imp-stato", "Ripristino non riuscito: " + (e.message || e) + ". I dati del telefono non sono stati salvati.", "err"); btn.disabled = false; }
+  }
+
+  // ---------- importazione chat di Claude ----------
+  window.__fileScelto = async (ok, dati) => {
+    const box = $("#chat-anteprima"); if (box) box.innerHTML = ""; S.chat = null;
+    if (!ok) { stato("#chat-stato", dati || "Nessun file scelto.", dati ? "err" : ""); return; }
+    try {
+      stato("#chat-stato", "Lettura del file…");
+      const bin = atob(dati); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      const testo = bytes[0] === 0x50 && bytes[1] === 0x4b ? await M.leggiDaZip(bytes, "conversations.json") : new TextDecoder().decode(bytes);
+      const a = M.analizzaChatClaude(JSON.parse(testo));
+      const gia = a.chat.filter((c) => T("note", c.id)).length; S.chat = a;
+      $("#chat-anteprima").innerHTML = `<div class="banner"><b>${a.chat.length} chat trovate</b><span>${a.chat.length - gia} nuove, ${gia} già importate (non verranno modificate)${a.scartate.length ? `, ${a.scartate.length} scartate perché vuote o non riconosciute` : ""}${a.allegatiIgnorati ? `, ${a.allegatiIgnorati} allegati non importati` : ""}.</span><span class="small">Diventeranno note originali e private in «Da organizzare», con fonte e data. Prima viene salvata una copia dei dati attuali.</span>${a.chat.length - gia ? `<div class="azioni"><button class="btn" id="b-chat-ok">Importa ${a.chat.length - gia} chat</button></div>` : ""}</div>`;
+      stato("#chat-stato", "Controlla e conferma.", "ok");
+    } catch (e) { stato("#chat-stato", "File non utilizzabile: " + (e.message || e) + " Il formato dell'esportazione di Claude non è documentato: se è cambiato, mandami il messaggio.", "err"); }
+  };
+  async function importaChat(btn) {
+    if (!S.chat || bloccato()) return; btn.disabled = true;
+    const copia = A ? A.salvaCopia("prima-importazione-chat-" + ora().replace(/[^0-9]/g, "").slice(0, 14) + ".json", JSON.stringify(S.stato)) : "ok";
+    if (copia !== "ok" && copia !== "esiste") { stato("#chat-stato", "Copia di sicurezza non salvata (" + copia + "): importazione annullata.", "err"); btn.disabled = false; return; }
+    const e = await M.importaChatClaude(S.stato, S.chat, ora()); await salva(); S.chat = null; render();
+    stato("#chat-stato", `Importate ${e.importate} chat come note private.${e.gia_presenti ? ` ${e.gia_presenti} erano già presenti${e.piu_recenti_non_sovrascritte ? `, di cui ${e.piu_recenti_non_sovrascritte} più recenti nell'esportazione: non sovrascritte (elimina la nota e reimporta se vuoi la versione nuova)` : ""}.` : ""}`, "ok");
   }
 
   // ---------- avvio ----------

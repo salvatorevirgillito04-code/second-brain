@@ -29,6 +29,8 @@ public class Ponte {
     static final String REPO = "second-brain";
     static final String PREFISSO = "/repos/" + OWNER + "/" + REPO;
     static final int MAX_IMPORT = 20 * 1024 * 1024;
+    static final int MAX_FILE = 60 * 1024 * 1024;
+    private boolean binario = false;
 
     private final MainActivity attivita;
     private final WebView web;
@@ -119,17 +121,22 @@ public class Ponte {
         }
     }
 
-    @JavascriptInterface public void importa() {
+    @JavascriptInterface public void importa() { avviaScelta(false); }
+    /** Come importa(), ma restituisce i byte in base64 (per gli archivi ZIP dell'esportazione di Claude). */
+    @JavascriptInterface public void importaFile() { avviaScelta(true); }
+    private void avviaScelta(boolean bin) {
+        binario = bin;
         attivita.runOnUiThread(() -> {
             Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
             i.setType("*/*");
-            i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/json", "text/plain", "application/octet-stream"});
+            if (!binario) i.putExtra(Intent.EXTRA_MIME_TYPES, new String[]{"application/json", "text/plain", "application/octet-stream"});
             try { attivita.startActivityForResult(i, MainActivity.RICHIESTA_IMPORTA); }
             catch (ActivityNotFoundException e) { chiama("__importato", false, "Nessuna app per scegliere file disponibile."); }
         });
     }
     void importaDa(Uri uri) {
+        if (binario) { importaBinario(uri); return; }
         if (uri == null) { chiama("__importato", false, ""); return; }
         try (InputStream in = attivita.getContentResolver().openInputStream(uri)) {
             if (in == null) throw new IllegalStateException("file non leggibile");
@@ -140,6 +147,21 @@ public class Ponte {
         } catch (Exception e) {
             chiama("__importato", false, "Lettura del file non riuscita (" + e.getMessage() + ").");
         }
+    }
+
+    private void importaBinario(Uri uri) {
+        if (uri == null) { chiama("__fileScelto", false, ""); return; }
+        new Thread(() -> {
+            try (InputStream in = attivita.getContentResolver().openInputStream(uri)) {
+                if (in == null) throw new IllegalStateException("file non leggibile");
+                ByteArrayOutputStream b = new ByteArrayOutputStream();
+                byte[] buf = new byte[65536]; int n; long tot = 0;
+                while ((n = in.read(buf)) > 0) { tot += n; if (tot > MAX_FILE) throw new IllegalStateException("file più grande di 60 MB"); b.write(buf, 0, n); }
+                chiama("__fileScelto", true, android.util.Base64.encodeToString(b.toByteArray(), android.util.Base64.NO_WRAP));
+            } catch (Exception e) {
+                chiama("__fileScelto", false, "Lettura del file non riuscita (" + e.getMessage() + ").");
+            }
+        }).start();
     }
 
     // ---------- varie ----------

@@ -305,3 +305,49 @@ test("403 alla creazione del ramo: messaggio di GitHub riportato, nessun dato pe
   await assert.rejects(M.sincronizza(s, gh.api(), OPZ), (e) => e.tipo === "permessi" && /Resource not accessible by personal access token/.test(e.message));
   assert.equal(M.inAttesa(s), 1);
 });
+
+// ---------- 1.2 ----------
+test("[[Titolo]]: collega solo titoli unici ed esistenti, segnala mancanti e ambigui", async () => {
+  const s = M.statoVuoto();
+  await M.salvaRecord(s, "note", "n1", { titolo: "Trasloco", testo: "x" });
+  await M.salvaRecord(s, "note", "n2", { testo: "Spesa settimanale\naltro" });
+  await M.salvaRecord(s, "note", "n3", { titolo: "Doppio", testo: "a" });
+  await M.salvaRecord(s, "note", "n4", { titolo: "doppio", testo: "b" });
+  const r = M.collegamentiDaTesto(s, "Vedi [[trasloco]], [[Spesa settimanale]], [[Doppio]] e [[Inesistente]] e [[trasloco]]", "n9");
+  assert.deepEqual(r.ids.sort(), ["n1", "n2"]);
+  assert.deepEqual(r.problemi.map((p) => p.titolo + ":" + p.motivo).sort(), ["Doppio:ambiguo", "Inesistente:mancante"]);
+  assert.deepEqual(M.collegamentiDaTesto(s, "[[Trasloco]]", "n1").ids, [], "una nota non si collega a sé stessa");
+});
+
+test("note simili: trovate per somiglianza, senza unione automatica", async () => {
+  const s = M.statoVuoto();
+  await M.salvaRecord(s, "note", "a", { testo: "Decisione: usare vasi da 30 cm con sottovaso sul balcone" });
+  await M.salvaRecord(s, "note", "b", { testo: "decisione usare i vasi da 30cm con sottovaso sul balcone!" });
+  await M.salvaRecord(s, "note", "c", { testo: "Bollette di novembre pagate" });
+  const sim = M.noteSimili(s, "a");
+  assert.deepEqual(sim.map((x) => x.id), ["b"]); assert.ok(sim[0].punteggio >= 0.6 && sim[0].punteggio <= 1);
+  assert.equal(M.gruppiSimili(s), 1); assert.equal(M.elenco(s, "note").length, 3);
+});
+
+test("chat di Claude: JSON e ZIP danno lo stesso risultato; note originali, private, con fonte e data; reimportazione senza duplicati", async () => {
+  const json = JSON.parse(readFileSync(new URL("./campioni/conversations.json", import.meta.url), "utf8"));
+  const zip = new Uint8Array(readFileSync(new URL("./campioni/esportazione-claude.zip", import.meta.url)));
+  const daZip = JSON.parse(await M.leggiDaZip(zip, "conversations.json"));
+  assert.deepEqual(daZip, json);
+  const a = M.analizzaChatClaude(json);
+  assert.equal(a.chat.length, 2); assert.equal(a.scartate.length, 2); assert.equal(a.allegatiIgnorati, 1);
+  const s = M.statoVuoto(); const e = await M.importaChatClaude(s, a, "2026-11-13T21:00:00.000Z");
+  assert.equal(e.importate, 2);
+  const n = M.trova(s, "note", "chat-aaaa-1111");
+  assert.equal(n.tipo, "originale"); assert.equal(n.accessibile_agenti, false); assert.equal(n.data, "2026-10-01T10:00:00Z"); assert.match(n.fonte, /Piano trasloco/);
+  assert.match(n.testo, /Tu \(2026-10-01 10:00\):\nCome organizzo/); assert.match(n.testo, /Claude .*:\nParti da una checklist/);
+  assert.match(M.trova(s, "note", "chat-bbbb-2222").testo, /àèì €/);
+  assert.equal(M.inAttesa(s), 0, "le chat importate sono private: niente da inviare");
+  await M.salvaRecord(s, "note", "chat-aaaa-1111", { ...n, id: undefined, testo: n.testo + "\nmia aggiunta" });
+  const a2 = M.analizzaChatClaude(json); a2.chat[0].aggiornata = "2026-12-01T00:00:00Z";
+  const e2 = await M.importaChatClaude(s, a2, "2026-11-14T00:00:00.000Z");
+  assert.deepEqual(e2, { importate: 0, gia_presenti: 2, piu_recenti_non_sovrascritte: 1 });
+  assert.match(M.trova(s, "note", "chat-aaaa-1111").testo, /mia aggiunta/, "modifica dell'utente non sovrascritta");
+  assert.throws(() => M.analizzaChatClaude({ non: "elenco" }), /elenco di conversazioni/);
+  await assert.rejects(M.leggiDaZip(zip, "manca.json"), /non c'è manca.json/);
+});

@@ -65,3 +65,8 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.0.1 | 2 | `0a90ad9cbc3ca75bd445c7e6e1e2557b73233922aa98cfd9ae3585f5a8ffc5d4` |
 | 1.1.0 | 3 | `766fed3fd2f1d9e18910a2c03686b882982c5c10418d72824d1031e3c554ebbd` (commit 27545a0, riprodotto due volte identico) |
 | 1.1.1 | 4 | `54f72ddd37954482c9ab06c3da3de24dd8f4e7da0d2770fbac43365009e8cb75` (commit 5fbf13b, riprodotto due volte identico) |
+
+## 1.2
+- **Collegamenti scritti**: `[[Titolo]]` nel testo collega la nota con quel titolo (o prima riga) se è unica. Titoli inesistenti o ambigui non vengono collegati e sono segnalati; per quelli inesistenti c'è «Crea nota». I collegamenti scelti dall'elenco restano; quelli scritti si aggiungono al salvataggio.
+- **Note simili**: somiglianza tra le parole (Jaccard ≥ 60%). Mostrate nella nota con la percentuale e contate nell'elenco; mai unite automaticamente. Le note con testo identico restano segnalate come duplicati.
+- **Chat di Claude**: Impostazioni › Importa chat di Claude, con lo ZIP dell'esportazione di claude.ai o `conversations.json`. Ogni chat diventa una nota *originale*, *privata*, in «Da organizzare», con fonte, data e tag `chat-claude`; prima viene salvata una copia dei dati. Le chat già importate non vengono mai sovrascritte. Gli allegati non vengono importati. Il formato dell'esportazione non è documentato ufficialmente: i campi non riconosciuti vengono segnalati. Limite: file fino a 60 MB.

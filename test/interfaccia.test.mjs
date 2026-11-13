@@ -34,7 +34,7 @@ await ctx.addInitScript(() => {
     retePresente: () => window.__rete !== false,
     github: (id, m, p, c) => { window.__nodeGithub(id, m, p, c).then(([i, s, b]) => window.__risposta(i, s, b)); },
     esporta: (nome, testo, msg) => { mem.esportato = testo; setTimeout(() => window.__esportato(true, msg), 10); },
-    importa: () => setTimeout(() => window.__importato(true, window.__fileDaImportare), 10),
+    importa: () => setTimeout(() => window.__importato(true, window.__fileDaImportare), 10), importaFile: () => setTimeout(() => window.__fileScelto(true, window.__fileB64), 10),
     infoApp: () => JSON.stringify({ versione: "1.1.0", codice: 3, pacchetto: "it.secondbrain.app" }), apriLink: () => {},
   };
 });
@@ -140,6 +140,34 @@ const dopo = Object.values((await salvato()).collezioni).flatMap((c) => Object.v
 ok(dopo.every((r) => r.dati.fittizio !== true) && dopo.length === reali, `dati di prova eliminati, ${reali} elementi reali conservati`);
 if (FOTO) { for (const v of ["home", "organizza", "note"]) { await vai(v); await page.screenshot({ path: join(FOTO, v + ".png") }); } }
 ok(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), "nessuno scorrimento orizzontale a 390 px");
+
+// 1.2: COLLEGAMENTI [[…]], NOTE SIMILI, CHAT DI CLAUDE
+await vai("home"); await page.click("#fab"); await page.fill("#r-testo", "Piano orto: vedi [[Calendario semine]] e [[Progetto offline]]"); await page.click("#f-salva"); await page.waitForTimeout(150);
+const idOrto = Object.entries((await salvato()).collezioni.note).find(([, r]) => r.dati.testo.startsWith("Piano orto"))[0];
+await page.evaluate(() => { location.hash = "note"; }); await page.waitForTimeout(100);
+await page.click(`[data-apri="nota"][data-id="${idOrto}"]`); await page.waitForTimeout(150);
+ok((await T("main")).includes("Collegamenti scritti ma non risolti") && (await T("main")).includes("[[Calendario semine]]"), "[[…]] verso una nota inesistente: segnalato");
+await page.click('[data-crea-da-link="Calendario semine"]'); await page.waitForTimeout(200);
+ok((await T("main")).includes("Collegamenti in uscita · 1") && !(await T("main")).includes("[[Calendario semine]] ·"), "«Crea nota» crea e collega (resta segnalato solo [[Progetto offline]], che è un progetto e non una nota)");
+await page.click('#vista a[data-apri="nota"]'); await page.waitForTimeout(150);
+ok((await T("main")).includes("Riferimenti in entrata · 1") && (await T("main")).includes("Piano orto"), "il collegamento scritto compare come riferimento in entrata");
+await vai("home"); await page.click("#fab"); await page.fill("#r-testo", "piano dell'orto: vedi calendario semine e progetto offline"); await page.click("#f-salva"); await page.waitForTimeout(150);
+await page.evaluate(() => { location.hash = "note"; }); await page.waitForTimeout(150);
+ok((await T("main")).includes("coppie di note simili"), "note simili segnalate nell'elenco");
+await page.click(`[data-apri="nota"][data-id="${idOrto}"]`); await page.waitForTimeout(150);
+ok(/Note simili · 1[\s\S]*%/.test(await T("main")), "nota: sezione «Note simili» con percentuale, nessuna unione");
+const zipB64 = readFileSync(join(QUI, "campioni/esportazione-claude.zip")).toString("base64");
+await page.evaluate((b) => { window.__fileB64 = b; }, zipB64);
+await vai("impostazioni"); await page.click("#b-chat"); await page.waitForTimeout(400);
+ok((await T("#chat-anteprima")).includes("2 chat trovate") && (await T("#chat-anteprima")).includes("2 scartate") && (await T("#chat-anteprima")).includes("1 allegati"), "anteprima importazione chat dallo ZIP");
+const nCopie = await page.evaluate(() => Object.keys(window.__mem.copie).length);
+await page.click("#b-chat-ok"); await page.waitForTimeout(300);
+ok((await T("#chat-stato")).includes("Importate 2 chat"), "chat importate");
+ok(await page.evaluate((n) => Object.keys(window.__mem.copie).length === n + 1, nCopie), "copia di sicurezza salvata prima dell'importazione");
+const sc = (await salvato()).collezioni.note["chat-aaaa-1111"];
+ok(sc && sc.dati.tipo === "originale" && sc.dati.accessibile_agenti === false && sc.sync.sporco === false, "chat = nota originale, privata, non inviata");
+await page.click("#b-chat"); await page.waitForTimeout(400);
+ok((await T("#chat-anteprima")).includes("0 nuove, 2 già importate") && !(await page.$("#b-chat-ok")), "reimportazione: nessun duplicato");
 
 // AVVIO CON DATI DELLA 1.0 (schema 1) già sul telefono
 const vecchi = { schema: 1, collezioni: { agenti: {}, collegamenti: {}, skill: {}, stanze: {}, memoria: {

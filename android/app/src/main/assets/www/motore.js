@@ -242,6 +242,105 @@
   };
   M.inEntrata = (stato, idNota) => M.elenco(stato, "note").filter((n) => n.id !== idNota && (n.collegamenti || []).includes(idNota));
 
+  // ---------- 1.2: collegamenti scritti nel testo come [[Titolo]] ----------
+  M.titoloNota = (n) => (n.titolo && String(n.titolo).trim()) || String(n.testo || "").split("\n")[0].slice(0, 80).trim();
+  M.estraiLink = (testo) => [...String(testo || "").matchAll(/\[\[([^\[\]\n]{1,150})\]\]/g)].map((m) => m[1].trim()).filter(Boolean);
+  // Risolve un titolo: una sola nota con quel titolo → collegamento; nessuna o più di una → non collega (lo segnala).
+  M.risolviTitolo = function (stato, titolo, escludiId) {
+    const t = String(titolo).toLowerCase().trim();
+    const trovate = M.elenco(stato, "note").filter((n) => n.id !== escludiId && M.titoloNota(n).toLowerCase() === t);
+    return trovate.length === 1 ? { id: trovate[0].id } : { id: null, motivo: trovate.length ? "ambiguo" : "mancante", quante: trovate.length };
+  };
+  M.collegamentiDaTesto = function (stato, testo, escludiId) {
+    const ok = [], problemi = [];
+    for (const t of [...new Set(M.estraiLink(testo))]) { const r = M.risolviTitolo(stato, t, escludiId); if (r.id) ok.push(r.id); else problemi.push({ titolo: t, motivo: r.motivo }); }
+    return { ids: [...new Set(ok)], problemi };
+  };
+
+  // ---------- 1.2: note simili (mai unite automaticamente) ----------
+  const parole = (t) => new Set(String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 3));
+  M.somiglianza = function (a, b) {
+    const A = parole(a), B = parole(b); if (!A.size || !B.size) return 0;
+    let c = 0; for (const w of A) if (B.has(w)) c++;
+    return c / (A.size + B.size - c);
+  };
+  M.SOGLIA_SIMILI = 0.6;
+  M.noteSimili = function (stato, id, soglia = M.SOGLIA_SIMILI) {
+    const n = M.trova(stato, "note", id); if (!n) return [];
+    const base = M.titoloNota(n) + " " + n.testo;
+    return M.elenco(stato, "note").filter((x) => x.id !== id).map((x) => ({ id: x.id, punteggio: M.somiglianza(base, M.titoloNota(x) + " " + x.testo) }))
+      .filter((x) => x.punteggio >= soglia).sort((a, b) => b.punteggio - a.punteggio);
+  };
+  M.gruppiSimili = function (stato, soglia = M.SOGLIA_SIMILI, limite = 1500) {
+    const note = M.elenco(stato, "note"); if (note.length > limite) return null;
+    const insiemi = note.map((n) => parole(M.titoloNota(n) + " " + n.testo)); let coppie = 0;
+    for (let i = 0; i < note.length; i++) for (let j = i + 1; j < note.length; j++) {
+      const A = insiemi[i], B = insiemi[j]; if (!A.size || !B.size) continue;
+      let c = 0; for (const w of A) if (B.has(w)) c++;
+      if (c / (A.size + B.size - c) >= soglia) coppie++;
+    }
+    return coppie;
+  };
+
+  // ---------- 1.2: importazione delle chat di Claude (file conversations.json dell'esportazione) ----------
+  // Il formato non è documentato ufficialmente: si accettano solo i campi riconosciuti e si segnala il resto.
+  const testoMessaggio = (m) => (typeof m.text === "string" && m.text.trim()) ? m.text : (Array.isArray(m.content) ? m.content.filter((c) => c && c.type === "text" && typeof c.text === "string").map((c) => c.text).join("\n") : "");
+  M.analizzaChatClaude = function (dati) {
+    if (!Array.isArray(dati)) throw new Error("Il file non contiene un elenco di conversazioni (conversations.json).");
+    const chat = [], scartate = []; let allegatiIgnorati = 0;
+    for (const c of dati) {
+      if (!c || typeof c.uuid !== "string" || !Array.isArray(c.chat_messages)) { scartate.push("elemento senza uuid o messaggi"); continue; }
+      const msg = c.chat_messages.filter((m) => m && (m.sender === "human" || m.sender === "assistant"));
+      for (const m of msg) allegatiIgnorati += (Array.isArray(m.attachments) ? m.attachments.length : 0) + (Array.isArray(m.files) ? m.files.length : 0);
+      const righe = msg.map((m) => ({ chi: m.sender === "human" ? "Tu" : "Claude", quando: m.created_at, testo: testoMessaggio(m).trim() })).filter((r) => r.testo);
+      if (!righe.length) { scartate.push(`«${c.name || c.uuid}»: nessun messaggio di testo`); continue; }
+      const id = "chat-" + c.uuid.replace(/[^A-Za-z0-9-]/g, "").slice(0, 100);
+      chat.push({ id, uuid: c.uuid, titolo: (c.name || "").trim() || "Chat senza titolo", creata: c.created_at || righe[0].quando || null, aggiornata: c.updated_at || null, messaggi: righe.length,
+        testo: righe.map((r) => `${r.chi}${r.quando ? " (" + String(r.quando).slice(0, 16).replace("T", " ") + ")" : ""}:\n${r.testo}`).join("\n\n") });
+    }
+    return { chat, scartate, allegatiIgnorati };
+  };
+  // Crea una nota ORIGINALE e PRIVATA per ogni chat nuova. Le chat già importate non vengono mai sovrascritte.
+  M.importaChatClaude = async function (stato, analisi, quando) {
+    const esito = { importate: 0, gia_presenti: 0, piu_recenti_non_sovrascritte: 0 };
+    for (const c of analisi.chat) {
+      const esistente = stato.collezioni.note[c.id];
+      if (esistente && !esistente.sync.eliminato) {
+        esito.gia_presenti++;
+        if (c.aggiornata && esistente.dati.origine && esistente.dati.origine.aggiornata_il && c.aggiornata > esistente.dati.origine.aggiornata_il) esito.piu_recenti_non_sovrascritte++;
+        continue;
+      }
+      await M.salvaRecord(stato, "note", c.id, { titolo: c.titolo, testo: c.testo, tipo: "originale", fonte: `Chat di Claude «${c.titolo}» (claude.ai, esportazione)`,
+        data: c.creata || quando, registrato_il: quando, categoria: "inbox", tag: ["chat-claude"], collegamenti: [], accessibile_agenti: false,
+        origine: { tipo: "chat_claude", id: c.uuid, aggiornata_il: c.aggiornata, messaggi: c.messaggi } });
+      esito.importate++;
+    }
+    return esito;
+  };
+
+  // Lettura minima di un file ZIP (esportazione di claude.ai): restituisce il testo di un file per nome.
+  M.leggiDaZip = async function (bytes, nomeCercato) {
+    const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let eocd = -1; for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) if (v.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) throw new Error("Archivio ZIP non valido.");
+    let p = v.getUint32(eocd + 16, true); const voci = v.getUint16(eocd + 10, true); const nomi = [];
+    for (let k = 0; k < voci; k++) {
+      if (v.getUint32(p, true) !== 0x02014b50) throw new Error("Indice dello ZIP danneggiato.");
+      const metodo = v.getUint16(p + 10, true), compr = v.getUint32(p + 20, true), lnome = v.getUint16(p + 28, true), lextra = v.getUint16(p + 30, true), lcomm = v.getUint16(p + 32, true), loc = v.getUint32(p + 42, true);
+      const nome = new TextDecoder().decode(bytes.subarray(p + 46, p + 46 + lnome)); nomi.push(nome);
+      if (nome === nomeCercato || nome.endsWith("/" + nomeCercato)) {
+        const inizio = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true);
+        const dati = bytes.subarray(inizio, inizio + compr);
+        if (metodo === 0) return new TextDecoder().decode(dati);
+        if (metodo !== 8) throw new Error("Compressione dello ZIP non supportata.");
+        const flusso = new Blob([dati]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+        return await new Response(flusso).text();
+      }
+      p += 46 + lnome + lextra + lcomm;
+    }
+    throw new Error(`Nell'archivio non c'è ${nomeCercato} (file trovati: ${nomi.slice(0, 8).join(", ")}).`);
+  };
+
   M.contaFittizi = (stato) => M.COLLEZIONI_APP.reduce((n, c) => n + M.elenco(stato, c).filter((r) => r.fittizio === true).length, 0);
 
   // ---------- sincronizzazione ----------
