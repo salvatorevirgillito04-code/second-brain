@@ -575,8 +575,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
         const r = A ? A.impostaToken(v) : "anteprima"; if (r !== "ok") throw new Error(r);
         if (!inRete()) return "Token salvato. Verrà verificato alla prima sincronizzazione.";
         const res = await api.richiesta("GET", `/repos/${OWNER}/${REPO}`);
-        if (res.status === 200 && res.corpo && res.corpo.permissions && res.corpo.permissions.push) { setTimeout(() => sincronizza(true), 50); return "Accesso verificato: lettura e scrittura su second-brain."; }
-        if (res.status === 200) return "Il token non può scrivere: imposta Contents su «Read and write».";
+        // permissions.push descrive il tuo account, non il token: la scrittura si verifica solo provando a scrivere
+        if (res.status === 200) { setTimeout(() => sincronizza(true), 50); return "Lettura verificata. La scrittura viene verificata dalla sincronizzazione appena avviata."; }
         if (res.status === 401) return "Token non valido o scaduto.";
         if (res.status === 404) return "Il token non dà accesso a second-brain.";
         return "Verifica non riuscita (" + res.status + "): riprova la sincronizzazione.";

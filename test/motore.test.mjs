@@ -295,3 +295,13 @@ test("relazioni: solo riferimenti esistenti; riferimenti in entrata; pulizia fit
   assert.equal(M.trova(s, "note", "n-a").progetto_id, null); assert.deepEqual(M.trova(s, "note", "n-c").collegamenti, []);
   assert.ok(M.trova(s, "progetti", "pr-1")); assert.equal(M.trova(s, "progetti", "pr-f"), null);
 });
+
+test("403 alla creazione del ramo: messaggio di GitHub riportato, nessun dato perso", async () => {
+  const gh = new FintoGitHub(); const s = M.statoVuoto();
+  await M.salvaRecord(s, "stanze", "st-1", { nome: "S" });
+  gh.guasto = { tipo: "403", quando: (m) => m === "POST", volte: -1 };
+  const orig = gh.gestisci.bind(gh);
+  gh.gestisci = async (m, p, c) => (m === "POST" ? { status: 403, corpo: { message: "Resource not accessible by personal access token" } } : orig(m, p, c));
+  await assert.rejects(M.sincronizza(s, gh.api(), OPZ), (e) => e.tipo === "permessi" && /Resource not accessible by personal access token/.test(e.message));
+  assert.equal(M.inAttesa(s), 1);
+});

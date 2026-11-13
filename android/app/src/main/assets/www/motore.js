@@ -248,12 +248,14 @@
   // api.richiesta(metodo, percorso, corpoOggetto|null) -> Promise<{status, corpo}>  (status 0 = rete assente)
   class ErroreSync extends Error { constructor(tipo, msg, status) { super(msg); this.tipo = tipo; this.status = status; } }
   M.ErroreSync = ErroreSync;
+  // Messaggio di GitHub (mai il token, che non passa da qui), utile per capire la causa reale.
+  const dettaglio = (res) => { const m = res && res.corpo && typeof res.corpo === "object" && res.corpo.message; return m ? ` GitHub dice: «${String(m).slice(0, 160)}».` : ""; };
   function controlla(res, cosa) {
     if (res.status === 0) throw new ErroreSync("rete", "Rete assente o non raggiungibile: le modifiche restano sul telefono e verranno inviate più tardi.", 0);
     if (res.status === 401) throw new ErroreSync("accesso", "Accesso a GitHub scaduto o revocato: crea un nuovo token e inseriscilo in Dati › Sincronizzazione.", 401);
-    if (res.status === 403) throw new ErroreSync("permessi", `GitHub ha rifiutato ${cosa} (403): il token non ha il permesso "Contents: Read and write" su second-brain, oppure è stato superato il limite di richieste.`, 403);
-    if (res.status === 404) throw new ErroreSync("non_trovato", `GitHub non trova ${cosa} (404): controlla che il token dia accesso al repository second-brain.`, 404);
-    throw new ErroreSync("github", `Errore di GitHub durante ${cosa} (${res.status}).`, res.status);
+    if (res.status === 403) throw new ErroreSync("permessi", `GitHub ha rifiutato ${cosa} (403): il token non ha il permesso "Contents: Read and write" su second-brain, oppure è stato superato il limite di richieste.${dettaglio(res)}`, 403);
+    if (res.status === 404) throw new ErroreSync("non_trovato", `GitHub non trova ${cosa} (404): controlla che il token dia accesso al repository second-brain.${dettaglio(res)}`, 404);
+    throw new ErroreSync("github", `Errore di GitHub durante ${cosa} (${res.status}).${dettaglio(res)}`, res.status);
   }
   const percorsoFile = (col, id) => `${M.CARTELLA_APP}/${col}/${id}.json`;
   const testoFile = (dati) => JSON.stringify(dati, null, 2) + "\n";
