@@ -293,7 +293,7 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
   async function salva() {
     if (!A) return;
     // dati illeggibili: non sovrascriverli con uno stato vuoto finché non ripristini un backup
-    if (S.origine === "illeggibile") { S.erroreArchivio = "salvataggio sospeso finché non ripristini un backup"; avvisi(); return; }
+    if (S.origine === "illeggibile" || S.origine === "migrazione_fallita") { S.erroreArchivio = "salvataggio sospeso finché non ripristini un backup"; avvisi(); return; }
     const r = A.salvaDati(JSON.stringify(S.stato));
     S.erroreArchivio = r === "ok" ? null : r;
     if (S.erroreArchivio) avvisi();
@@ -342,8 +342,10 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
     if (S.erroreArchivio) h += `<p class="banner err"><strong>Salvataggio sul telefono non riuscito.</strong><span>${esc(S.erroreArchivio)}. Esporta subito un backup da Dati.</span></p>`;
     if (S.origine === "precedente") h += `<p class="banner warn"><strong>Il file dati era danneggiato.</strong><span>È stata caricata la copia salvata subito prima. Controlla gli ultimi inserimenti.</span></p>`;
     if (S.origine === "illeggibile") h += `<p class="banner err"><strong>Dati non leggibili.</strong><span>Non sono stati sovrascritti. Ripristina un backup da Dati › Ripristino.</span></p>`;
+    if (S.migrazione && S.migrazione.ok) h += `<p class="banner ok"><strong>Memorie convertite in note.</strong><span>${S.migrazione.memorie} memorie → ${S.migrazione.note} note con gli stessi contenuti, fonti, date e permessi (${S.migrazione.condivise} accessibili agli agenti). Copia dei dati precedenti salvata sul telefono.</span></p>`;
+    if (S.origine === "migrazione_fallita") h += `<p class="banner err"><strong>Conversione delle memorie interrotta.</strong><span>I dati sul telefono non sono stati modificati. Esporta un backup ed scrivimi questi dettagli: ${esc((S.migrazione.errori || []).join("; "))}</span></p>`;
     const vuoto = M.COLLEZIONI_APP.every((c) => !L(c).length);
-    if (vuoto && S.origine !== "illeggibile") h += `<p class="banner"><strong>Nessun dato sul telefono.</strong><span>Per portare qui i dati della versione web vai in Dati › Ripristino e migrazione e scegli il file di backup. Se hai già configurato GitHub, puoi anche sincronizzare.</span></p>`;
+    if (vuoto && S.origine !== "illeggibile" && S.origine !== "migrazione_fallita") h += `<p class="banner"><strong>Nessun dato sul telefono.</strong><span>Per portare qui i dati della versione web vai in Dati › Ripristino e migrazione e scegli il file di backup. Se hai già configurato GitHub, puoi anche sincronizzare.</span></p>`;
     $("#avvisi").innerHTML = h;
   }
 
@@ -369,7 +371,7 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
     const lista = L("stanze").filter((s) => f === "tutte" || statoStanza(s) === f);
     $("#l-stanze").innerHTML = lista.length ? lista.map((s) => {
       const agenti = (s.agenti_ids || []).map((id) => T("agenti", id)).filter(Boolean);
-      const mem = L("memoria").filter((m) => m.stanza_id === s.id).length;
+      const mem = L("note").filter((m) => m.stanza_id === s.id).length;
       const esec = collegamentiDi("stanza_id", s.id);
       const obj = (s.obiettivi || []).filter(Boolean);
       return `<div class="item">
@@ -422,7 +424,7 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
   function renderMemoria() {
     opzioniStanze("#me-stanza", "nessuna stanza"); opzioniStanze("#me-fstanza", "tutte le stanze");
     const q = norm($("#me-cerca").value), ft = $("#me-ftipo").value, fs = $("#me-fstanza").value;
-    const tutte = L("memoria"); const gruppi = {}; for (const m of tutte) (gruppi[norm(m.testo)] ||= []).push(m.id);
+    const tutte = L("note"); const gruppi = {}; for (const m of tutte) (gruppi[norm(m.testo)] ||= []).push(m.id);
     const lista = tutte.filter((m) => (!q || norm(m.testo + " " + m.fonte).includes(q)) && (!ft || m.tipo === ft) && (!fs || m.stanza_id === fs)).sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
     $("#l-memoria").innerHTML = lista.length ? lista.map((m) => {
       const st = T("stanze", m.stanza_id);
@@ -433,7 +435,7 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
         <div class="chips"><span class="chip ${tipoK}">${esc(m.tipo || "tipo non indicato")}</span><span class="chip">fonte: ${esc(m.fonte || "non indicata")}</span>
           <span class="chip">del ${esc(giorno(m.data) || "data non indicata")}</span>${st ? `<span class="chip">${esc(st.nome)}</span>` : ""}
           ${m.corretto_il ? `<span class="chip warn">corretto il ${esc(giorno(m.corretto_il))}</span>` : ""}${dup ? `<span class="chip err">possibile duplicato</span>` : ""}
-          ${nota(m)}${m.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("memoria", m.id)}</div>
+          ${nota(m)}${m.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("note", m.id)}</div>
         <div class="actions"><button type="button" class="quiet" data-act="mod-mem" data-id="${esc(m.id)}">Correggi</button>
           <button type="button" class="quiet" data-act="cond-mem" data-id="${esc(m.id)}">${m.accessibile_agenti === true ? "Rendi privata" : "Rendi accessibile agli agenti"}</button>
           <button type="button" class="danger" data-act="del-mem" data-id="${esc(m.id)}">Elimina</button></div>
@@ -569,8 +571,8 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
     ev.preventDefault(); const id = $("#me-id").value; const testo = $("#me-testo").value.trim();
     const campi = { testo, tipo: $("#me-tipo").value, fonte: $("#me-fonte").value.trim(), data: $("#me-data").value + "T00:00:00.000Z", stanza_id: $("#me-stanza").value || null, accessibile_agenti: $("#me-agenti").checked };
     if (id) campi.corretto_il = nowIso(); else campi.registrato_il = nowIso();
-    const doppio = L("memoria").find((m) => m.id !== id && norm(m.testo) === norm(testo));
-    if (await scrivi("memoria", id, campi, "#me-status")) {
+    const doppio = L("note").find((m) => m.id !== id && norm(m.testo) === norm(testo));
+    if (await scrivi("note", id, campi, "#me-status")) {
       if (doppio) status("#me-status", "Salvato. Esiste già un elemento con lo stesso testo: è segnato come possibile duplicato.", "warn");
       ev.target.reset(); $("#me-data").value = oggi(); modoModifica("me", "", "Salva in memoria", "Salva correzione");
     }
@@ -583,14 +585,14 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
     const id = b.dataset.id, act = b.dataset.act;
     if (act === "mod-stanza") { const s = T("stanze", id); $("#st-nome").value = s.nome || ""; $("#st-desc").value = s.descrizione || ""; $("#st-obj").value = (s.obiettivi || []).join("\n"); caselle("#st-agenti", L("agenti"), new Set(s.agenti_ids || [])); modoModifica("st", id, "Crea stanza", "Salva modifiche"); $("#f-stanze").scrollIntoView({ block: "start" }); }
     if (act === "arch-stanza") { const s = T("stanze", id); const arch = statoStanza(s) !== "archiviata"; await scrivi("stanze", id, { stato: arch ? "archiviata" : "attiva", archiviata: arch }, "#st-status", arch ? "Stanza archiviata." : "Stanza riattivata."); }
-    if (act === "del-stanza") conferma(b, () => { const usi = L("memoria").filter((m) => m.stanza_id === id).length + collegamentiDi("stanza_id", id).length; elimina("stanze", id, "#st-status", usi ? `Questa stanza ha ${usi} elementi di memoria o collegamenti: spostali o archivia la stanza.` : null); });
+    if (act === "del-stanza") conferma(b, () => { const usi = L("note").filter((m) => m.stanza_id === id).length + collegamentiDi("stanza_id", id).length; elimina("stanze", id, "#st-status", usi ? `Questa stanza ha ${usi} elementi di memoria o collegamenti: spostali o archivia la stanza.` : null); });
     if (act === "mod-agente") { const a = T("agenti", id); $("#ag-nome").value = a.nome || ""; $("#ag-ruolo").value = a.ruolo || ""; $("#ag-istr").value = a.istruzioni || ""; $("#ag-strum").value = (a.strumenti || []).join(", "); $("#ag-mem").value = a.accesso_memoria || "nessuno"; caselle("#ag-skill", L("skill"), new Set(a.skill_ids || [])); modoModifica("ag", id, "Aggiungi agente", "Salva modifiche"); $("#f-agenti").scrollIntoView({ block: "start" }); }
     if (act === "del-agente") conferma(b, () => { const usi = L("stanze").filter((s) => (s.agenti_ids || []).includes(id)).length + collegamentiDi("agente_id", id).length; elimina("agenti", id, "#ag-status", usi ? `Questo agente è assegnato a stanze o collegato a esecuzioni (${usi}): rimuovi prima le assegnazioni.` : null); });
     if (act === "mod-skill") { const k = T("skill", id); $("#sk-nome").value = k.nome || ""; $("#sk-desc").value = k.descrizione || ""; $("#sk-proc").value = k.procedura || ""; modoModifica("sk", id, "Aggiungi skill", "Salva modifiche"); $("#f-skill").scrollIntoView({ block: "start" }); }
     if (act === "del-skill") conferma(b, () => { const usi = L("agenti").filter((a) => (a.skill_ids || []).includes(id)).length; elimina("skill", id, "#sk-status", usi ? `Questa skill è usata da ${usi} agenti: toglila prima dalle loro schede.` : null); });
-    if (act === "mod-mem") { const m = T("memoria", id); $("#me-testo").value = m.testo || ""; $("#me-tipo").value = m.tipo || "originale"; $("#me-fonte").value = m.fonte || ""; $("#me-data").value = String(m.data || "").slice(0, 10); $("#me-stanza").value = m.stanza_id || ""; $("#me-agenti").checked = m.accessibile_agenti === true; modoModifica("me", id, "Salva in memoria", "Salva correzione"); $("#f-memoria").scrollIntoView({ block: "start" }); }
-    if (act === "cond-mem") { const m = T("memoria", id); const si = m.accessibile_agenti !== true; await scrivi("memoria", id, { accessibile_agenti: si }, "#me-status", si ? "Resa accessibile agli agenti: sarà copiata nel repository alla prossima sincronizzazione." : "Resa privata: sarà tolta dal repository alla prossima sincronizzazione (resta nella cronologia Git)."); }
-    if (act === "del-mem") conferma(b, () => elimina("memoria", id, "#me-status"));
+    if (act === "mod-mem") { const m = T("note", id); $("#me-testo").value = m.testo || ""; $("#me-tipo").value = m.tipo || "originale"; $("#me-fonte").value = m.fonte || ""; $("#me-data").value = String(m.data || "").slice(0, 10); $("#me-stanza").value = m.stanza_id || ""; $("#me-agenti").checked = m.accessibile_agenti === true; modoModifica("me", id, "Salva in memoria", "Salva correzione"); $("#f-memoria").scrollIntoView({ block: "start" }); }
+    if (act === "cond-mem") { const m = T("note", id); const si = m.accessibile_agenti !== true; await scrivi("note", id, { accessibile_agenti: si }, "#me-status", si ? "Resa accessibile agli agenti: sarà copiata nel repository alla prossima sincronizzazione." : "Resa privata: sarà tolta dal repository alla prossima sincronizzazione (resta nella cronologia Git)."); }
+    if (act === "del-mem") conferma(b, () => elimina("note", id, "#me-status"));
     if (act === "add-link") {
       const ag = document.querySelector(`[data-link-ag="${CSS.escape(id)}"]`).value, st = document.querySelector(`[data-link-st="${CSS.escape(id)}"]`).value;
       if (!ag && !st) { status("#lv-status", "Scegli almeno un agente o una stanza da collegare.", "warn"); return; }
@@ -644,7 +646,7 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
     $("#imp-preview").innerHTML = ""; S.pending = null;
     if (!ok) { status("#imp-status", testo || "Nessun file scelto.", testo ? "err" : ""); return; }
     try {
-      const file = JSON.parse(testo); const h = await M.verificaBackup(file); S.pending = file;
+      const file = JSON.parse(testo); const h = (await M.verificaBackup(file)).hashFile; S.pending = file;
       $("#imp-preview").innerHTML = `<div class="banner"><strong>Backup del ${esc(quando(file.esportato_il))}</strong>
         <span>${M.COLLEZIONI_BACKUP.map((c) => (file.dati[c] || []).length + " " + c).join(", ")}</span><span class="mono">impronta ${esc(h.slice(0, 16))}… verificata</span>
         <span class="small">I dati attuali del telefono saranno sostituiti. Ciò che era già sincronizzato e differisce verrà inviato alla prossima sincronizzazione.</span>
@@ -657,13 +659,13 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
     if (ev.target.id !== "b-imp-ok" || !S.pending) return;
     ev.target.disabled = true;
     try {
-      const base = S.origine === "illeggibile" ? M.statoVuoto() : S.stato;
+      const base = (S.origine === "illeggibile" || S.origine === "migrazione_fallita") ? M.statoVuoto() : S.stato;
       const r = await M.ripristina(base, S.pending); S.stato = base; S.origine = "ripristinato"; await salva();
       // ricarica dal file salvato e ricalcola: verifica che sia stato scritto davvero
       let suDisco = r.hashDopo;
       if (A) { const c = M.carica(A.caricaDati(), null); suDisco = await M.impronta(M.datiPuliti(c.stato)); }
-      const ok = r.identico && suDisco === r.hashFile;
-      status("#imp-status", ok ? `Importazione verificata: impronta ${r.hashFile.slice(0, 16)}… identica al file, anche dopo il salvataggio sul telefono.` : `Attenzione: impronta diversa dopo l'importazione (${suDisco.slice(0, 12)}…). Non cancellare il file di backup.`, ok ? "ok" : "err");
+      const ok = r.identico && suDisco === r.hashAtteso;
+      status("#imp-status", ok ? `Importazione verificata${r.versione === 1 ? " (backup 1.0: memorie importate come note)" : ""}: impronta ${r.hashAtteso.slice(0, 16)}… corrispondente al file, anche dopo il salvataggio sul telefono.` : `Attenzione: impronta diversa dopo l'importazione (${suDisco.slice(0, 12)}…). Non cancellare il file di backup.`, ok ? "ok" : "err");
       $("#imp-preview").innerHTML = ""; S.pending = null; render(); programmaSync();
     } catch (e) { status("#imp-status", "Ripristino non riuscito: " + (e.message || e) + ". I dati del telefono non sono stati salvati.", "err"); ev.target.disabled = false; }
   });
@@ -676,11 +678,20 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
   // ---------- avvio ----------
   if (A) {
     const c = M.carica(A.caricaDati(), A.caricaDatiPrecedenti());
-    S.stato = c.stato; S.origine = c.origine;
+    S.origine = c.origine;
+    if (c.origine === "migrazione_fallita") { S.stato = M.statoVuoto(); S.migrazione = c.migrazione; } // dati su disco intatti, salvataggio sospeso
+    else {
+      S.stato = c.stato;
+      if (c.migrazione) {
+        const copia = A.salvaCopia("dati-1.0-prima-della-migrazione.json", c.testoOriginale);
+        S.migrazione = c.migrazione;
+        if (copia === "ok" || copia === "esiste") salva(); else { S.origine = "migrazione_fallita"; S.migrazione = { ...c.migrazione, ok: false, errori: ["copia di sicurezza non salvata: " + copia] }; }
+      }
+    }
   }
   render();
   setInterval(() => { if (!document.hidden) { chipSync(); renderLavoro(); renderAgenti(); } }, 60000);
-  if (S.origine !== "illeggibile") sincronizza(false);
+  if (S.origine !== "illeggibile" && S.origine !== "migrazione_fallita") sincronizza(false);
 })();
 </script>
 </body>

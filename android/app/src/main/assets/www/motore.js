@@ -15,9 +15,13 @@
 (function (radice) {
   "use strict";
   const M = {};
-  M.SCHEMA = 1;
-  M.COLLEZIONI_APP = ["agenti", "collegamenti", "memoria", "skill", "stanze"];
-  M.COLLEZIONI_BACKUP = ["agenti", "collegamenti", "memoria", "skill", "stanze", "stato_lavoro"];
+  M.SCHEMA = 2;
+  // Schema 2 (app 1.1): le memorie sono diventate note. "memoria" resta solo per eliminare dal repository i file della 1.0.
+  M.COLLEZIONI_APP = ["agenti", "collegamenti", "note", "progetti", "skill", "stanze"];
+  M.COLLEZIONI_LEGACY = ["memoria"];
+  M.COLLEZIONI_SYNC = [...M.COLLEZIONI_APP, ...M.COLLEZIONI_LEGACY];
+  M.COLLEZIONI_BACKUP = [...M.COLLEZIONI_APP, "stato_lavoro"];
+  M.COLLEZIONI_BACKUP_V1 = ["agenti", "collegamenti", "memoria", "skill", "stanze", "stato_lavoro"];
   M.RAMO = "dati";
   M.CARTELLA_APP = "dati/app";
   M.CARTELLA_STATO = "dati/stato";
@@ -50,16 +54,23 @@
   // ---------- stato locale ----------
   M.statoVuoto = () => ({
     schema: M.SCHEMA, creato_il: ora(),
-    collezioni: Object.fromEntries(M.COLLEZIONI_APP.map((c) => [c, {}])),
+    collezioni: Object.fromEntries(M.COLLEZIONI_SYNC.map((c) => [c, {}])),
     stato_lavoro: [],
     sync: { ultimo_ok: null, ultimo_tentativo: null, errore: null, conflitti: {}, istantanea_scaricata_il: null },
   });
 
   // Carica il testo salvato; se il principale è illeggibile usa la copia precedente.
+  // Restituisce anche il rapporto di migrazione: se la verifica fallisce lo stato NON viene sostituito.
   M.carica = function (principale, precedente) {
     for (const [testo, origine] of [[principale, "principale"], [precedente, "precedente"]]) {
       if (!testo) continue;
-      try { const s = M.migra(JSON.parse(testo)); return { stato: s, origine }; } catch (_) { /* prova la successiva */ }
+      let grezzo; try { grezzo = JSON.parse(testo); } catch (_) { continue; }
+      if (grezzo && grezzo.schema === 1 && grezzo.collezioni) {
+        const m = M.migraV1(grezzo);
+        if (!m.rapporto.ok) return { stato: null, origine: "migrazione_fallita", migrazione: m.rapporto, testoOriginale: testo };
+        return { stato: m.stato, origine, migrazione: m.rapporto, testoOriginale: testo };
+      }
+      try { return { stato: M.migra(grezzo), origine }; } catch (_) { /* prova la successiva */ }
     }
     return { stato: M.statoVuoto(), origine: principale || precedente ? "illeggibile" : "nuovo" };
   };
@@ -67,11 +78,61 @@
   M.migra = function (s) {
     if (!s || typeof s !== "object" || !s.collezioni) throw new Error("formato sconosciuto");
     if ((s.schema || 0) > M.SCHEMA) throw new Error("dati creati da una versione più recente dell'app");
-    for (const c of M.COLLEZIONI_APP) s.collezioni[c] ||= {};
+    if ((s.schema || 1) < 2) throw new Error("dati della 1.0: usa migraV1");
+    for (const c of M.COLLEZIONI_SYNC) s.collezioni[c] ||= {};
     s.stato_lavoro ||= [];
     s.sync ||= {}; s.sync.conflitti ||= {};
     s.schema = M.SCHEMA;
     return s;
+  };
+
+  // ---------- migrazione 1.0 → 1.1: memorie → note ----------
+  // Le note conservano ESATTAMENTE i dati della memoria (stesso id, stessi campi): categoria, tag e collegamenti
+  // nuovi sono facoltativi e assenti finché non li imposti. Le memorie condivise vengono spostate nel repository
+  // da dati/app/memoria a dati/app/note (il vecchio file viene eliminato solo se è ancora la versione vista).
+  M.migraV1 = function (s1) {
+    const s = copia(s1);
+    s.schema = 2;
+    for (const c of M.COLLEZIONI_SYNC) s.collezioni[c] ||= {};
+    s.collezioni.note = {};
+    s.collezioni.memoria = {};
+    s.stato_lavoro ||= []; s.sync ||= {}; s.sync.conflitti ||= {};
+    const mem = (s1.collezioni && s1.collezioni.memoria) || {};
+    for (const [id, r] of Object.entries(mem)) {
+      const k = s1.sync && s1.sync.conflitti && s1.sync.conflitti["memoria/" + id];
+      if (!r.sync.eliminato) {
+        s.collezioni.note[id] = { dati: copia(r.dati), sync: { sha: null, base: null, sporco: M.nelRepository("note", r.dati), eliminato: false } };
+      } else if (k && k.remoto) { // eliminata qui ma modificata nel repository: resta una nota da decidere
+        s.collezioni.note[id] = { dati: copia(k.remoto), sync: { sha: null, base: null, sporco: false, eliminato: false } };
+      }
+      const shaRemoto = k ? k.rsha : r.sync.sha;
+      if (shaRemoto) s.collezioni.memoria[id] = { dati: copia(r.dati), sync: { sha: shaRemoto, base: r.sync.base, sporco: true, eliminato: true } };
+      if (k) {
+        delete s.sync.conflitti["memoria/" + id];
+        if (s.collezioni.note[id]) s.sync.conflitti["note/" + id] = { col: "note", id, tipo: "migrazione", locale: r.sync.eliminato ? null : copia(r.dati), remoto: k.remoto ? copia(k.remoto) : null, rsha: null, rilevato_il: ora() };
+      }
+    }
+    return { stato: s, rapporto: M.verificaMigrazione(s1, s) };
+  };
+  M.verificaMigrazione = function (s1, s2) {
+    const errori = [], mem = (s1.collezioni && s1.collezioni.memoria) || {};
+    const attive = Object.entries(mem).filter(([, r]) => !r.sync.eliminato);
+    const note = s2.collezioni.note || {};
+    for (const [id, r] of attive) {
+      if (!note[id]) errori.push(`memoria ${id} non trovata tra le note`);
+      else if (M.canon(note[id].dati) !== M.canon(r.dati)) errori.push(`memoria ${id}: contenuto diverso`);
+    }
+    const attese = new Set(attive.map(([id]) => id));
+    for (const [id, r] of Object.entries(mem)) if (r.sync.eliminato && s1.sync && s1.sync.conflitti && s1.sync.conflitti["memoria/" + id]) attese.add(id);
+    for (const id of Object.keys(note)) if (!attese.has(id)) errori.push(`nota ${id} in più (possibile duplicato)`);
+    const condPrima = attive.filter(([, r]) => r.dati.accessibile_agenti === true).map(([id]) => id).sort();
+    const condDopo = Object.entries(note).filter(([id, r]) => attese.has(id) && mem[id] && !mem[id].sync.eliminato && M.nelRepository("note", r.dati)).map(([id]) => id).sort();
+    if (M.canon(condPrima) !== M.canon(condDopo)) errori.push("cambiato l'insieme delle note accessibili agli agenti");
+    for (const [id, r] of Object.entries(note)) if (r.dati.accessibile_agenti !== true && r.sync.sporco) errori.push(`nota privata ${id} sarebbe inviata`);
+    for (const c of ["agenti", "collegamenti", "skill", "stanze"]) if (M.canon((s1.collezioni || {})[c] || {}) !== M.canon(s2.collezioni[c] || {})) errori.push(`collezione ${c} modificata`);
+    if (M.canon(s1.stato_lavoro || []) !== M.canon(s2.stato_lavoro || [])) errori.push("istantanea modificata");
+    return { ok: errori.length === 0, errori, memorie: attive.length, note: Object.keys(note).length, condivise: condPrima.length,
+      da_spostare_nel_repository: condPrima.length, file_1_0_da_eliminare: Object.keys(s2.collezioni.memoria).length };
   };
 
   M.elenco = (stato, col) => Object.entries(stato.collezioni[col] || {}).filter(([, r]) => !r.sync.eliminato).map(([id, r]) => ({ id, ...r.dati }))
@@ -79,7 +140,7 @@
   M.trova = (stato, col, id) => { const r = stato.collezioni[col][id]; return r && !r.sync.eliminato ? { id, ...r.dati } : null; };
 
   // Il record va nel repository? Le memorie solo se l'utente le ha rese accessibili agli agenti.
-  M.nelRepository = (col, dati) => col !== "memoria" || (dati && dati.accessibile_agenti === true);
+  M.nelRepository = (col, dati) => (col !== "note" && col !== "memoria") || (dati && dati.accessibile_agenti === true);
 
   M.salvaRecord = async function (stato, col, id, dati) {
     if (!M.COLLEZIONI_APP.includes(col)) throw new Error("collezione non modificabile: " + col);
@@ -99,7 +160,7 @@
     r.sync.eliminato = true; r.sync.sporco = true;
   };
 
-  M.inAttesa = (stato) => M.COLLEZIONI_APP.reduce((n, c) => n + Object.values(stato.collezioni[c]).filter((r) => r.sync.sporco).length, 0);
+  M.inAttesa = (stato) => M.COLLEZIONI_SYNC.reduce((n, c) => n + Object.values(stato.collezioni[c]).filter((r) => r.sync.sporco).length, 0);
 
   // Dati "puliti" (senza metadati di sincronizzazione): formato dei backup e dell'impronta.
   M.datiPuliti = function (stato) {
@@ -112,27 +173,32 @@
   // ---------- backup / ripristino / migrazione ----------
   M.creaBackup = async function (stato) {
     const dati = M.datiPuliti(stato);
-    return { formato: "second-brain-backup", versione: 1, esportato_il: ora(), hash_sha256: await M.impronta(dati), dati };
+    return { formato: "second-brain-backup", versione: 2, esportato_il: ora(), hash_sha256: await M.impronta(dati), dati };
   };
+  // Backup della 1.0 (versione 1, con "memoria") → stessa forma della 1.1 (le memorie diventano note, identiche).
+  M.datiV1aV2 = (d) => { const { memoria, ...resto } = d; return { ...resto, note: memoria || [], progetti: [] }; };
   M.verificaBackup = async function (file) {
     if (!file || file.formato !== "second-brain-backup" || !file.dati) throw new Error("Il file non è un backup di Second Brain.");
+    if (file.versione !== 1 && file.versione !== 2) throw new Error("Versione del backup non supportata: aggiorna l'app.");
     const h = await M.impronta(file.dati);
     if (file.hash_sha256 !== h) throw new Error("L'impronta non corrisponde: il file è stato modificato o è danneggiato.");
-    for (const c of M.COLLEZIONI_BACKUP) for (const r of file.dati[c] || []) if (!r || !ID_VALIDO.test(r.id || "")) throw new Error(`Record non valido in ${c}.`);
-    return h;
+    const cols = file.versione === 1 ? M.COLLEZIONI_BACKUP_V1 : M.COLLEZIONI_BACKUP;
+    for (const c of cols) for (const r of file.dati[c] || []) if (!r || !ID_VALIDO.test(r.id || "")) throw new Error(`Record non valido in ${c}.`);
+    const dati = file.versione === 1 ? M.datiV1aV2(file.dati) : file.dati;
+    return { hashFile: h, dati, hashAtteso: await M.impronta(dati), versione: file.versione };
   };
   // Sostituisce i dati locali con quelli del file, conservando i riferimenti di sincronizzazione:
   // ciò che differisce dall'ultima versione sincronizzata diventa "da inviare", ciò che manca viene eliminato.
   M.ripristina = async function (stato, file) {
-    const h = await M.verificaBackup(file);
+    const v = await M.verificaBackup(file);
     for (const c of M.COLLEZIONI_APP) {
-      const nuovi = new Map((file.dati[c] || []).map((r) => [r.id, r]));
+      const nuovi = new Map((v.dati[c] || []).map((r) => [r.id, r]));
       for (const id of Object.keys(stato.collezioni[c])) if (!nuovi.has(id)) M.eliminaRecord(stato, c, id);
       for (const [id, r] of nuovi) { const { id: _x, ...dati } = r; await M.salvaRecord(stato, c, id, dati); }
     }
-    stato.stato_lavoro = copia(file.dati.stato_lavoro || []);
+    stato.stato_lavoro = copia(v.dati.stato_lavoro || []);
     const dopo = await M.impronta(M.datiPuliti(stato));
-    return { hashFile: h, hashDopo: dopo, identico: dopo === h };
+    return { hashFile: v.hashFile, hashAtteso: v.hashAtteso, hashDopo: dopo, identico: dopo === v.hashAtteso, versione: v.versione };
   };
 
   // Elimina solo i dati di prova (fittizio: true) e i collegamenti che li riguardano. Le stanze reali
@@ -150,7 +216,7 @@
       const sk = (a.skill_ids || []).filter((id) => !via.has("skill/" + id));
       if (sk.length !== (a.skill_ids || []).length) { const { id, ...d } = a; d.skill_ids = sk; await M.salvaRecord(stato, "agenti", id, d); }
     }
-    for (const m of M.elenco(stato, "memoria")) if (m.stanza_id && via.has("stanze/" + m.stanza_id)) { const { id, ...d } = m; d.stanza_id = null; await M.salvaRecord(stato, "memoria", id, d); }
+    for (const m of M.elenco(stato, "note")) if (m.stanza_id && via.has("stanze/" + m.stanza_id)) { const { id, ...d } = m; d.stanza_id = null; await M.salvaRecord(stato, "memoria", id, d); }
     return n;
   };
   M.contaFittizi = (stato) => M.COLLEZIONI_APP.reduce((n, c) => n + M.elenco(stato, c).filter((r) => r.fittizio === true).length, 0);
@@ -200,7 +266,8 @@
     stato.sync.ultimo_tentativo = ora();
     try {
       esito.ramo_creato = await assicuraRamo(api, R);
-      for (const col of M.COLLEZIONI_APP) {
+      for (const col of M.COLLEZIONI_SYNC) {
+        const legacy = M.COLLEZIONI_LEGACY.includes(col);
         const lista = await api.richiesta("GET", `${R}/contents/${M.CARTELLA_APP}/${col}?ref=${M.RAMO}`);
         if (lista.status !== 200 && lista.status !== 404) controlla(lista, "l'elenco di " + col);
         const remoti = new Map((lista.status === 200 ? lista.corpo : []).filter((f) => f.type === "file" && f.name.endsWith(".json")).map((f) => [f.name.slice(0, -5), f.sha]));
@@ -212,6 +279,7 @@
           const rsha = remoti.get(id) || null;
           const rec = stato.collezioni[col][id];
 
+          if (!rec && legacy) { esito.file_1_0_ignorati = (esito.file_1_0_ignorati || 0) + 1; continue; } // file della 1.0 non nostro: lasciato com'è
           if (!rec) { // nuovo nel repository
             const f = await leggiFile(api, R, percorsoFile(col, id)); if (!f) continue;
             if (stato.collezioni[col][id]) continue; // creato localmente durante la lettura: lo gestirà il prossimo giro
@@ -297,6 +365,21 @@
   M.risolviConflitto = async function (stato, chiave, scelta) {
     const k = stato.sync.conflitti[chiave]; if (!k) return;
     const rec = stato.collezioni[k.col][k.id];
+    if (k.tipo === "migrazione") { // la versione scelta viene scritta nel nuovo percorso delle note
+      if (scelta === "repository" && k.remoto) rec.dati = copia(k.remoto);
+      else if (scelta === "repository") { M.eliminaRecord(stato, k.col, k.id); delete stato.sync.conflitti[chiave]; return; }
+      else if (scelta !== "telefono") throw new Error("scelta non valida");
+      rec.sync.sporco = M.nelRepository(k.col, rec.dati);
+      delete stato.sync.conflitti[chiave]; return;
+    }
+    if (M.COLLEZIONI_LEGACY.includes(k.col)) { // vecchio file della 1.0 cambiato nel repository dopo la migrazione
+      if (scelta === "repository" && k.remoto) {
+        const n = stato.collezioni.note[k.id] || { sync: { sha: null, base: null, sporco: false, eliminato: false } };
+        n.dati = copia(k.remoto); n.sync.eliminato = false; n.sync.sporco = M.nelRepository("note", n.dati); stato.collezioni.note[k.id] = n;
+      } else if (scelta !== "repository" && scelta !== "telefono") throw new Error("scelta non valida");
+      if (rec) { rec.sync.sha = k.rsha; rec.sync.sporco = true; } // in ogni caso il file nel vecchio percorso va rimosso
+      delete stato.sync.conflitti[chiave]; return;
+    }
     if (scelta === "repository") {
       if (k.remoto) stato.collezioni[k.col][k.id] = { dati: copia(k.remoto), sync: { sha: k.rsha, base: await M.impronta(k.remoto), sporco: false, eliminato: false } };
       else delete stato.collezioni[k.col][k.id];

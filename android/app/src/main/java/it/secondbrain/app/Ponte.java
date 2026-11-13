@@ -53,6 +53,10 @@ public class Ponte {
         try { archivio.scrivi(json); return "ok"; } catch (Exception e) { return "errore di scrittura (" + e.getClass().getSimpleName() + ")"; }
     }
 
+    @JavascriptInterface public String salvaCopia(String nome, String testo) {
+        try { return archivio.scriviCopia(nome, testo); } catch (Exception e) { return "errore (" + e.getClass().getSimpleName() + ")"; }
+    }
+
     // ---------- token ----------
     @JavascriptInterface public boolean haToken() { return cassaforte.presente(); }
     @JavascriptInterface public String impostaToken(String t) {

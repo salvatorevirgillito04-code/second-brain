@@ -34,6 +34,17 @@ class Archivio {
         }
     }
 
+    /** Copia di sicurezza con nome fisso: non sovrascrive mai un file esistente. */
+    synchronized String scriviCopia(String nome, String testo) throws IOException {
+        if (nome == null || !nome.matches("[a-z0-9.-]{1,80}\\.json") || nome.startsWith("dati.")) throw new IOException("nome non valido");
+        File f = new File(principale.getParentFile(), nome);
+        if (f.exists()) return "esiste";
+        File tmp = new File(principale.getParentFile(), nome + ".tmp");
+        try (FileOutputStream out = new FileOutputStream(tmp)) { out.write(testo.getBytes(StandardCharsets.UTF_8)); out.getFD().sync(); }
+        Files.move(tmp.toPath(), f.toPath(), StandardCopyOption.ATOMIC_MOVE);
+        return "ok";
+    }
+
     synchronized void scrivi(String json) throws IOException {
         if (json == null || json.isEmpty()) throw new IOException("contenuto vuoto");
         try (FileOutputStream out = new FileOutputStream(temporaneo)) {

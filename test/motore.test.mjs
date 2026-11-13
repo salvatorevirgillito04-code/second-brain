@@ -9,14 +9,15 @@ const M = createRequire(import.meta.url)("../android/app/src/main/assets/www/mot
 
 const OPZ = { owner: "utente", repo: "second-brain" };
 const P = (col, id) => `dati/app/${col}/${id}.json`;
+const leggiP = (gh, p) => { const t = gh.file("dati", p); return t === undefined ? undefined : JSON.parse(t); };
 const leggi = (gh, col, id) => { const t = gh.file("dati", P(col, id)); return t === undefined ? undefined : JSON.parse(t); };
 
 async function base() {
   const s = M.statoVuoto();
   await M.salvaRecord(s, "stanze", "st-1", { nome: "Lavoro", obiettivi: ["A"] });
   await M.salvaRecord(s, "agenti", "ag-1", { nome: "Sviluppatore" });
-  await M.salvaRecord(s, "memoria", "me-pub", { testo: "condivisa", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z", accessibile_agenti: true });
-  await M.salvaRecord(s, "memoria", "me-priv", { testo: "privata", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z" });
+  await M.salvaRecord(s, "note", "me-pub", { testo: "condivisa", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z", accessibile_agenti: true });
+  await M.salvaRecord(s, "note", "me-priv", { testo: "privata", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z" });
   return s;
 }
 
@@ -25,7 +26,7 @@ test("prima sincronizzazione: crea il ramo dati, invia tutto tranne le memorie p
   assert.equal(M.inAttesa(s), 3);
   const e = await M.sincronizza(s, gh.api(), OPZ);
   assert.equal(e.ramo_creato, true); assert.equal(e.inviati, 3);
-  assert.ok(leggi(gh, "memoria", "me-pub")); assert.equal(leggi(gh, "memoria", "me-priv"), undefined);
+  assert.ok(leggi(gh, "note", "me-pub")); assert.equal(leggi(gh, "note", "me-priv"), undefined);
   assert.equal(M.inAttesa(s), 0); assert.ok(s.sync.ultimo_ok); assert.equal(s.sync.errore, null);
   assert.equal(gh.file("main", P("stanze", "st-1")), undefined, "il ramo principale non viene toccato");
 });
@@ -80,11 +81,11 @@ test("cancellazioni: locale propagata; remota con telefono invariato applicata; 
   assert.equal(leggi(gh, "agenti", "ag-1"), undefined); assert.equal(s.collezioni.agenti["ag-1"], undefined);
   gh.eliminaDiretto("dati", P("stanze", "st-1"));
   await M.sincronizza(s, gh.api(), OPZ); assert.equal(M.trova(s, "stanze", "st-1"), null);
-  await M.salvaRecord(s, "memoria", "me-pub", { testo: "condivisa modificata", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z", accessibile_agenti: true });
-  gh.eliminaDiretto("dati", P("memoria", "me-pub"));
+  await M.salvaRecord(s, "note", "me-pub", { testo: "condivisa modificata", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z", accessibile_agenti: true });
+  gh.eliminaDiretto("dati", P("note", "me-pub"));
   const e = await M.sincronizza(s, gh.api(), OPZ);
-  assert.equal(e.conflitti_nuovi, 1); assert.equal(s.sync.conflitti["memoria/me-pub"].tipo, "eliminato_remoto_modificato_locale");
-  assert.equal(M.trova(s, "memoria", "me-pub").testo, "condivisa modificata");
+  assert.equal(e.conflitti_nuovi, 1); assert.equal(s.sync.conflitti["note/me-pub"].tipo, "eliminato_remoto_modificato_locale");
+  assert.equal(M.trova(s, "note", "me-pub").testo, "condivisa modificata");
 });
 
 test("cancellazione locale di un dato modificato nel repository: conflitto, il file remoto resta", async () => {
@@ -129,11 +130,11 @@ test("token scaduto (401): messaggio di accesso scaduto, nessun dato perso", asy
 
 test("memorie: scegliere se renderle accessibili agli agenti", async () => {
   const gh = new FintoGitHub(); const s = await base(); await M.sincronizza(s, gh.api(), OPZ);
-  await M.salvaRecord(s, "memoria", "me-priv", { testo: "privata", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z", accessibile_agenti: true });
-  await M.sincronizza(s, gh.api(), OPZ); assert.ok(leggi(gh, "memoria", "me-priv"));
-  await M.salvaRecord(s, "memoria", "me-priv", { testo: "privata", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z", accessibile_agenti: false });
+  await M.salvaRecord(s, "note", "me-priv", { testo: "privata", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z", accessibile_agenti: true });
+  await M.sincronizza(s, gh.api(), OPZ); assert.ok(leggi(gh, "note", "me-priv"));
+  await M.salvaRecord(s, "note", "me-priv", { testo: "privata", tipo: "originale", fonte: "test", data: "2026-11-13T00:00:00.000Z", accessibile_agenti: false });
   await M.sincronizza(s, gh.api(), OPZ);
-  assert.equal(leggi(gh, "memoria", "me-priv"), undefined, "tolta dal repository"); assert.ok(M.trova(s, "memoria", "me-priv"), "resta sul telefono");
+  assert.equal(leggi(gh, "note", "me-priv"), undefined, "tolta dal repository"); assert.ok(M.trova(s, "note", "me-priv"), "resta sul telefono");
   assert.equal(M.inAttesa(s), 0);
 });
 
@@ -150,8 +151,10 @@ test("migrazione dal backup dell'artifact: contenuto identico, impronta verifica
   const file = JSON.parse(readFileSync(new URL("../backup/migrazione-artifact-2026-11-13.json", import.meta.url)));
   const s = M.statoVuoto();
   const r = await M.ripristina(s, file);
-  assert.equal(r.identico, true); assert.equal(r.hashDopo, file.hash_sha256);
-  const esportato = await M.creaBackup(s); assert.equal(esportato.hash_sha256, file.hash_sha256);
+  assert.equal(r.versione, 1); assert.equal(r.identico, true); assert.equal(r.hashDopo, r.hashAtteso);
+  const esportato = await M.creaBackup(s); assert.equal(esportato.versione, 2); assert.equal(esportato.hash_sha256, r.hashAtteso);
+  for (const m of file.dati.memoria) { const { id, ...d } = m; assert.equal(M.canon(M.trova(s, "note", id)), M.canon({ id, ...d }), "memoria " + id + " identica come nota"); }
+  assert.equal(M.elenco(s, "note").length, file.dati.memoria.length);
   const alterato = JSON.parse(JSON.stringify(file)); alterato.dati.memoria[0].testo += "!";
   await assert.rejects(M.ripristina(M.statoVuoto(), alterato), /impronta non corrisponde/);
 });
@@ -173,7 +176,7 @@ test("dati fittizi: eliminati separatamente, quelli reali restano identici", asy
   await M.salvaRecord(s, "agenti", "ag-finto", { nome: "Finto", fittizio: true });
   await M.salvaRecord(s, "skill", "sk-finta", { nome: "Finta", fittizio: true });
   await M.salvaRecord(s, "stanze", "st-finta", { nome: "Finta", fittizio: true });
-  await M.salvaRecord(s, "memoria", "me-vera", { testo: "vera", stanza_id: "st-vera" });
+  await M.salvaRecord(s, "note", "me-vera", { testo: "vera", stanza_id: "st-vera" });
   await M.salvaRecord(s, "collegamenti", "co-1", { session_id: "session_A", agente_id: "ag-finto", stanza_id: "st-vera" });
   await M.salvaRecord(s, "collegamenti", "co-2", { session_id: "session_B", agente_id: "ag-vero", stanza_id: "st-vera" });
   assert.equal(M.contaFittizi(s), 3);
@@ -181,7 +184,7 @@ test("dati fittizi: eliminati separatamente, quelli reali restano identici", asy
   assert.equal(n, 4); // 3 fittizi + 1 collegamento che li usa
   assert.deepEqual(M.trova(s, "stanze", "st-vera").agenti_ids, ["ag-vero"]);
   assert.deepEqual(M.trova(s, "agenti", "ag-vero").skill_ids, []);
-  assert.ok(M.trova(s, "memoria", "me-vera")); assert.ok(M.trova(s, "collegamenti", "co-2")); assert.equal(M.trova(s, "collegamenti", "co-1"), null);
+  assert.ok(M.trova(s, "note", "me-vera")); assert.ok(M.trova(s, "collegamenti", "co-2")); assert.equal(M.trova(s, "collegamenti", "co-1"), null);
   assert.equal(M.contaFittizi(s), 0);
 });
 
@@ -190,4 +193,87 @@ test("caricamento: file principale danneggiato → copia precedente; dati di una
   const r = M.carica("{rotto", buono); assert.equal(r.origine, "precedente"); assert.ok(M.trova(r.stato, "stanze", "st-1"));
   const futuro = JSON.stringify({ ...s, schema: 99 });
   assert.equal(M.carica(futuro, null).origine, "illeggibile");
+});
+
+// ---------- migrazione 1.0 → 1.1 (memorie → note) ----------
+function statoV1() {
+  const sync = (sha, extra = {}) => ({ sha, base: sha ? "h" : null, sporco: false, eliminato: false, ...extra });
+  return { schema: 1, collezioni: {
+      agenti: { "ag-1": { dati: { nome: "A" }, sync: sync("s-ag") } }, collegamenti: {}, skill: {}, stanze: { "st-1": { dati: { nome: "S" }, sync: sync("s-st") } },
+      memoria: {
+        "me-cond": { dati: { testo: "condivisa", tipo: "riassunto", fonte: "chat", data: "2026-11-01T00:00:00.000Z", stanza_id: "st-1", accessibile_agenti: true, registrato_il: "x" }, sync: sync(null) },
+        "me-priv": { dati: { testo: "privata", tipo: "dedotto", fonte: "io", data: "2026-11-02T00:00:00.000Z" }, sync: sync(null) },
+        "me-falsa": { dati: { testo: "falsa privata", tipo: "originale", fonte: "io", accessibile_agenti: false }, sync: sync(null) },
+        "me-via": { dati: { testo: "eliminata", accessibile_agenti: true }, sync: sync(null, { eliminato: true, sporco: true }) },
+      } },
+    stato_lavoro: [{ id: "istantanea", totale: 0 }], sync: { conflitti: {} } };
+}
+
+test("migrazione 1.0: memorie → note identiche, private restano private, nessun duplicato", async () => {
+  const v1 = statoV1();
+  const { stato, rapporto } = M.migraV1(v1);
+  assert.equal(rapporto.ok, true, rapporto.errori.join("; "));
+  assert.equal(rapporto.memorie, 3); assert.equal(rapporto.note, 3); assert.equal(rapporto.condivise, 1);
+  for (const id of ["me-cond", "me-priv", "me-falsa"]) assert.equal(M.canon(stato.collezioni.note[id].dati), M.canon(v1.collezioni.memoria[id].dati));
+  assert.equal(stato.collezioni.note["me-via"], undefined, "una memoria già eliminata non ritorna");
+  assert.equal(M.inAttesa(stato), 1, "da inviare solo la nota condivisa");
+  assert.equal(M.canon(stato.collezioni.agenti), M.canon(v1.collezioni.agenti));
+  assert.equal(stato.schema, 2);
+});
+
+test("migrazione: la verifica rileva perdite, contenuti cambiati, duplicati e private rese accessibili", () => {
+  const v1 = statoV1();
+  const casi = [
+    (s) => delete s.collezioni.note["me-priv"],
+    (s) => (s.collezioni.note["me-cond"].dati.testo += "!"),
+    (s) => (s.collezioni.note["me-copia"] = JSON.parse(JSON.stringify(s.collezioni.note["me-cond"]))),
+    (s) => { s.collezioni.note["me-priv"].dati.accessibile_agenti = true; },
+    (s) => { s.collezioni.note["me-falsa"].sync.sporco = true; },
+  ];
+  for (const guasta of casi) { const { stato } = M.migraV1(v1); guasta(stato); assert.equal(M.verificaMigrazione(v1, stato).ok, false, String(guasta)); }
+});
+
+test("migrazione con dati già sincronizzati: file spostati da memoria/ a note/, private mai inviate, vecchi file tolti", async () => {
+  const gh = new FintoGitHub(); const OPZ1 = OPZ;
+  // situazione 1.0 nel repository: una memoria condivisa e un agente
+  gh.rami.dati = new Map(gh.rami.main);
+  const vecchio = JSON.stringify({ testo: "condivisa", accessibile_agenti: true }, null, 2) + "\n";
+  gh.scriviDiretto("dati", "dati/app/memoria/me-cond.json", vecchio);
+  const v1 = { schema: 1, collezioni: { agenti: {}, collegamenti: {}, skill: {}, stanze: {},
+      memoria: { "me-cond": { dati: { testo: "condivisa", accessibile_agenti: true }, sync: { sha: FintoGitHub.shaBlob(vecchio), base: "h", sporco: false, eliminato: false } },
+                 "me-priv": { dati: { testo: "privata" }, sync: { sha: null, base: null, sporco: false, eliminato: false } } } },
+    stato_lavoro: [], sync: { conflitti: {} } };
+  const c = M.carica(JSON.stringify(v1), null);
+  assert.equal(c.migrazione.ok, true); assert.equal(c.migrazione.file_1_0_da_eliminare, 1);
+  const s = c.stato;
+  await M.sincronizza(s, gh.api(), OPZ1);
+  assert.deepEqual(leggiP(gh, "dati/app/note/me-cond.json"), { testo: "condivisa", accessibile_agenti: true });
+  assert.equal(gh.file("dati", "dati/app/memoria/me-cond.json"), undefined, "vecchio file rimosso");
+  assert.equal(gh.file("dati", "dati/app/note/me-priv.json"), undefined, "privata mai inviata");
+  assert.equal(M.inAttesa(s), 0); assert.deepEqual(s.sync.conflitti, {});
+  assert.ok(!gh.richieste.some((r) => r.startsWith("DELETE") && !r.includes("/memoria/")), "nessun'altra eliminazione");
+});
+
+test("migrazione: vecchio file cambiato nel repository dopo la migrazione → conflitto, nulla sovrascritto", async () => {
+  const gh = new FintoGitHub(); gh.rami.dati = new Map(gh.rami.main);
+  const vecchio = JSON.stringify({ testo: "v1" }); gh.scriviDiretto("dati", "dati/app/memoria/me-x.json", vecchio);
+  const v1 = { schema: 1, collezioni: { agenti: {}, collegamenti: {}, skill: {}, stanze: {},
+      memoria: { "me-x": { dati: { testo: "v1", accessibile_agenti: true }, sync: { sha: FintoGitHub.shaBlob(vecchio), base: "h", sporco: false, eliminato: false } } } },
+    stato_lavoro: [], sync: { conflitti: {} } };
+  const s = M.carica(JSON.stringify(v1), null).stato;
+  gh.scriviDiretto("dati", "dati/app/memoria/me-x.json", JSON.stringify({ testo: "cambiato altrove", accessibile_agenti: true }));
+  await M.sincronizza(s, gh.api(), OPZ);
+  assert.ok(s.sync.conflitti["memoria/me-x"]); assert.ok(gh.file("dati", "dati/app/memoria/me-x.json"), "vecchio file non eliminato");
+  await M.risolviConflitto(s, "memoria/me-x", "repository"); await M.sincronizza(s, gh.api(), OPZ);
+  assert.equal(leggiP(gh, "dati/app/note/me-x.json").testo, "cambiato altrove"); assert.equal(gh.file("dati", "dati/app/memoria/me-x.json"), undefined);
+});
+
+test("backup: la 1.0 si ripristina ancora; la 1.1 esporta versione 2 e la ripristina identica", async () => {
+  const file = JSON.parse(readFileSync(new URL("../backup/migrazione-artifact-2026-11-13.json", import.meta.url)));
+  const s = M.statoVuoto(); await M.ripristina(s, file);
+  await M.salvaRecord(s, "note", "no-nuova", { testo: "nuova", tipo: "originale", fonte: "app", categoria: "risorsa", tag: ["foto"], collegamenti: ["mem-fittizia-vasi"] });
+  const b2 = await M.creaBackup(s);
+  const s2 = M.statoVuoto(); const r = await M.ripristina(s2, JSON.parse(JSON.stringify(b2)));
+  assert.equal(r.versione, 2); assert.equal(r.identico, true); assert.equal(r.hashDopo, b2.hash_sha256);
+  await assert.rejects(M.ripristina(M.statoVuoto(), { ...b2, versione: 3 }), /non supportata/);
 });

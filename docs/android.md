@@ -6,7 +6,7 @@
 |---|---|---|
 | Interfaccia | `android/app/src/main/assets/www/` (dentro l'APK, funziona senza rete) | — |
 | Dati | `files/dati.json` nella memoria privata dell'app (+ `dati.prec.json`, copia precedente) | app |
-| Copia sincronizzata | repository privato `second-brain`, ramo `dati`, cartella `dati/app/` | app (con il tuo token) |
+| Copia sincronizzata | repository privato `second-brain`, ramo `dati`, cartella `dati/app/` (note in `dati/app/note/`) | app (con il tuo token) |
 | Istantanee degli agenti | ramo `dati`, cartella `dati/stato/` | Claude Code («aggiorna stato») |
 | Token GitHub | Android Keystore (AES-256-GCM), mai nell'APK, nei log o nelle esportazioni | tu, nell'app |
 
@@ -49,3 +49,11 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 
 - `node --test test/motore.test.mjs` – motore dati/sincronizzazione contro un GitHub simulato.
 - `node test/interfaccia.test.mjs` – interfaccia in Chromium con ponte Android e GitHub simulati.
+
+## 1.1: memorie → note (archivio unico)
+
+- Ogni memoria diventa una nota con **lo stesso identificativo e gli stessi campi** (contenuto, fonte, data, tipo originale/riassunto/dedotto, stanza, permesso agenti, date di registrazione e correzione). Categoria, tag e collegamenti tra note sono campi nuovi e facoltativi.
+- Al primo avvio della 1.1 l'app salva `dati-1.0-prima-della-migrazione.json` nella sua memoria privata (mai sovrascritto), converte e verifica: nessuna memoria persa o modificata, nessuna nota in più, stesso insieme di note accessibili agli agenti, nessuna nota privata da inviare, altre collezioni invariate. Se la verifica fallisce non salva nulla e mostra l'errore.
+- Nel repository le note condivise passano da `dati/app/memoria/` a `dati/app/note/`; il vecchio file viene eliminato solo se è ancora la versione vista (altrimenti conflitto da risolvere).
+- I backup della 1.0 (versione 1) si ripristinano ancora: le memorie diventano note identiche. I nuovi backup sono versione 2.
+- Progetti e stanze restano entità dedicate (`progetti`, `stanze`); le note vi si collegano.
