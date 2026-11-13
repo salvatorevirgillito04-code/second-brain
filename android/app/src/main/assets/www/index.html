@@ -179,6 +179,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     if (!A) return;
     if (bloccato()) { S.erroreArchivio = "salvataggio sospeso finché non ripristini un backup"; return; }
     const t = JSON.stringify(S.stato); const r = A.salvaDati(t); S.erroreArchivio = r === "ok" ? null : r; if (r === "ok") S.testoSalvato = t;
+    try { if (A.aggiornaWidget) A.aggiornaWidget(JSON.stringify(M.riepilogoWidget(S.stato))); } catch (_) {}
   }
   async function scrivi(col, id, campi) {
     const prima = id ? T(col, id) : null;
@@ -207,7 +208,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
   // ---------- righe ----------
   function syncChip(col, id) { const r = S.stato.collezioni[col][id]; if (!r) return ""; if (S.stato.sync.conflitti[col + "/" + id]) return `<span class="chip err">conflitto</span>`; return r.sync.sporco ? `<span class="chip att">da inviare</span>` : ""; }
-  const rigaNota = (n) => `<button class="riga" data-apri="nota" data-id="${esc(n.id)}">${pallino(catNota(n))}<span class="t"><b>${esc(titoloNota(n))}</b><span>${esc(CAT[catNota(n)][0])} · ${esc(n.tipo || "nota")} · ${esc(giorno(recente(n)))}</span></span><span class="conta">${M.inEntrata(S.stato, n.id).length}↙</span></button>`;
+  const rigaNota = (n, q) => `<button class="riga" data-apri="nota" data-id="${esc(n.id)}">${pallino(catNota(n))}<span class="t"><b>${esc(titoloNota(n))}</b><span>${typeof q === "string" && q.trim() ? esc(M.estratto(n.testo, q, 60)) : `${esc(CAT[catNota(n)][0])} · ${esc(n.tipo || "nota")} · ${esc(giorno(recente(n)))}`}</span></span><span class="conta">${M.inEntrata(S.stato, n.id).length}↙</span></button>`;
   const rigaProgetto = (p) => { const nn = L("note").filter((n) => n.progetto_id === p.id).length; return `<button class="riga" data-apri="progetto" data-id="${esc(p.id)}"><span class="quadro" style="background:var(--progetto)"></span><span class="t"><b>${esc(p.nome)}</b><span>${esc(p.stato || "attivo")} · ${nn} note · ${esc(giorno(recente(p)))}</span></span>${syncChip("progetti", p.id)}</button>`; };
   const rigaStanza = (s) => `<button class="riga" data-apri="stanza" data-id="${esc(s.id)}"><span class="quadro" style="background:var(--stanza)"></span><span class="t"><b>${esc(s.nome)}</b><span>${(s.agenti_ids || []).length} agenti · ${(s.attivita || []).filter((a) => !a.fatta).length} attività aperte</span></span>${statoStanza(s) === "archiviata" ? `<span class="chip">archiviata</span>` : ""}</button>`;
   const lista = (righe, vuoto) => `<div class="lista">${righe.join("") || `<p class="vuoto">${vuoto}</p>`}</div>`;
@@ -220,18 +221,20 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
         const n = L("note").filter((x) => norm(titoloNota(x) + " " + x.testo + " " + (x.fonte || "") + " " + (x.tag || []).join(" ")).includes(q));
         const p = L("progetti").filter((x) => norm(x.nome + " " + (x.obiettivo || "")).includes(q));
         const s = L("stanze").filter((x) => norm(x.nome + " " + (x.descrizione || "")).includes(q));
-        return campoCerca() + `<section><h2>${n.length + p.length + s.length} risultati</h2>${lista([...p.map(rigaProgetto), ...s.map(rigaStanza), ...n.map(rigaNota)], "Nessun risultato.")}</section>`;
+        return campoCerca() + `<section><h2>${n.length + p.length + s.length} risultati</h2>${lista([...p.map(rigaProgetto), ...s.map(rigaStanza), ...n.map((x) => rigaNota(x, S.cerca))], "Nessun risultato.")}</section>`;
       }
       const inbox = L("note").filter((n) => catNota(n) === "inbox").length;
       const attivi = L("progetti").filter((p) => (p.stato || "attivo") === "attivo");
       const ist = istantanea(); const lavoro = ist ? (ist.sessioni || []).filter((x) => bk(x.status_bucket) === "WORKING").length : 0;
       const pc = M.promemoriaChat(S.stato);
+      const attese = ist ? (ist.sessioni || []).filter((x) => bk(x.status_bucket) === "BLOCKED" && x.richiede) : [];
       return campoCerca() + avvisi() + (pc ? `<div class="banner"><b>${pc.giorni === null ? "Importa le tue chat di Claude" : `Ultima importazione delle chat ${pc.giorni} giorni fa`}</b><span>claude.ai non permette un'importazione automatica: esporta da claude.ai (Impostazioni › Privacy › Esporta dati, da web o computer) e scegli qui lo ZIP ricevuto via email.</span><div class="azioni"><button class="btn v" data-vai="impostazioni">Importa ora</button><button class="btn v" id="b-rimanda">Ricordamelo tra 7 giorni</button></div></div>` : "") + `
         <div class="rapidi">
           <button class="rapido" data-vai="organizza" data-org="inbox"><b style="color:var(--inbox)">${inbox}</b>Da organizzare</button>
           <button class="rapido" data-vai="organizza" data-org="progetti"><b style="color:var(--progetto)">${attivi.length}</b>Progetti attivi</button>
           <button class="rapido" data-vai="stanze" data-sub="esecuzioni"><b style="color:var(--area)">${ist ? lavoro : "–"}</b>${ist ? "in esecuzione · " + esc(eta(ist.rilevato_il)) : "nessuna rilevazione"}</button>
         </div>
+        ${attese.length ? `<section><h2>Attendono un tuo intervento · rilevazione ${esc(eta(ist.rilevato_il))}</h2>${lista(attese.slice(0, 3).map((x) => `<button class="riga" data-apri="nota" data-id="sessione-${esc(x.id.slice(8))}"><span class="punto" style="background:var(--att)"></span><span class="t"><b>${esc(x.titolo || x.id)}</b><span>${esc(x.richiede)}</span></span></button>`), "")}</section>` : ""}
         <section><h2>Progetti recenti</h2>${lista(attivi.sort((a, b) => recente(b).localeCompare(recente(a))).slice(0, 4).map(rigaProgetto), "Nessun progetto. Crealo con il pulsante +.")}</section>
         <section><h2>Ultime note</h2>${lista(L("note").sort((a, b) => recente(b).localeCompare(recente(a))).slice(0, 5).map(rigaNota), "Nessuna nota. Aggiungine una con il pulsante +.")}</section>`;
     },
@@ -254,7 +257,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       return `<label class="cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="cerca-note" type="search" placeholder="Cerca nelle note e nei tag" value="${esc(S.cercaNote)}"></label>
         ${doppi ? `<p class="banner att"><b>${doppi} gruppi di possibili duplicati</b><span>Note con lo stesso testo: aprile e decidi tu se eliminarne una.</span></p>` : ""}
         ${(() => { const c = q ? 0 : M.gruppiSimili(S.stato); return c ? `<p class="banner"><b>${c} coppie di note simili</b><span>Aprendo una nota trovi le simili con la percentuale di somiglianza.</span></p>` : ""; })()}
-        <section><h2>${tutte.length} note</h2>${lista(tutte.map(rigaNota), "Nessuna nota trovata.")}</section>`;
+        <section><h2>${tutte.length} note</h2>${lista(tutte.map((x) => rigaNota(x, q ? S.cercaNote : "")), "Nessuna nota trovata.")}</section>`;
     },
     nota() {
       const n = T("note", S.nota); if (!n) return `<p class="vuoto">Nota non trovata.</p>`;
@@ -332,6 +335,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
             <dt>Sincronizzazione in background</dt><dd>ogni 30 minuti circa con rete, anche ad app chiusa · ultima: ${esc(sy.ultimo_sfondo ? quando(sy.ultimo_sfondo.quando) + (sy.ultimo_sfondo.esito === "ok" ? " (riuscita)" : " (errore: " + (sy.ultimo_sfondo.messaggio || "") + ")") : "non ancora eseguita")}</dd>
             <dt>Stato degli agenti</dt><dd>attività pianificata in Claude Code ogni 2 ore · ultima istantanea: ${esc(istantanea() ? quando(istantanea().rilevato_il) : "nessuna")}</dd>
             <dt>«Aggiorna ora»</dt><dd>${A && A.haRoutine() ? "attivo" : "da configurare"}</dd>
+            <dt>Notifiche interventi</dt><dd>${A && A.notificheConsentite && A.notificheConsentite() ? "attive: ti avviso quando una sessione attende un tuo intervento" : `disattivate <button class="chip cfg" id="b-notifiche">Attiva</button>`}</dd>
+            <dt>Widget</dt><dd>tieni premuto sulla schermata Home › Widget › Second Brain</dd>
             <dt>Chat di claude.ai</dt><dd>importazione manuale (nessuna API ufficiale) · ultima: ${esc(S.stato.impostazioni && S.stato.impostazioni.ultimo_import_chat ? quando(S.stato.impostazioni.ultimo_import_chat) : "mai")}</dd></dl>
           <div class="azioni"><button class="btn v" data-modifica="routine">Configura «Aggiorna ora»</button></div></div></section>
         ${ks.length ? `<section><h2>Conflitti da risolvere · ${ks.length}</h2>${ks.map(([k, c]) => `<div class="blocco"><b>${esc(c.col)} · ${esc((c.locale || c.remoto || {}).nome || titoloNota(c.locale || c.remoto || {}) || c.id)}</b><span class="small muted">${esc(TIPI[c.tipo] || c.tipo)} · ${esc(quando(c.rilevato_il))}</span>
@@ -660,6 +665,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     if (b.id === "b-sync") { sincronizza(true); return; }
     if (b.id === "b-rimanda") { S.stato.impostazioni ||= {}; S.stato.impostazioni.chat_rimandato_fino = new Date(Date.now() + 7 * 86400000).toISOString(); await salva(); render(); toast("Te lo ricordo tra 7 giorni"); return; }
     if (b.id === "b-aggiorna-ora") { aggiornaOra(); return; }
+    if (b.id === "b-notifiche") { if (A && A.richiediNotifiche) A.richiediNotifiche(); return; }
     if (b.id === "b-snap") { scaricaIstantanea(); return; }
     if (b.id === "b-exp") { esporta(); return; }
     if (b.id === "b-imp") { if (A) { stato("#imp-stato", "Scegli il file…"); A.importa(); } return; }
@@ -690,6 +696,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       if (e.eliminati_remoto) parti.push(`${e.eliminati_remoto} tolti dal repository`);
       if (e.eliminati_locale) parti.push(`${e.eliminati_locale} tolti qui perché eliminati nel repository`);
       if (e.conflitti_nuovi) parti.push(`${e.conflitti_nuovi} conflitti da risolvere`);
+      const visti = M.interventiDaNotificare(S.stato); if (visti.length) { M.segnaNotificati(S.stato, visti); await salva(); } // l'app è aperta: li vedi qui, niente notifica dopo
       S.esitoSync = ["Sincronizzato: " + parti.join(", ") + (e.ramo_creato ? ". Creato il ramo «dati»." : "."), e.conflitti_nuovi ? "att" : "ok"];
     } catch (err) { S.esitoSync = [err.message || String(err), err.tipo === "rete" ? "att" : "err"]; if (manuale) toast(S.esitoSync[0]); }
     finally { S.inSync = false; if (!F.hidden) chipSync(); else render(); if (S.esitoSync) stato("#sync-stato", ...S.esitoSync); }
@@ -707,6 +714,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     try { const n = await M.scaricaIstantanea(S.stato, api, { owner: OWNER, repo: REPO }); await salva(); render(); stato("#lv-stato", n ? "Istantanea scaricata dal repository." : "Nel repository non c'è ancora un'istantanea.", n ? "ok" : "att"); }
     catch (e) { stato("#lv-stato", (e.message || e) + " Resta l'istantanea precedente.", "err"); }
   }
+
+  window.__notifiche = (ok) => { render(); toast(ok ? "Notifiche attive: ti avviso quando una sessione attende un tuo intervento." : "Notifiche non consentite: puoi attivarle dalle impostazioni di Android."); };
+  window.__apri = (v) => { if (v === "home-rapido") { if (location.hash !== "#home") location.hash = "home"; setTimeout(() => EDITOR.rapido(), 50); } else vai(v); };
 
   // ---------- avvio dell'attività pianificata di Claude Code ----------
   const avvia = () => new Promise((res) => { const id = "f" + ++seq; attese.set(id, res); A.avviaRoutine(id); });
@@ -788,7 +798,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       }
     }
   }
+  if (location.hash === "#home-rapido") { history.replaceState(null, "", "#home"); setTimeout(() => EDITOR.rapido(), 50); }
   render();
+  if (A && A.aggiornaWidget) try { A.aggiornaWidget(JSON.stringify(M.riepilogoWidget(S.stato))); } catch (_) {}
   setInterval(() => { if (!document.hidden && F.hidden && !document.activeElement.matches("input,textarea,select")) render(); }, 60000);
   if (!bloccato()) sincronizza(false);
 })();

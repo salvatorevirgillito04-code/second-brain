@@ -40,6 +40,8 @@ await ctx.addInitScript(() => {
     impostaRoutine: (id, tok) => (/^trig_[A-Za-z0-9]{10,}$/.test(id) && tok.startsWith("sk-ant-oat01-") ? ((mem.routine = id), "ok") : "non valido"),
     avviaRoutine: (id) => { mem.avvii = (mem.avvii || 0) + 1; setTimeout(() => window.__risposta(id, 200, JSON.stringify({ type: "routine_fire", claude_code_session_id: "session_Z" })), 10); },
     fine: (e) => { mem.fine = e; },
+    notificheConsentite: () => !!mem.notifiche, richiediNotifiche: () => { mem.notifiche = true; setTimeout(() => window.__notifiche(true), 10); },
+    notifica: (id, t, x) => { (mem.notificate ||= []).push(id); return true; }, aggiornaWidget: (j) => { mem.widget = JSON.parse(j); },
   };
 });
 const page = await ctx.newPage(); page.on("pageerror", (e) => errori.push(e.message));
@@ -188,6 +190,19 @@ const disco = await salvato(); disco.collezioni.note["sessione-QQ"].dati.titolo 
 await page.evaluate((t) => { window.__mem.dati = t; window.__ripresa(); }, nuovoTesto); await page.waitForTimeout(300);
 ok((await salvato()).collezioni.note["sessione-QQ"].dati.titolo === "Scritto dal background", "al ritorno nell'app i dati scritti in background vengono ricaricati, non sovrascritti");
 
+// 1.4: ESTRATTI, BANNER INTERVENTI, WIDGET, NOTIFICHE
+await vai("home"); await page.fill("#cerca", "approva il testo"); await page.waitForTimeout(150);
+ok((await T("main")).includes("approva il testo") && (await T("main")).includes("1 risultati"), "ricerca: estratto del testo trovato nel risultato");
+await page.fill("#cerca", ""); await page.waitForTimeout(100);
+ok((await T("main")).includes("Attendono un tuo intervento") && (await T("main")).includes("approva il testo"), "Home: sessioni che attendono un tuo intervento");
+const wid = await page.evaluate(() => window.__mem.widget);
+ok(wid && typeof wid.inbox === "number" && wid.attesa >= 1, "widget aggiornato con i conteggi reali");
+await vai("impostazioni"); await page.click("#b-notifiche"); await page.waitForTimeout(150);
+ok((await T("main")).includes("Notifiche interventi") && (await T("main")).includes("attive"), "notifiche attivate su richiesta");
+await page.evaluate(() => { window.__apri("home-rapido"); }); await page.waitForTimeout(200);
+ok(!(await page.isHidden("#foglio")) && (await T("#foglio")).includes("Aggiunta rapida"), "apertura dal widget: aggiunta rapida");
+await page.click("#f-annulla");
+
 // AVVIO CON DATI DELLA 1.0 (schema 1) già sul telefono
 const vecchi = { schema: 1, collezioni: { agenti: {}, collegamenti: {}, skill: {}, stanze: {}, memoria: {
   "me-a": { dati: { testo: "condivisa 1.0", tipo: "riassunto", fonte: "chat", data: "2026-11-01T00:00:00.000Z", accessibile_agenti: true }, sync: { sha: null, base: null, sporco: true, eliminato: false } },
@@ -210,6 +225,7 @@ await p3.evaluate(() => 0).catch(() => {});
 await p3.goto("https://app.test/sfondo.html"); await p3.waitForTimeout(1500);
 const esitoSfondo = await p3.evaluate(() => window.__mem.fine);
 ok(esitoSfondo === "ok" || esitoSfondo === "saltato: nessun token o rete", "background: esecuzione terminata (" + esitoSfondo + ")");
+if (esitoSfondo === "ok") { const nn = await p3.evaluate(() => window.__mem.notificate || []); const sv = JSON.parse(await p3.evaluate(() => window.__mem.dati)); ok(Array.isArray(nn) && Object.keys((sv.impostazioni || {}).notificate || {}).length >= 1, "background: interventi segnati come notificati (nessun doppione)"); }
 if (esitoSfondo === "ok") ok(JSON.parse(gh.file("dati", `dati/app/progetti/${pr}.json`)).nome === "Modificato e inviato in background" && JSON.parse(await p3.evaluate(() => window.__mem.dati)).sync.ultimo_sfondo.esito === "ok", "background: modifica inviata e salvata");
 
 ok(errori.length === 0, "nessun errore JavaScript" + (errori.length ? ": " + errori.join(" | ") : ""));

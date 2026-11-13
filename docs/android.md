@@ -79,3 +79,8 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - **«Aggiorna ora»**: l'app avvia l'attività con l'endpoint documentato `POST https://api.anthropic.com/v1/claude_code/routines/{id}/fire` (sperimentale) e un token dedicato (`sk-ant-oat01-…`, solo per quell'attività), cifrato nel Keystore.
 - **Sessioni come note**: ogni sessione dell'istantanea diventa una nota privata `sessione-…` (tipo *riassunto*), aggiornata solo se la sessione cambia e se non l'hai modificata.
 - **Chat di claude.ai**: nessuna API ufficiale, quindi solo promemoria ogni 30 giorni + importazione con un tocco. L'automazione tramite la sessione web violerebbe le condizioni d'uso.
+
+## 1.4
+- **Ricerca**: i risultati mostrano l'estratto del testo attorno alla parola cercata (utile nelle chat importate, che sono lunghe).
+- **Notifiche interventi**: la sincronizzazione in background avvisa quando una sessione di Claude Code risulta «attende un tuo intervento» nell'ultima istantanea; una sola notifica per richiesta. Permesso chiesto solo quando tocchi «Attiva» in Impostazioni › Automazioni. Se l'app è aperta, le richieste si vedono in Home e non vengono notificate.
+- **Widget** per la schermata Home: Da organizzare, progetti attivi, sessioni che attendono te, ora dell'ultima rilevazione; tocco su «+» = aggiunta rapida, tocco su «Attendono te» = Esecuzioni.

@@ -76,6 +76,37 @@ public class Ponte {
         });
     }
 
+    // ---------- 1.4: notifiche e widget ----------
+    @JavascriptInterface public boolean notificheConsentite() {
+        if (android.os.Build.VERSION.SDK_INT >= 33 && ctx.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return false;
+        return ctx.getSystemService(android.app.NotificationManager.class).areNotificationsEnabled();
+    }
+    /** Chiede il permesso (Android 13+); l'esito arriva a window.__notifiche(true|false). */
+    @JavascriptInterface public void richiediNotifiche() {
+        if (attivita == null) return;
+        attivita.runOnUiThread(() -> {
+            if (android.os.Build.VERSION.SDK_INT >= 33) attivita.requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, MainActivity.RICHIESTA_NOTIFICHE);
+            else chiama("__notifiche", notificheConsentite(), "");
+        });
+    }
+    void esitoNotifiche() { chiama("__notifiche", notificheConsentite(), ""); }
+    @JavascriptInterface public boolean notifica(String id, String titolo, String testo) {
+        if (!notificheConsentite()) return false;
+        android.app.NotificationManager nm = ctx.getSystemService(android.app.NotificationManager.class);
+        nm.createNotificationChannel(new android.app.NotificationChannel("interventi", "Interventi richiesti dalle sessioni", android.app.NotificationManager.IMPORTANCE_DEFAULT));
+        Intent apri = new Intent(ctx, MainActivity.class).putExtra("vista", "stanze").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        android.app.PendingIntent pi = android.app.PendingIntent.getActivity(ctx, Math.abs(id.hashCode()), apri, android.app.PendingIntent.FLAG_IMMUTABLE | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+        android.app.Notification n = new android.app.Notification.Builder(ctx, "interventi")
+                .setSmallIcon(R.drawable.ic_notifica).setContentTitle(titolo).setContentText(testo)
+                .setStyle(new android.app.Notification.BigTextStyle().bigText(testo)).setContentIntent(pi).setAutoCancel(true).build();
+        nm.notify(id, 1, n);
+        return true;
+    }
+    @JavascriptInterface public void aggiornaWidget(String json) {
+        prefs.edit().putString("widget", json == null ? "{}" : json).apply();
+        WidgetSecondBrain.aggiornaTutti(ctx);
+    }
+
     /** Chiamato da sfondo.html al termine della sincronizzazione in background. */
     @JavascriptInterface public void fine(String esito) { esitoFine = esito; if (allaFine != null) web.post(allaFine); }
 
@@ -214,7 +245,7 @@ public class Ponte {
         });
     }
 
-    private void chiama(String funzione, boolean ok, String testo) {
+    void chiama(String funzione, boolean ok, String testo) {
         final String js = "window." + funzione + " && window." + funzione + "(" + ok + "," + JSONObject.quote(testo == null ? "" : testo) + ")";
         web.post(() -> web.evaluateJavascript(js, null));
     }

@@ -380,3 +380,19 @@ test("promemoria esportazione chat: dopo 30 giorni o mai importate; rimandabile"
   s.impostazioni.chat_rimandato_fino = "2026-12-10T00:00:00Z";
   assert.equal(M.promemoriaChat(s, Date.parse("2026-12-05T00:00:00Z")), null);
 });
+
+// ---------- 1.4 ----------
+test("estratto di ricerca, interventi da notificare una sola volta, riepilogo per il widget", async () => {
+  assert.equal(M.estratto("a ".repeat(200) + "parola chiave qui" + " b".repeat(200), "chiave").includes("parola chiave qui"), true);
+  assert.match(M.estratto("x".repeat(500) + "Trovami", "trovami"), /^….*Trovami$/);
+  const s = M.statoVuoto();
+  s.stato_lavoro = [{ id: "istantanea", rilevato_il: "2026-11-13T22:00:00Z", sessioni: [
+    { id: "session_A", titolo: "A", status_bucket: "SESSION_STATUS_BUCKET_BLOCKED", updated_at: "t1", richiede: "decidi" },
+    { id: "session_B", titolo: "B", status_bucket: "SESSION_STATUS_BUCKET_WORKING", updated_at: "t1" }] }];
+  const da = M.interventiDaNotificare(s); assert.deepEqual(da.map((x) => x.id), ["session_A"]);
+  M.segnaNotificati(s, da); assert.equal(M.interventiDaNotificare(s).length, 0, "non notificare due volte");
+  s.stato_lavoro[0].sessioni[0].updated_at = "t2"; assert.equal(M.interventiDaNotificare(s).length, 1, "nuova richiesta → nuova notifica");
+  await M.salvaRecord(s, "note", "n1", { testo: "x" }); await M.salvaRecord(s, "note", "n2", { testo: "y", categoria: "risorsa" });
+  await M.salvaRecord(s, "progetti", "p1", { nome: "P" });
+  const w = M.riepilogoWidget(s); assert.equal(w.inbox, 1); assert.equal(w.progetti, 1); assert.equal(w.attesa, 1); assert.equal(w.rilevato, "2026-11-13T22:00:00Z");
+});

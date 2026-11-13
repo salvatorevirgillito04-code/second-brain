@@ -242,6 +242,33 @@
   };
   M.inEntrata = (stato, idNota) => M.elenco(stato, "note").filter((n) => n.id !== idNota && (n.collegamenti || []).includes(idNota));
 
+  // ---------- 1.4: estratti di ricerca, notifiche di intervento, dati del widget ----------
+  // Estratto del testo attorno alla prima occorrenza (per i risultati di ricerca, anche nelle chat lunghe).
+  M.estratto = function (testo, q, larghezza = 90) {
+    const t = String(testo || "").replace(/\s+/g, " "), i = q ? t.toLowerCase().indexOf(String(q).toLowerCase().trim()) : -1;
+    if (i < 0) return t.slice(0, larghezza * 2);
+    const da = Math.max(0, i - larghezza), a = Math.min(t.length, i + q.trim().length + larghezza);
+    return (da > 0 ? "…" : "") + t.slice(da, a) + (a < t.length ? "…" : "");
+  };
+  // Sessioni che chiedono un tuo intervento e non sono ancora state notificate (per sessione e versione).
+  M.interventiDaNotificare = function (stato) {
+    const ist = (stato.stato_lavoro || []).find((x) => x.id === "istantanea"); if (!ist) return [];
+    const fatti = (stato.impostazioni && stato.impostazioni.notificate) || {};
+    return (ist.sessioni || []).filter((s) => s.richiede && /BLOCKED/.test(s.status_bucket || "") && fatti[s.id] !== (s.updated_at || s.richiede))
+      .map((s) => ({ id: s.id, titolo: s.titolo || s.id, richiede: s.richiede, chiave: s.updated_at || s.richiede }));
+  };
+  M.segnaNotificati = function (stato, elenco) {
+    stato.impostazioni ||= {}; stato.impostazioni.notificate ||= {};
+    for (const x of elenco) stato.impostazioni.notificate[x.id] = x.chiave;
+  };
+  M.riepilogoWidget = function (stato) {
+    const ist = (stato.stato_lavoro || []).find((x) => x.id === "istantanea");
+    const attesa = ist ? (ist.sessioni || []).filter((s) => /BLOCKED/.test(s.status_bucket || "")).length : 0;
+    return { inbox: M.elenco(stato, "note").filter((n) => !["area", "risorsa", "archivio"].includes(n.categoria)).length,
+      progetti: M.elenco(stato, "progetti").filter((p) => (p.stato || "attivo") === "attivo").length,
+      attesa, rilevato: ist ? ist.rilevato_il : null, sync: stato.sync.ultimo_ok || null, da_inviare: M.inAttesa(stato) };
+  };
+
   // ---------- 1.3: ogni sessione di Claude Code dell'istantanea diventa una nota privata ----------
   // Aggiornata solo se la sessione è cambiata E l'utente non ha modificato la nota (corretto_il assente).
   M.noteDaSessioni = async function (stato) {
