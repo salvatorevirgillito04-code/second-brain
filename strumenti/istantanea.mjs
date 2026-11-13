@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Prepara i documenti che "aggiorna stato" salva nell'archivio dell'artifact.
-// Riduce la risposta di list_sessions ai soli campi che servono al pannello delle esecuzioni.
+// Riduce la risposta di list_sessions ai campi che servono al pannello e alle note delle sessioni
+// (id, titolo, stato, date, origine, riepilogo breve e richiesta di intervento, max 500 caratteri).
 //
 // Uso:
 //   node strumenti/istantanea.mjs ok <risposta_list_sessions.json> <rilevato_il ISO> <id_sessione_rilevatrice> <cartella_uscita>
@@ -26,13 +27,18 @@ export function riduci(risposta, rilevatoIl, rilevatore) {
     const r = {};
     for (const k of CAMPI) if (s[k] !== undefined && s[k] !== null) r[k === "title" ? "titolo" : k] = String(s[k]).slice(0, 200);
     if (s.id === rilevatore) r.rilevatore = true;
+    // riepilogo breve per le note delle sessioni nell'app (mai il contenuto della conversazione)
+    const pts = s.post_turn_summary || {};
+    const riep = [pts.recent_action, s.task_summary].find((x) => typeof x === "string" && x.trim());
+    if (riep) r.riepilogo = String(riep).trim().slice(0, 500);
+    if (typeof pts.needs_action === "string" && pts.needs_action.trim()) r.richiede = pts.needs_action.trim().slice(0, 500);
     return r;
   });
   return {
     formato: "istantanea-lavoro",
     versione: 1,
     rilevato_il: rilevatoIl,
-    fonte: "Claude Code su richiesta («aggiorna stato»), strumento list_sessions",
+    fonte: "Claude Code («aggiorna stato», su richiesta o pianificato), strumento list_sessions",
     rilevatore_session_id: rilevatore,
     troncato: !!corpo.has_more,
     totale: sessioni.length,

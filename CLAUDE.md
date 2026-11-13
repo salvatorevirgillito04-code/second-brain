@@ -14,9 +14,9 @@ L'artifact della v1 (https://claude.ai/artifact/FixFdEmbd31YEYpuNbE4za) resta co
 Quando l'utente scrive «aggiorna stato», esegui SOLO questo, senza pianificazioni:
 
 1. `list_sessions` (connettore claude-code-remote) con `mine: true`, `limit: 50`; subito dopo `date -u +%Y-%m-%dT%H:%M:%SZ` → `<rilevato_il>`.
-2. Salva la risposta in `<scratchpad>/lista.json`; ricava l'id di questa sessione con `get_session` senza argomenti → `<id_rilevatore>`.
+2. Salva la risposta così com'è (con `post_turn_summary` e `task_summary`) in `<scratchpad>/lista.json`; ricava l'id di questa sessione con `get_session` senza argomenti → `<id_rilevatore>`.
 3. `node strumenti/istantanea.mjs ok <scratchpad>/lista.json <rilevato_il> <id_rilevatore> <scratchpad>/stato`
-   (tiene solo id, titolo, stato, categoria, origine, date; nessun riassunto o contenuto).
+   (tiene id, titolo, stato, categoria, origine, date, riepilogo breve e richiesta di intervento, max 500 caratteri; mai il contenuto delle conversazioni).
 4. Pubblica sul ramo `dati` solo i due file di stato. **Mai force push.**
    ```
    git fetch origin dati && git worktree add <scratchpad>/ramo-dati origin/dati --detach
