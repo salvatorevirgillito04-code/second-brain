@@ -1,9 +1,11 @@
 {
-  "archiviata": false,
+  "archiviata": true,
   "creato_il": "2026-11-13T06:20:00.000Z",
   "fittizio": true,
   "nome": "Orto sul balcone (fittizio)",
   "obiettivi": [
     "Raccolto di pomodori a luglio"
-  ]
+  ],
+  "stato": "archiviata",
+  "aggiornato_il": "2026-11-13T19:35:03.829Z"
 }
