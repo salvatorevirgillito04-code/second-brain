@@ -32,8 +32,13 @@ public class Ponte {
     static final int MAX_FILE = 60 * 1024 * 1024;
     private boolean binario = false;
 
-    private final MainActivity attivita;
+    private final MainActivity attivita; // null quando gira in background
+    private final android.content.Context ctx;
     private final WebView web;
+    private final Cassaforte routine;
+    private final android.content.SharedPreferences prefs;
+    Runnable allaFine;
+    String esitoFine;
     private final Archivio archivio;
     private final Cassaforte cassaforte;
     private final ClientGitHub github;
@@ -41,12 +46,38 @@ public class Ponte {
     private String daEsportare;
     private String messaggioEsportazione;
 
-    Ponte(MainActivity a, WebView w) {
-        attivita = a; web = w;
-        archivio = new Archivio(a.getFilesDir());
-        cassaforte = new Cassaforte(a);
+    Ponte(android.content.Context c, MainActivity a, WebView w) {
+        ctx = c.getApplicationContext(); attivita = a; web = w;
+        archivio = new Archivio(ctx.getFilesDir());
+        cassaforte = new Cassaforte(ctx);
+        routine = new Cassaforte(ctx, "second_brain_routine", "routine_cifrato");
+        prefs = ctx.getSharedPreferences("impostazioni", android.content.Context.MODE_PRIVATE);
         github = new ClientGitHub();
     }
+
+    // ---------- attività pianificata di Claude Code (avvio dal telefono) ----------
+    @JavascriptInterface public boolean haRoutine() { return routine.presente() && prefs.contains("routine_id"); }
+    @JavascriptInterface public String idRoutine() { return prefs.getString("routine_id", ""); }
+    @JavascriptInterface public String impostaRoutine(String id, String token) {
+        if (id == null || !id.trim().matches("trig_[A-Za-z0-9]{10,60}")) return "Identificativo non valido: deve iniziare con trig_.";
+        if (token == null || !token.trim().startsWith("sk-ant-oat01-") || token.trim().length() > 300) return "Token non valido: deve iniziare con sk-ant-oat01-.";
+        try { routine.salva(token.trim()); prefs.edit().putString("routine_id", id.trim()).commit(); return "ok"; }
+        catch (Exception e) { return "Impossibile salvare il token in modo cifrato (" + e.getClass().getSimpleName() + ")."; }
+    }
+    @JavascriptInterface public void rimuoviRoutine() { routine.rimuovi(); prefs.edit().remove("routine_id").commit(); }
+    @JavascriptInterface public void avviaRoutine(final String id) {
+        rete.execute(() -> {
+            String rid = prefs.getString("routine_id", ""), tok = routine.leggi();
+            ClientGitHub.Risposta r = (tok == null || rid.isEmpty()) ? new ClientGitHub.Risposta(401, "{\"message\":\"token assente\"}")
+                : github.richiesta("https://api.anthropic.com/v1/claude_code/routines/" + rid + "/fire", "POST", "{\"text\":\"Avviato dall'app Second Brain\"}",
+                    new String[][]{{"Authorization", "Bearer " + tok}, {"anthropic-version", "2023-06-01"}, {"anthropic-beta", "experimental-cc-routine-2026-04-01"}});
+            final String js = "window.__risposta(" + JSONObject.quote(id) + "," + r.stato + "," + JSONObject.quote(r.corpo == null ? "" : r.corpo) + ")";
+            web.post(() -> web.evaluateJavascript(js, null));
+        });
+    }
+
+    /** Chiamato da sfondo.html al termine della sincronizzazione in background. */
+    @JavascriptInterface public void fine(String esito) { esitoFine = esito; if (allaFine != null) web.post(allaFine); }
 
     // ---------- archivio locale ----------
     @JavascriptInterface public String caricaDati() { return archivio.leggi(false); }
@@ -72,7 +103,7 @@ public class Ponte {
 
     // ---------- rete ----------
     @JavascriptInterface public boolean retePresente() {
-        ConnectivityManager cm = attivita.getSystemService(ConnectivityManager.class);
+        ConnectivityManager cm = ctx.getSystemService(ConnectivityManager.class);
         if (cm == null) return false;
         Network n = cm.getActiveNetwork();
         NetworkCapabilities c = n == null ? null : cm.getNetworkCapabilities(n);
@@ -98,6 +129,7 @@ public class Ponte {
 
     // ---------- file (selettore di Android) ----------
     @JavascriptInterface public void esporta(String nome, String testo, String messaggioOk) {
+        if (attivita == null) return;
         daEsportare = testo; messaggioEsportazione = messaggioOk;
         attivita.runOnUiThread(() -> {
             Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
@@ -125,6 +157,7 @@ public class Ponte {
     /** Come importa(), ma restituisce i byte in base64 (per gli archivi ZIP dell'esportazione di Claude). */
     @JavascriptInterface public void importaFile() { avviaScelta(true); }
     private void avviaScelta(boolean bin) {
+        if (attivita == null) return;
         binario = bin;
         attivita.runOnUiThread(() -> {
             Intent i = new Intent(Intent.ACTION_OPEN_DOCUMENT);
@@ -167,15 +200,15 @@ public class Ponte {
     // ---------- varie ----------
     @JavascriptInterface public String infoApp() {
         try {
-            PackageInfo p = attivita.getPackageManager().getPackageInfo(attivita.getPackageName(), 0);
+            PackageInfo p = ctx.getPackageManager().getPackageInfo(ctx.getPackageName(), 0);
             JSONObject o = new JSONObject();
-            o.put("versione", p.versionName); o.put("codice", p.getLongVersionCode()); o.put("pacchetto", attivita.getPackageName());
+            o.put("versione", p.versionName); o.put("codice", p.getLongVersionCode()); o.put("pacchetto", ctx.getPackageName());
             return o.toString();
         } catch (Exception e) { return "{}"; }
     }
 
     @JavascriptInterface public void apriLink(String url) {
-        if (url == null || !url.startsWith("https://github.com/")) return; // solo pagine di GitHub
+        if (attivita == null || url == null || !(url.startsWith("https://github.com/") || url.startsWith("https://claude.ai/"))) return; // solo GitHub e claude.ai
         attivita.runOnUiThread(() -> {
             try { attivita.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url))); } catch (ActivityNotFoundException ignorata) { }
         });

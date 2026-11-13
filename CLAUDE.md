@@ -11,6 +11,8 @@ L'artifact della v1 (https://claude.ai/artifact/FixFdEmbd31YEYpuNbE4za) resta co
 
 ## «aggiorna stato»
 
+Viene eseguito anche in automatico dall'attività pianificata «Second Brain – aggiorna stato» (ogni 2 ore) e dal pulsante «Aggiorna ora» dell'app.
+
 Quando l'utente scrive «aggiorna stato», esegui SOLO questo, senza pianificazioni:
 
 1. `list_sessions` (connettore claude-code-remote) con `mine: true`, `limit: 50`; subito dopo `date -u +%Y-%m-%dT%H:%M:%SZ` → `<rilevato_il>`.

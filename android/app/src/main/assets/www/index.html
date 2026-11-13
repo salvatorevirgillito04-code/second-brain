@@ -178,7 +178,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   async function salva() {
     if (!A) return;
     if (bloccato()) { S.erroreArchivio = "salvataggio sospeso finché non ripristini un backup"; return; }
-    const r = A.salvaDati(JSON.stringify(S.stato)); S.erroreArchivio = r === "ok" ? null : r;
+    const t = JSON.stringify(S.stato); const r = A.salvaDati(t); S.erroreArchivio = r === "ok" ? null : r; if (r === "ok") S.testoSalvato = t;
   }
   async function scrivi(col, id, campi) {
     const prima = id ? T(col, id) : null;
@@ -225,7 +225,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       const inbox = L("note").filter((n) => catNota(n) === "inbox").length;
       const attivi = L("progetti").filter((p) => (p.stato || "attivo") === "attivo");
       const ist = istantanea(); const lavoro = ist ? (ist.sessioni || []).filter((x) => bk(x.status_bucket) === "WORKING").length : 0;
-      return campoCerca() + avvisi() + `
+      const pc = M.promemoriaChat(S.stato);
+      return campoCerca() + avvisi() + (pc ? `<div class="banner"><b>${pc.giorni === null ? "Importa le tue chat di Claude" : `Ultima importazione delle chat ${pc.giorni} giorni fa`}</b><span>claude.ai non permette un'importazione automatica: esporta da claude.ai (Impostazioni › Privacy › Esporta dati, da web o computer) e scegli qui lo ZIP ricevuto via email.</span><div class="azioni"><button class="btn v" data-vai="impostazioni">Importa ora</button><button class="btn v" id="b-rimanda">Ricordamelo tra 7 giorni</button></div></div>` : "") + `
         <div class="rapidi">
           <button class="rapido" data-vai="organizza" data-org="inbox"><b style="color:var(--inbox)">${inbox}</b>Da organizzare</button>
           <button class="rapido" data-vai="organizza" data-org="progetti"><b style="color:var(--progetto)">${attivi.length}</b>Progetti attivi</button>
@@ -327,6 +328,12 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
             <dt>Da inviare</dt><dd>${n} modifiche</dd><dt>Rete</dt><dd>${inRete() ? "disponibile" : "assente"}</dd></dl>
           <div class="azioni"><button class="btn" id="b-sync">Sincronizza ora</button><button class="btn v" data-modifica="token">Accesso GitHub</button></div><p class="stato" id="sync-stato"></p>
           <p class="small muted">Vanno nel repository privato stanze, progetti, agenti, skill, collegamenti e le note che rendi accessibili agli agenti. Eliminare un dato lo toglie dalla versione attuale del repository, non dalla cronologia Git.</p></div></section>
+        <section><h2>Automazioni</h2><div class="blocco"><dl class="kv">
+            <dt>Sincronizzazione in background</dt><dd>ogni 30 minuti circa con rete, anche ad app chiusa · ultima: ${esc(sy.ultimo_sfondo ? quando(sy.ultimo_sfondo.quando) + (sy.ultimo_sfondo.esito === "ok" ? " (riuscita)" : " (errore: " + (sy.ultimo_sfondo.messaggio || "") + ")") : "non ancora eseguita")}</dd>
+            <dt>Stato degli agenti</dt><dd>attività pianificata in Claude Code ogni 2 ore · ultima istantanea: ${esc(istantanea() ? quando(istantanea().rilevato_il) : "nessuna")}</dd>
+            <dt>«Aggiorna ora»</dt><dd>${A && A.haRoutine() ? "attivo" : "da configurare"}</dd>
+            <dt>Chat di claude.ai</dt><dd>importazione manuale (nessuna API ufficiale) · ultima: ${esc(S.stato.impostazioni && S.stato.impostazioni.ultimo_import_chat ? quando(S.stato.impostazioni.ultimo_import_chat) : "mai")}</dd></dl>
+          <div class="azioni"><button class="btn v" data-modifica="routine">Configura «Aggiorna ora»</button></div></div></section>
         ${ks.length ? `<section><h2>Conflitti da risolvere · ${ks.length}</h2>${ks.map(([k, c]) => `<div class="blocco"><b>${esc(c.col)} · ${esc((c.locale || c.remoto || {}).nome || titoloNota(c.locale || c.remoto || {}) || c.id)}</b><span class="small muted">${esc(TIPI[c.tipo] || c.tipo)} · ${esc(quando(c.rilevato_il))}</span>
             <div class="confronto"><div><h2>Sul telefono</h2><pre>${esc(c.locale ? JSON.stringify(c.locale, null, 1) : "(eliminato)")}</pre></div><div><h2>Nel repository</h2><pre>${esc(c.remoto ? JSON.stringify(c.remoto, null, 1) : "(eliminato)")}</pre></div></div>
             <div class="azioni"><button class="btn v" data-risolvi="telefono" data-id="${esc(k)}">Tieni quella del telefono</button><button class="btn v" data-risolvi="repository" data-id="${esc(k)}">Tieni quella del repository</button></div></div>`).join("")}</section>` : ""}
@@ -382,7 +389,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     if (t && t.esito === "errore") h += `<p class="banner err"><b>Ultimo aggiornamento di Claude Code non riuscito (${esc(quando(t.quando))})</b><span>${esc(t.messaggio)}</span><span class="small">Resta visibile l'istantanea precedente.</span></p>`;
     if (!ist) h += `<p class="banner att"><b>Nessuna istantanea.</b><span>L'app non legge le sessioni in tempo reale. Scrivi «aggiorna stato» in Claude Code, poi scarica l'istantanea.</span></p>`;
     else h += `<p class="banner ${minutiDa(ist.rilevato_il) > FRESCO_MIN ? "att" : ""}"><b>Istantanea del ${esc(quando(ist.rilevato_il))} · non in tempo reale</b><span>Rilevata ${esc(eta(ist.rilevato_il))} da Claude Code${minutiDa(ist.rilevato_il) > FRESCO_MIN ? ": gli stati descrivono quel momento, non adesso" : ""}. ${esc(ist.totale)} sessioni${ist.troncato ? ", elenco troncato" : ""}.</span></p>`;
-    h += `<div class="azioni"><button class="btn v" id="b-snap">Scarica istantanea dal repository</button></div><p class="stato" id="lv-stato"></p>`;
+    h += `<div class="azioni">${A && A.haRoutine() ? `<button class="btn" id="b-aggiorna-ora">Aggiorna ora</button>` : `<button class="btn v" data-modifica="routine">Attiva «Aggiorna ora»</button>`}<button class="btn v" id="b-snap">Scarica istantanea dal repository</button></div><p class="stato" id="lv-stato"></p>
+      <p class="small muted">L'aggiornamento automatico gira ogni 2 ore in Claude Code; l'app scarica il risultato da sola. «Aggiorna ora» lo avvia subito: arriva in pochi minuti.</p>`;
     const sess = ist ? ist.sessioni || [] : [];
     const agOpt = `<option value="">nessun agente</option>` + L("agenti").map((a) => `<option value="${esc(a.id)}">${esc(a.nome)}</option>`).join("");
     const stOpt = `<option value="">nessuna stanza</option>` + L("stanze").map((s) => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join("");
@@ -579,6 +587,24 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
         await scrivi("skill", id, { nome: $("#k-nome").value.trim(), descrizione: $("#k-desc").value.trim(), procedura: $("#k-proc").value.trim() }); return "Skill salvata";
       });
     },
+    routine() {
+      foglio(`<h2>«Aggiorna ora» e aggiornamento automatico</h2>
+        <ol class="guida"><li>Tocca <b>Apri attività</b>: si apre claude.ai/code/routines (accedi se richiesto).</li>
+          <li>Apri «Second Brain – aggiorna stato» e tocca <b>Modifica</b>.</li>
+          <li>In <b>Repository</b> aggiungi <b>second-brain</b>; in <b>Connettori</b> attiva quello delle sessioni di Claude Code, se presente.</li>
+          <li>In <b>Trigger</b> tocca <b>+</b> → <b>API</b> → <b>Generate token</b>: copia il token (inizia con <span class="mono">sk-ant-oat01-</span>, viene mostrato una sola volta) e l'identificativo (inizia con <span class="mono">trig_</span>).</li>
+          <li>Riattiva l'attività, poi incolla qui identificativo e token.</li></ol>
+        <div class="azioni"><button type="button" class="btn v" id="b-routines">Apri attività</button>${A && A.haRoutine() ? `<button type="button" class="btn r" id="b-routine-via">Rimuovi dal telefono</button>` : ""}</div>
+        <label>Identificativo attività <input id="ro-id" required autocapitalize="off" spellcheck="false" value="${esc((A && A.idRoutine()) || "trig_01HZXaSzUp1ANbZLwKJ8Gmnm")}"></label>
+        <label>Token dell'attività <input id="ro-token" type="password" required autocapitalize="off" spellcheck="false" placeholder="sk-ant-oat01-…"></label>
+        <p class="small muted">Il token permette solo di avviare questa attività; viene cifrato nel telefono (Android Keystore) e non compare mai nell'app né nelle esportazioni. Ogni avvio usa i limiti del tuo abbonamento.</p>`, async () => {
+        const r = A ? A.impostaRoutine($("#ro-id").value, $("#ro-token").value) : "anteprima"; $("#ro-token").value = "";
+        if (r !== "ok") throw new Error(r);
+        return "Salvato. Ora puoi usare «Aggiorna ora» in Stanze › Esecuzioni.";
+      });
+      $("#b-routines").onclick = () => A && A.apriLink("https://claude.ai/code/routines");
+      const via = $("#b-routine-via"); if (via) via.onclick = (e) => conferma(e.currentTarget, () => { A.rimuoviRoutine(); F.hidden = true; render(); toast("Token dell'attività rimosso dal telefono."); });
+    },
     token() {
       foglio(`<h2>Accesso GitHub</h2><p class="small">${haToken() ? "Un token è salvato cifrato su questo telefono." : "Nessun token: la sincronizzazione è spenta."}</p>
         <ol class="guida"><li>Tocca <b>Apri GitHub</b> (accedi se richiesto).</li><li>Nome «Second Brain telefono», scadenza 90 giorni.</li><li><i>Repository access</i>: <b>Only select repositories → second-brain</b>.</li><li><i>Repository permissions → Contents</i>: <b>Read and write</b>. Nient'altro.</li><li><i>Generate token</i>, copia (inizia con <span class="mono">github_pat_</span>) e incolla qui.</li></ol>
@@ -632,6 +658,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     }
     if (d.risolvi) { await M.risolviConflitto(S.stato, d.id, d.risolvi); await salva(); render(); programmaSync(); toast("Conflitto risolto"); return; }
     if (b.id === "b-sync") { sincronizza(true); return; }
+    if (b.id === "b-rimanda") { S.stato.impostazioni ||= {}; S.stato.impostazioni.chat_rimandato_fino = new Date(Date.now() + 7 * 86400000).toISOString(); await salva(); render(); toast("Te lo ricordo tra 7 giorni"); return; }
+    if (b.id === "b-aggiorna-ora") { aggiornaOra(); return; }
     if (b.id === "b-snap") { scaricaIstantanea(); return; }
     if (b.id === "b-exp") { esporta(); return; }
     if (b.id === "b-imp") { if (A) { stato("#imp-stato", "Scegli il file…"); A.importa(); } return; }
@@ -667,13 +695,31 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
     finally { S.inSync = false; if (!F.hidden) chipSync(); else render(); if (S.esitoSync) stato("#sync-stato", ...S.esitoSync); }
   }
   function programmaSync() { clearTimeout(S.timerSync); if (haToken()) S.timerSync = setTimeout(() => sincronizza(false), 20000); }
-  window.__ripresa = () => { if (F.hidden) render(); sincronizza(false); };
+  window.__ripresa = () => {
+    // la sincronizzazione in background può aver aggiornato il file: ricarica prima di qualsiasi scrittura
+    if (A && !bloccato() && !S.inSync) { const t = A.caricaDati(); if (t && S.testoSalvato && t !== S.testoSalvato) { const c = M.carica(t, null); if (c.stato && c.origine === "principale") { S.stato = c.stato; S.testoSalvato = t; } } }
+    if (F.hidden) render(); sincronizza(false);
+  };
   async function scaricaIstantanea() {
     if (!haToken()) { stato("#lv-stato", "Configura l'accesso GitHub nelle impostazioni.", "att"); return; }
     if (!inRete()) { stato("#lv-stato", "Rete assente: resta l'ultima istantanea scaricata.", "att"); return; }
     stato("#lv-stato", "Lettura del repository…");
     try { const n = await M.scaricaIstantanea(S.stato, api, { owner: OWNER, repo: REPO }); await salva(); render(); stato("#lv-stato", n ? "Istantanea scaricata dal repository." : "Nel repository non c'è ancora un'istantanea.", n ? "ok" : "att"); }
     catch (e) { stato("#lv-stato", (e.message || e) + " Resta l'istantanea precedente.", "err"); }
+  }
+
+  // ---------- avvio dell'attività pianificata di Claude Code ----------
+  const avvia = () => new Promise((res) => { const id = "f" + ++seq; attese.set(id, res); A.avviaRoutine(id); });
+  async function aggiornaOra() {
+    if (!A || !A.haRoutine()) return;
+    if (!inRete()) { stato("#lv-stato", "Rete assente: riprova quando sei connesso.", "att"); return; }
+    stato("#lv-stato", "Avvio dell'aggiornamento in Claude Code…");
+    const r = await avvia();
+    const m = { 401: "Token dell'attività non valido o revocato: rigeneralo su claude.ai e inseriscilo di nuovo.", 400: "L'attività è sospesa o la richiesta non è valida: controllala su claude.ai/code/routines.", 403: "Il tuo account non ha accesso a questa funzione.", 404: "Attività non trovata: controlla l'identificativo.", 429: "Troppi avvii nell'ultima ora: riprova più tardi.", 0: "Rete assente o risposta non ricevuta." };
+    if (r.status === 200) {
+      stato("#lv-stato", "Aggiornamento avviato in Claude Code. L'app scaricherà il risultato tra qualche minuto.", "ok");
+      for (const min of [3, 6, 10]) setTimeout(() => { if (!document.hidden) scaricaIstantanea(); }, min * 60000);
+    } else stato("#lv-stato", (m[r.status] || "Avvio non riuscito (" + r.status + ").") + (r.corpo && r.corpo.error && r.corpo.error.message ? " Messaggio: «" + String(r.corpo.error.message).slice(0, 160) + "»." : ""), "err");
   }
 
   // ---------- esporta / ripristina ----------
@@ -729,8 +775,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
 
   // ---------- avvio ----------
   if (A) {
-    const c = M.carica(A.caricaDati(), A.caricaDatiPrecedenti());
-    S.origine = c.origine;
+    const t0 = A.caricaDati(); const c = M.carica(t0, A.caricaDatiPrecedenti());
+    S.origine = c.origine; S.testoSalvato = t0;
     if (c.origine === "migrazione_fallita") { S.stato = M.statoVuoto(); S.migrazione = c.migrazione; }
     else {
       S.stato = c.stato;

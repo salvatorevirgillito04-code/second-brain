@@ -242,6 +242,42 @@
   };
   M.inEntrata = (stato, idNota) => M.elenco(stato, "note").filter((n) => n.id !== idNota && (n.collegamenti || []).includes(idNota));
 
+  // ---------- 1.3: ogni sessione di Claude Code dell'istantanea diventa una nota privata ----------
+  // Aggiornata solo se la sessione è cambiata E l'utente non ha modificato la nota (corretto_il assente).
+  M.noteDaSessioni = async function (stato) {
+    const ist = (stato.stato_lavoro || []).find((x) => x.id === "istantanea"); if (!ist) return { create: 0, aggiornate: 0 };
+    const BK = { WORKING: "in esecuzione", BLOCKED: "attende un tuo intervento", REVIEW_READY: "pronta per revisione", COMPLETED: "completata", FAILED: "fallita", IDLE: "inattiva" };
+    const esito = { create: 0, aggiornate: 0 };
+    for (const se of ist.sessioni || []) {
+      if (!/^session_[A-Za-z0-9]+$/.test(se.id || "")) continue;
+      const id = "sessione-" + se.id.slice(8, 120);
+      const r = stato.collezioni.note[id];
+      const statoS = BK[String(se.status_bucket || "").replace("SESSION_STATUS_BUCKET_", "")] || "sconosciuto";
+      const testo = [`Sessione di Claude Code «${se.titolo || se.id}».`, `Stato rilevato: ${statoS} (rilevazione del ${String(ist.rilevato_il).slice(0, 16).replace("T", " ")} UTC, non in tempo reale).`,
+        se.riepilogo ? `Ultimo riepilogo: ${se.riepilogo}` : null, se.richiede ? `Richiede un tuo intervento: ${se.richiede}` : null,
+        `Creata: ${String(se.created_at || "").slice(0, 16).replace("T", " ")} · ultima attività: ${String(se.updated_at || "").slice(0, 16).replace("T", " ")}${se.origin ? " · origine " + se.origin : ""}.`,
+        `Identificativo: ${se.id}`].filter(Boolean).join("\n");
+      const origine = { tipo: "sessione_claude_code", id: se.id, aggiornata_il: se.updated_at || null, stato: statoS };
+      if (!r) {
+        await M.salvaRecord(stato, "note", id, { titolo: "Sessione: " + (se.titolo || se.id), testo, tipo: "riassunto", fonte: `Claude Code, istantanea del ${ist.rilevato_il}`, data: se.created_at || ist.rilevato_il,
+          registrato_il: ora(), categoria: "inbox", tag: ["sessione-claude-code"], collegamenti: [], accessibile_agenti: false, origine });
+        esito.create++;
+      } else if (!r.sync.eliminato && !r.dati.corretto_il && r.dati.origine && (r.dati.origine.aggiornata_il !== origine.aggiornata_il || r.dati.origine.stato !== statoS)) {
+        await M.salvaRecord(stato, "note", id, { ...r.dati, testo, fonte: `Claude Code, istantanea del ${ist.rilevato_il}`, origine, aggiornato_il: ora() });
+        esito.aggiornate++;
+      }
+    }
+    return esito;
+  };
+  // Promemoria per l'esportazione delle chat di claude.ai (non automatizzabile: nessuna API ufficiale).
+  M.promemoriaChat = function (stato, adesso = Date.now()) {
+    const imp = stato.impostazioni || {};
+    if (imp.chat_rimandato_fino && Date.parse(imp.chat_rimandato_fino) > adesso) return null;
+    const ultimo = imp.ultimo_import_chat ? Date.parse(imp.ultimo_import_chat) : null;
+    const giorni = ultimo ? Math.floor((adesso - ultimo) / 86400000) : null;
+    return giorni === null || giorni >= 30 ? { giorni } : null;
+  };
+
   // ---------- 1.2: collegamenti scritti nel testo come [[Titolo]] ----------
   M.titoloNota = (n) => (n.titolo && String(n.titolo).trim()) || String(n.testo || "").split("\n")[0].slice(0, 80).trim();
   M.estraiLink = (testo) => [...String(testo || "").matchAll(/\[\[([^\[\]\n]{1,150})\]\]/g)].map((m) => m[1].trim()).filter(Boolean);
@@ -315,6 +351,7 @@
         origine: { tipo: "chat_claude", id: c.uuid, aggiornata_il: c.aggiornata, messaggi: c.messaggi } });
       esito.importate++;
     }
+    stato.impostazioni ||= {}; stato.impostazioni.ultimo_import_chat = quando;
     return esito;
   };
 
@@ -481,7 +518,7 @@
       const f = await leggiFile(api, R, `${M.CARTELLA_STATO}/${nome}.json`);
       if (f) nuovi.push({ id: nome, ...f.dati });
     }
-    if (nuovi.length) { stato.stato_lavoro = nuovi; stato.sync.istantanea_scaricata_il = ora(); }
+    if (nuovi.length) { stato.stato_lavoro = nuovi; stato.sync.istantanea_scaricata_il = ora(); await M.noteDaSessioni(stato); }
     return nuovi.length;
   };
 

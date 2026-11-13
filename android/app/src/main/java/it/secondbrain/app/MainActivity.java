@@ -52,22 +52,7 @@ public class MainActivity extends Activity {
         s.setSupportMultipleWindows(false);
         s.setMediaPlaybackRequiresUserGesture(true);
 
-        web.setWebViewClient(new WebViewClient() {
-            @Override
-            public WebResourceResponse shouldInterceptRequest(WebView v, WebResourceRequest r) {
-                Uri u = r.getUrl();
-                if (!HOST.equals(u.getHost())) return new WebResourceResponse("text/plain", "utf-8", 403, "Bloccato", null, null);
-                String p = u.getPath() == null ? "" : u.getPath();
-                if (!p.startsWith("/www/") || p.contains("..")) return new WebResourceResponse("text/plain", "utf-8", 404, "Non trovato", null, null);
-                try {
-                    InputStream in = getAssets().open(p.substring(1));
-                    String tipo = p.endsWith(".js") ? "text/javascript" : p.endsWith(".css") ? "text/css" : p.endsWith(".svg") ? "image/svg+xml" : "text/html";
-                    return new WebResourceResponse(tipo, "utf-8", in);
-                } catch (IOException e) {
-                    return new WebResourceResponse("text/plain", "utf-8", 404, "Non trovato", null, null);
-                }
-            }
-
+        web.setWebViewClient(new ClientRisorse(this) {
             @Override
             public boolean shouldOverrideUrlLoading(WebView v, WebResourceRequest r) {
                 Uri u = r.getUrl();
@@ -77,9 +62,10 @@ public class MainActivity extends Activity {
             }
         });
 
-        ponte = new Ponte(this, web);
+        ponte = new Ponte(this, this, web);
         web.addJavascriptInterface(ponte, "Android");
         web.loadUrl("https://" + HOST + "/www/index.html");
+        SincronizzazioneJob.pianifica(this);
 
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
@@ -93,9 +79,15 @@ public class MainActivity extends Activity {
         if (web != null && web.canGoBack()) web.goBack(); else super.onBackPressed();
     }
 
+    static volatile boolean inPrimoPiano = false;
+
+    @Override
+    protected void onPause() { inPrimoPiano = false; super.onPause(); }
+
     @Override
     protected void onResume() {
         super.onResume();
+        inPrimoPiano = true;
         if (web != null) web.evaluateJavascript("window.__ripresa && window.__ripresa()", null);
     }
 

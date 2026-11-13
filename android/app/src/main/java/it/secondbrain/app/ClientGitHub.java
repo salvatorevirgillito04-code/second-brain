@@ -18,17 +18,20 @@ class ClientGitHub {
     }
 
     Risposta invia(String token, String metodo, String percorso, String corpo) {
+        return richiesta("https://api.github.com" + percorso, metodo, corpo, new String[][]{
+            {"Authorization", "Bearer " + token}, {"Accept", "application/vnd.github+json"}, {"X-GitHub-Api-Version", "2022-11-28"}});
+    }
+
+    Risposta richiesta(String url, String metodo, String corpo, String[][] intestazioni) {
         HttpURLConnection c = null;
         try {
-            c = (HttpURLConnection) new URL("https://api.github.com" + percorso).openConnection();
+            c = (HttpURLConnection) new URL(url).openConnection();
             c.setRequestMethod(metodo);
             c.setConnectTimeout(15000);
             c.setReadTimeout(30000);
             c.setUseCaches(false);
             c.setInstanceFollowRedirects(false);
-            c.setRequestProperty("Authorization", "Bearer " + token);
-            c.setRequestProperty("Accept", "application/vnd.github+json");
-            c.setRequestProperty("X-GitHub-Api-Version", "2022-11-28");
+            for (String[] h : intestazioni) c.setRequestProperty(h[0], h[1]);
             c.setRequestProperty("User-Agent", "SecondBrainApp");
             if (corpo != null && !corpo.isEmpty()) {
                 byte[] b = corpo.getBytes(StandardCharsets.UTF_8);

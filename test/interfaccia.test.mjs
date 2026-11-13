@@ -35,7 +35,11 @@ await ctx.addInitScript(() => {
     github: (id, m, p, c) => { window.__nodeGithub(id, m, p, c).then(([i, s, b]) => window.__risposta(i, s, b)); },
     esporta: (nome, testo, msg) => { mem.esportato = testo; setTimeout(() => window.__esportato(true, msg), 10); },
     importa: () => setTimeout(() => window.__importato(true, window.__fileDaImportare), 10), importaFile: () => setTimeout(() => window.__fileScelto(true, window.__fileB64), 10),
-    infoApp: () => JSON.stringify({ versione: "1.1.0", codice: 3, pacchetto: "it.secondbrain.app" }), apriLink: () => {},
+    infoApp: () => JSON.stringify({ versione: "1.3.0", codice: 6, pacchetto: "it.secondbrain.app" }), apriLink: () => {},
+    haRoutine: () => !!mem.routine, idRoutine: () => (mem.routine || ""), rimuoviRoutine: () => { mem.routine = null; },
+    impostaRoutine: (id, tok) => (/^trig_[A-Za-z0-9]{10,}$/.test(id) && tok.startsWith("sk-ant-oat01-") ? ((mem.routine = id), "ok") : "non valido"),
+    avviaRoutine: (id) => { mem.avvii = (mem.avvii || 0) + 1; setTimeout(() => window.__risposta(id, 200, JSON.stringify({ type: "routine_fire", claude_code_session_id: "session_Z" })), 10); },
+    fine: (e) => { mem.fine = e; },
   };
 });
 const page = await ctx.newPage(); page.on("pageerror", (e) => errori.push(e.message));
@@ -169,6 +173,21 @@ ok(sc && sc.dati.tipo === "originale" && sc.dati.accessibile_agenti === false &&
 await page.click("#b-chat"); await page.waitForTimeout(400);
 ok((await T("#chat-anteprima")).includes("0 nuove, 2 già importate") && !(await page.$("#b-chat-ok")), "reimportazione: nessun duplicato");
 
+// 1.3: PROMEMORIA CHAT, «AGGIORNA ORA», NOTE DALLE SESSIONI, RICARICA DOPO IL BACKGROUND
+await vai("home");
+ok(!(await T("main")).includes("Importa le tue chat") , "promemoria chat assente subito dopo un'importazione");
+await page.evaluate(() => { location.hash = "stanze"; }); await page.waitForTimeout(100); await page.click('[data-sub="esecuzioni"]'); await page.waitForTimeout(100);
+await page.click('[data-modifica="routine"]'); await page.fill("#ro-token", "sk-ant-oat01-prova"); await page.click("#f-salva"); await page.waitForTimeout(150);
+await page.click("#b-aggiorna-ora"); await page.waitForTimeout(200);
+ok((await T("#lv-stato")).includes("Aggiornamento avviato") && await page.evaluate(() => window.__mem.avvii === 1), "«Aggiorna ora»: attività avviata");
+gh.scriviDiretto("dati", "dati/stato/istantanea.json", JSON.stringify({ rilevato_il: new Date().toISOString(), totale: 1, sessioni: [{ id: "session_QQ", titolo: "Sito negozio", status_bucket: "SESSION_STATUS_BUCKET_BLOCKED", updated_at: "2026-11-13T20:00:00Z", riepilogo: "bozza pronta", richiede: "approva il testo" }] }));
+await page.click("#b-snap"); await page.waitForTimeout(600);
+const ns = (await salvato()).collezioni.note["sessione-QQ"];
+ok(ns && ns.dati.accessibile_agenti === false && /approva il testo/.test(ns.dati.testo) && ns.dati.tipo === "riassunto", "sessione di Claude Code diventata nota privata con richiesta di intervento");
+const disco = await salvato(); disco.collezioni.note["sessione-QQ"].dati.titolo = "Scritto dal background"; const nuovoTesto = JSON.stringify(disco);
+await page.evaluate((t) => { window.__mem.dati = t; window.__ripresa(); }, nuovoTesto); await page.waitForTimeout(300);
+ok((await salvato()).collezioni.note["sessione-QQ"].dati.titolo === "Scritto dal background", "al ritorno nell'app i dati scritti in background vengono ricaricati, non sovrascritti");
+
 // AVVIO CON DATI DELLA 1.0 (schema 1) già sul telefono
 const vecchi = { schema: 1, collezioni: { agenti: {}, collegamenti: {}, skill: {}, stanze: {}, memoria: {
   "me-a": { dati: { testo: "condivisa 1.0", tipo: "riassunto", fonte: "chat", data: "2026-11-01T00:00:00.000Z", accessibile_agenti: true }, sync: { sha: null, base: null, sporco: true, eliminato: false } },
@@ -181,6 +200,17 @@ const copia = await p2.evaluate(() => window.__mem.copie["dati-1.0-prima-della-m
 ok(copia && JSON.parse(copia).schema === 1, "avvio 1.0: copia di sicurezza salvata prima");
 const s2 = JSON.parse(await p2.evaluate(() => window.__mem.dati));
 ok(s2.schema === 2 && s2.collezioni.note["me-b"].sync.sporco === false && s2.collezioni.note["me-a"].sync.sporco === true, "avvio 1.0: privata resta privata, condivisa da inviare");
+
+// SINCRONIZZAZIONE IN BACKGROUND (sfondo.html, come la usa SincronizzazioneJob)
+const p3 = await ctx.newPage(); p3.on("pageerror", (e) => errori.push(e.message));
+const sfondoDati = await salvato(); const pr = Object.keys(sfondoDati.collezioni.progetti)[0]; sfondoDati.collezioni.progetti[pr].dati.nome = "Modificato e inviato in background"; sfondoDati.collezioni.progetti[pr].sync.sporco = true;
+await p3.addInitScript((t) => { window.__datiIniziali = t; }, JSON.stringify(sfondoDati));
+await p3.addInitScript(() => { setTimeout(() => { window.__mem.token = true; }, 0); });
+await p3.evaluate(() => 0).catch(() => {});
+await p3.goto("https://app.test/sfondo.html"); await p3.waitForTimeout(1500);
+const esitoSfondo = await p3.evaluate(() => window.__mem.fine);
+ok(esitoSfondo === "ok" || esitoSfondo === "saltato: nessun token o rete", "background: esecuzione terminata (" + esitoSfondo + ")");
+if (esitoSfondo === "ok") ok(JSON.parse(gh.file("dati", `dati/app/progetti/${pr}.json`)).nome === "Modificato e inviato in background" && JSON.parse(await p3.evaluate(() => window.__mem.dati)).sync.ultimo_sfondo.esito === "ok", "background: modifica inviata e salvata");
 
 ok(errori.length === 0, "nessun errore JavaScript" + (errori.length ? ": " + errori.join(" | ") : ""));
 ok(!salvataggi.some((t) => t.includes("github_pat")), "nessun token nei dati salvati");

@@ -351,3 +351,32 @@ test("chat di Claude: JSON e ZIP danno lo stesso risultato; note originali, priv
   assert.throws(() => M.analizzaChatClaude({ non: "elenco" }), /elenco di conversazioni/);
   await assert.rejects(M.leggiDaZip(zip, "manca.json"), /non c'è manca.json/);
 });
+
+// ---------- 1.3 ----------
+test("sessioni → note private; aggiornate solo se cambiano e se non le hai modificate; mai inviate", async () => {
+  const gh = new FintoGitHub(); const s = M.statoVuoto();
+  const ist = (stato, upd) => JSON.stringify({ rilevato_il: "2026-11-13T21:01:11Z", totale: 1, sessioni: [{ id: "session_ABC", titolo: "Negozio", status_bucket: "SESSION_STATUS_BUCKET_" + stato, updated_at: upd, created_at: "2026-11-01T00:00:00Z", riepilogo: "fatto X", richiede: "decidi Y" }] });
+  await M.sincronizza(s, gh.api(), OPZ);
+  gh.scriviDiretto("dati", "dati/stato/istantanea.json", ist("BLOCKED", "2026-11-13T10:00:00Z"));
+  await M.sincronizza(s, gh.api(), OPZ);
+  const n = M.trova(s, "note", "sessione-ABC");
+  assert.equal(n.tipo, "riassunto"); assert.equal(n.accessibile_agenti, false); assert.match(n.testo, /attende un tuo intervento/); assert.match(n.testo, /decidi Y/); assert.match(n.testo, /non in tempo reale/);
+  assert.equal(M.inAttesa(s), 0); assert.equal(gh.file("dati", "dati/app/note/sessione-ABC.json"), undefined);
+  gh.scriviDiretto("dati", "dati/stato/istantanea.json", ist("COMPLETED", "2026-11-13T12:00:00Z"));
+  await M.sincronizza(s, gh.api(), OPZ);
+  assert.match(M.trova(s, "note", "sessione-ABC").testo, /completata/);
+  await M.salvaRecord(s, "note", "sessione-ABC", { ...M.trova(s, "note", "sessione-ABC"), id: undefined, testo: "mia nota", corretto_il: "2026-11-13T13:00:00Z" });
+  gh.scriviDiretto("dati", "dati/stato/istantanea.json", ist("WORKING", "2026-11-13T14:00:00Z"));
+  await M.sincronizza(s, gh.api(), OPZ);
+  assert.equal(M.trova(s, "note", "sessione-ABC").testo, "mia nota", "nota modificata dall'utente non sovrascritta");
+});
+
+test("promemoria esportazione chat: dopo 30 giorni o mai importate; rimandabile", async () => {
+  const s = M.statoVuoto(); const ora0 = Date.parse("2026-11-13T00:00:00Z");
+  assert.deepEqual(M.promemoriaChat(s, ora0), { giorni: null });
+  await M.importaChatClaude(s, { chat: [] }, "2026-11-01T00:00:00Z");
+  assert.equal(M.promemoriaChat(s, ora0), null);
+  assert.deepEqual(M.promemoriaChat(s, Date.parse("2026-12-05T00:00:00Z")), { giorni: 34 });
+  s.impostazioni.chat_rimandato_fino = "2026-12-10T00:00:00Z";
+  assert.equal(M.promemoriaChat(s, Date.parse("2026-12-05T00:00:00Z")), null);
+});

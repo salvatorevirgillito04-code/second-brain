@@ -19,11 +19,13 @@ import javax.crypto.spec.GCMParameterSpec;
  * Il token non viene mai scritto nei log né restituito all'interfaccia.
  */
 class Cassaforte {
-    private static final String ALIAS = "second_brain_token";
-    private static final String CAMPO = "token_cifrato";
+    private final String ALIAS;
+    private final String CAMPO;
     private final SharedPreferences prefs;
 
-    Cassaforte(Context c) { prefs = c.getSharedPreferences("cassaforte", Context.MODE_PRIVATE); }
+    /** Token GitHub (nomi invariati dalla 1.0 per conservare il token già salvato). */
+    Cassaforte(Context c) { this(c, "second_brain_token", "token_cifrato"); }
+    Cassaforte(Context c, String alias, String campo) { ALIAS = alias; CAMPO = campo; prefs = c.getSharedPreferences("cassaforte", Context.MODE_PRIVATE); }
 
     boolean presente() { return prefs.contains(CAMPO); }
 
