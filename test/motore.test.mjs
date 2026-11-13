@@ -277,3 +277,21 @@ test("backup: la 1.0 si ripristina ancora; la 1.1 esporta versione 2 e la ripris
   assert.equal(r.versione, 2); assert.equal(r.identico, true); assert.equal(r.hashDopo, b2.hash_sha256);
   await assert.rejects(M.ripristina(M.statoVuoto(), { ...b2, versione: 3 }), /non supportata/);
 });
+
+test("relazioni: solo riferimenti esistenti; riferimenti in entrata; pulizia fittizi su note e progetti", async () => {
+  const s = M.statoVuoto();
+  await M.salvaRecord(s, "stanze", "st-1", { nome: "S" });
+  await M.salvaRecord(s, "progetti", "pr-1", { nome: "P", stanza_id: "st-1" });
+  await M.salvaRecord(s, "progetti", "pr-f", { nome: "Finto", fittizio: true });
+  await M.salvaRecord(s, "note", "n-a", { testo: "A", collegamenti: ["n-b", "n-inesistente"], stanza_id: "st-1", progetto_id: "pr-f" });
+  await M.salvaRecord(s, "note", "n-b", { testo: "B", collegamenti: ["n-a"] });
+  await M.salvaRecord(s, "note", "n-f", { testo: "F", fittizio: true, collegamenti: ["n-a"] });
+  await M.salvaRecord(s, "note", "n-c", { testo: "C", collegamenti: ["n-f"], progetto_id: "pr-1" });
+  const tipi = M.relazioni(s).map((r) => [r.da, r.a, r.tipo].join(" ")).sort();
+  assert.ok(!tipi.some((t) => t.includes("inesistente")), "nessun arco verso elementi inesistenti");
+  assert.equal(M.relazioni(s).filter((r) => r.tipo === "collegamento").length, 3, "A↔B contato una volta, F→A, C→F");
+  assert.deepEqual(M.inEntrata(s, "n-a").map((n) => n.id).sort(), ["n-b", "n-f"]);
+  await M.eliminaFittizi(s);
+  assert.equal(M.trova(s, "note", "n-a").progetto_id, null); assert.deepEqual(M.trova(s, "note", "n-c").collegamenti, []);
+  assert.ok(M.trova(s, "progetti", "pr-1")); assert.equal(M.trova(s, "progetti", "pr-f"), null);
+});

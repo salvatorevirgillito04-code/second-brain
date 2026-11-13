@@ -1,4 +1,4 @@
-// Prova dell'interfaccia (assets/www) in Chromium con un ponte Android SIMULATO e GitHub SIMULATO.
+// Prova dell'interfaccia 1.1 (assets/www) in Chromium con un ponte Android SIMULATO e GitHub SIMULATO.
 // Verifica la logica della pagina, non il comportamento reale di Android.
 // Esecuzione: node test/interfaccia.test.mjs [cartella_screenshot]
 import { createRequire } from "node:module";
@@ -11,133 +11,152 @@ const { chromium } = createRequire(import.meta.url)("playwright");
 const QUI = dirname(fileURLToPath(import.meta.url));
 const WWW = join(QUI, "../android/app/src/main/assets/www");
 const BACKUP = readFileSync(join(QUI, "../backup/migrazione-artifact-2026-11-13.json"), "utf8");
+const ATTESO = await M.impronta(M.datiV1aV2(JSON.parse(BACKUP).dati));
 const FOTO = process.argv[2];
-const ATTESO = await M.impronta(M.datiV1aV2(JSON.parse(BACKUP).dati)); // stessa forma 1.1: memorie → note
 const gh = new FintoGitHub("salvatorevirgillito04-code", "second-brain");
 let fallite = 0;
-const ok = (cond, nome) => { console.log((cond ? "ok   " : "FAIL ") + nome); if (!cond) fallite++; };
+const ok = (c, nome) => { console.log((c ? "ok   " : "FAIL ") + nome); if (!c) fallite++; };
 
 const browser = await chromium.launch();
 const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
-const page = await ctx.newPage();
-const errori = []; page.on("pageerror", (e) => errori.push(e.message));
-let rete = true; const salvataggi = [];
-await ctx.exposeFunction("__nodeGithub", async (id, m, p, c) => {
-  const r = rete ? await gh.gestisci(m, p, c ? JSON.parse(c) : null) : { status: 0, corpo: null };
-  return [id, r.status, r.corpo == null ? "" : JSON.stringify(r.corpo)];
-});
-await ctx.exposeFunction("__nodeRete", () => rete);
+const errori = [], salvataggi = [];
+await ctx.exposeFunction("__nodeGithub", async (id, m, p, c) => { const r = await gh.gestisci(m, p, c ? JSON.parse(c) : null); return [id, r.status, r.corpo == null ? "" : JSON.stringify(r.corpo)]; });
 await ctx.exposeFunction("__nodeSalvato", (t) => { salvataggi.push(t); });
-await ctx.route("https://app.test/**", (route) => {
-  const nome = new URL(route.request().url()).pathname.slice(1) || "index.html";
-  route.fulfill({ body: readFileSync(join(WWW, nome)), contentType: nome.endsWith(".js") ? "text/javascript" : "text/html" });
-});
+await ctx.route("https://app.test/**", (route) => { const nome = new URL(route.request().url()).pathname.slice(1) || "index.html"; route.fulfill({ body: readFileSync(join(WWW, nome)), contentType: nome.endsWith(".js") ? "text/javascript" : "text/html" }); });
 await ctx.addInitScript(() => {
-  const mem = { dati: window.__datiIniziali || "", prec: "", token: false, esportato: null, copie: {} };
+  const mem = { dati: "", prec: "", token: false, esportato: null, copie: {} };
   window.__mem = mem;
   window.Android = {
     caricaDati: () => mem.dati || window.__datiIniziali || "", caricaDatiPrecedenti: () => mem.prec,
-    salvaCopia: (n, t) => (mem.copie[n] ? "esiste" : ((mem.copie[n] = t), "ok")), salvaDati: (t) => { mem.prec = mem.dati; mem.dati = t; window.__nodeSalvato(t); return "ok"; },
-    haToken: () => mem.token, impostaToken: (t) => (t.startsWith("github_pat_") ? ((mem.token = true), "ok") : "Usa un token a grana fine"), rimuoviToken: () => { mem.token = false; },
+    salvaCopia: (n, t) => (mem.copie[n] ? "esiste" : ((mem.copie[n] = t), "ok")),
+    salvaDati: (t) => { mem.prec = mem.dati; mem.dati = t; window.__nodeSalvato(t); return "ok"; },
+    haToken: () => mem.token, impostaToken: (t) => (t.startsWith("github_pat_") ? ((mem.token = true), "ok") : "token non valido"), rimuoviToken: () => { mem.token = false; },
     retePresente: () => window.__rete !== false,
     github: (id, m, p, c) => { window.__nodeGithub(id, m, p, c).then(([i, s, b]) => window.__risposta(i, s, b)); },
     esporta: (nome, testo, msg) => { mem.esportato = testo; setTimeout(() => window.__esportato(true, msg), 10); },
     importa: () => setTimeout(() => window.__importato(true, window.__fileDaImportare), 10),
-    infoApp: () => JSON.stringify({ versione: "test", codice: 0 }), apriLink: () => {},
+    infoApp: () => JSON.stringify({ versione: "1.1.0", codice: 3, pacchetto: "it.secondbrain.app" }), apriLink: () => {},
   };
 });
-const testo = (s) => page.textContent(s);
+const page = await ctx.newPage(); page.on("pageerror", (e) => errori.push(e.message));
+const T = (s) => page.textContent(s);
+const vai = async (h) => { await page.evaluate((x) => { location.hash = x; }, h); await page.waitForTimeout(150); };
+const salvato = async () => JSON.parse(await page.evaluate(() => window.__mem.dati));
 
-await page.goto("https://app.test/index.html#dati");
-await page.waitForTimeout(300);
-ok((await testo("#avvisi")).includes("Nessun dato sul telefono"), "primo avvio: invito a importare il backup");
-ok((await testo("#chip-sync")).includes("solo telefono"), "senza token: indicato 'solo telefono'");
+await page.goto("https://app.test/index.html#home"); await page.waitForTimeout(300);
+ok((await T("main")).includes("Archivio vuoto"), "avvio vuoto: invito a ripristinare o aggiungere");
+ok((await T("#chip-sync")) === "solo telefono", "senza token: «solo telefono»");
 
-// MIGRAZIONE
+// MIGRAZIONE DAL BACKUP 1.0
+await vai("impostazioni");
 await page.evaluate((b) => { window.__fileDaImportare = b; }, BACKUP);
 await page.click("#b-imp"); await page.waitForTimeout(200);
-ok((await testo("#imp-preview")).includes("verificata"), "migrazione: impronta del file verificata prima di importare");
+ok((await T("#imp-anteprima")).includes("le memorie diventeranno note"), "backup 1.0 riconosciuto");
 await page.click("#b-imp-ok"); await page.waitForTimeout(400);
-const msgImp = await testo("#imp-status");
-ok(msgImp.includes("Importazione verificata") && msgImp.includes(ATTESO.slice(0, 16)) && msgImp.includes("memorie importate come note"), "migrazione: impronta identica anche dopo il salvataggio");
-// esporta e confronta impronta
+const msg = await T("#imp-stato");
+ok(msg.includes("Importazione verificata") && msg.includes(ATTESO.slice(0, 16)), "migrazione verificata, impronta corrispondente");
+const s1 = await salvato();
+const v1 = JSON.parse(BACKUP).dati.memoria;
+ok(v1.every((m) => { const { id, ...d } = m; return M.canon(s1.collezioni.note[id].dati) === M.canon(d); }), "memorie → note: contenuto identico campo per campo");
+ok(Object.keys(s1.collezioni.note).length === v1.length && !Object.keys(s1.collezioni.memoria || {}).length, "nessuna nota in più o in meno");
 await page.click("#b-exp"); await page.waitForTimeout(200);
 const esp = JSON.parse(await page.evaluate(() => window.__mem.esportato));
-ok(esp.versione === 2 && esp.hash_sha256 === ATTESO && esp.dati.note.length === 3, "esportazione 1.1: impronta corrispondente al backup 1.0 convertito");
-ok(!JSON.stringify(esp).includes("github_pat"), "esportazione: nessun token");
+ok(esp.versione === 2 && esp.hash_sha256 === ATTESO && !JSON.stringify(esp).includes("github_pat"), "esportazione 1.1: impronta corrispondente, nessun token");
 
 // SINCRONIZZAZIONE
 await page.evaluate(() => { window.__mem.token = true; });
-await page.click("#b-sync"); await page.waitForTimeout(800);
-ok((await testo("#sync-status")).startsWith("Sincronizzato"), "sincronizzazione: completata");
-ok(gh.file("dati", "dati/app/stanze/st-mwel7t86-4la8o.json") !== undefined, "sincronizzazione: stanza reale nel ramo dati");
-ok(gh.file("dati", "dati/app/note/mem-mwel8hdu-hn371.json") === undefined, "memoria non resa accessibile: NON inviata");
-ok((await testo("#chip-sync")).includes("sincronizzato"), "chip: sincronizzato");
+await page.click("#b-sync"); await page.waitForTimeout(900);
+ok((await T("#sync-stato")).startsWith("Sincronizzato"), "sincronizzazione completata");
+ok(gh.file("dati", "dati/app/stanze/st-mwel7t86-4la8o.json") !== undefined, "stanza nel ramo dati");
+ok(!v1.some((m) => gh.file("dati", `dati/app/note/${m.id}.json`)), "note private non inviate");
+
+// AGGIUNTA RAPIDA, ORGANIZZAZIONE, RICERCA
+await vai("home");
+const inboxPrima = Number((await T('[data-org="inbox"] b')).trim());
+await page.click("#fab"); await page.fill("#r-testo", "Idea: archivio unico delle note"); await page.click("#f-salva"); await page.waitForTimeout(200);
+ok(Number((await T('[data-org="inbox"] b')).trim()) === inboxPrima + 1, "aggiunta rapida: nota in «Da organizzare»");
+await page.fill("#cerca", "archivio unico"); await page.waitForTimeout(150);
+ok((await T("main")).includes("1 risultati"), "ricerca in diretta");
+await page.click('[data-apri="nota"]'); await page.waitForTimeout(150);
+await page.click('[data-categoria="risorsa"]'); await page.waitForTimeout(150);
+await vai("organizza"); await page.click('[data-org="risorsa"]'); await page.waitForTimeout(100);
+ok((await T("main")).includes("Idea: archivio unico"), "nota spostata in Risorse");
+await page.click('[data-org="progetti"]'); await page.click('[data-modifica="progetto"]'); await page.fill("#p-nome", "Progetto reale di prova"); await page.click("#f-salva"); await page.waitForTimeout(150);
+ok((await T("main")).includes("Progetto reale di prova"), "progetto creato");
+
+// COLLEGAMENTI, RIFERIMENTI IN ENTRATA, MAPPA
+const nuova = Object.entries((await salvato()).collezioni.note).find(([, r]) => r.dati.testo.startsWith("Idea:"))[0];
+await page.evaluate((id) => { location.hash = "note"; }, nuova); await page.waitForTimeout(100);
+await page.click(`[data-apri="nota"][data-id="mem-mwel8hdu-hn371"]`); await page.waitForTimeout(100);
+await page.click('[data-modifica="nota"]'); await page.check(`#n-link input[value="${nuova}"]`); await page.selectOption("#n-prog", { label: "Progetto reale di prova" }); await page.click("#f-salva"); await page.waitForTimeout(200);
+ok((await T("main")).includes("Collegamenti in uscita · 1"), "collegamento in uscita salvato");
+const sn = await salvato();
+{ const orig = v1.find((m) => m.id === "mem-mwel8hdu-hn371"); const ora1 = sn.collezioni.note["mem-mwel8hdu-hn371"].dati; ok(Object.keys(orig).filter((k) => k !== "id").every((k) => M.canon(orig[k]) === M.canon(ora1[k])) && !("accessibile_agenti" in ora1), "modifica: tutti i campi originali restano identici (data compresa), nessun permesso aggiunto"); }
+await page.click(`[data-apri="nota"][data-id="${nuova}"]`); await page.waitForTimeout(150);
+ok((await T("main")).includes("Riferimenti in entrata · 1"), "riferimento in entrata mostrato sulla nota collegata");
+await vai("mappa"); await page.waitForTimeout(200);
+const relazioni = M.relazioni(M.carica(JSON.stringify(await salvato()), null).stato).length;
+ok((await T("#mappa-info")).includes(`${relazioni} relazioni reali`), `mappa: ${relazioni} relazioni, tutte esistenti nei dati`);
+const nodiSenza = (await T("#mappa-info")).match(/^(\d+) elementi/)[1];
+await page.check("#isolati"); await page.waitForTimeout(200);
+ok(Number((await T("#mappa-info")).match(/^(\d+) elementi/)[1]) > Number(nodiSenza), "mappa: elementi isolati nascosti di default, visibili a richiesta");
+if (FOTO) await page.screenshot({ path: join(FOTO, "mappa.png") });
+
+// STANZE E ATTIVITÀ
+await vai("stanze"); await page.click('[data-apri="stanza"]'); await page.waitForTimeout(150);
+await page.fill("#att-testo", "Prima attività reale"); await page.press("#att-testo", "Enter"); await page.waitForTimeout(200);
+ok((await T("main")).includes("Prima attività reale") && (await T("main")).includes("1 aperte"), "attività aggiunta");
+await page.check('[data-att]'); await page.waitForTimeout(200);
+ok((await T("main")).includes("0 aperte"), "attività segnata come fatta");
+if (FOTO) await page.screenshot({ path: join(FOTO, "stanza.png") });
 
 // CONFLITTO
-gh.scriviDiretto("dati", "dati/app/stanze/st-mwel7t86-4la8o.json", JSON.stringify({ nome: "Orto (modificato altrove)", obiettivi: [], stato: "attiva" }));
-await page.evaluate(() => { location.hash = "stanze"; window.__ripresa(); }); await page.waitForTimeout(800); // ritorno nell'app (onResume): sincronizza
-ok((await testo("#l-stanze")).includes("Orto (modificato altrove)"), "modifica remota con telefono invariato: scaricata");
-gh.scriviDiretto("dati", "dati/app/stanze/st-mwel7t86-4la8o.json", JSON.stringify({ nome: "Versione repository", obiettivi: [] }));
-await page.click('button[data-act="mod-stanza"][data-id="st-mwel7t86-4la8o"]');
-await page.fill("#st-nome", "Versione telefono"); await page.click("#st-save"); await page.waitForTimeout(200);
-await page.goto("https://app.test/index.html#dati"); await page.waitForTimeout(300);
-await page.click("#b-sync"); await page.waitForTimeout(800);
-ok(!(await page.isHidden("#c-conflitti")), "conflitto: mostrato");
-ok(JSON.parse(gh.file("dati", "dati/app/stanze/st-mwel7t86-4la8o.json")).nome === "Versione repository", "conflitto: repository non sovrascritto");
-ok((await testo("#chip-sync")).includes("conflitti"), "chip: conflitti");
-if (FOTO) await page.screenshot({ path: join(FOTO, "conflitto.png"), fullPage: true });
-await page.click('button[data-act="ris-tel"]'); await page.waitForTimeout(100);
-await page.click("#b-sync"); await page.waitForTimeout(800);
-ok(JSON.parse(gh.file("dati", "dati/app/stanze/st-mwel7t86-4la8o.json")).nome === "Versione telefono", "conflitto risolto scegliendo il telefono");
+const sid = await page.evaluate(() => document.querySelector('[data-modifica="stanza"][data-id]').dataset.id);
+await vai("impostazioni"); await page.click("#b-sync"); await page.waitForTimeout(900);
+gh.scriviDiretto("dati", `dati/app/stanze/${sid}.json`, JSON.stringify({ nome: "Versione repository" }));
+await page.evaluate((id) => { location.hash = "stanze"; }, sid); await page.waitForTimeout(100);
+await page.click(`[data-apri="stanza"][data-id="${sid}"]`); await page.click('[data-modifica="stanza"][data-id]'); await page.fill("#s-nome", "Versione telefono"); await page.click("#f-salva"); await page.waitForTimeout(150);
+await vai("impostazioni"); await page.click("#b-sync"); await page.waitForTimeout(900);
+ok((await T("main")).includes("Conflitti da risolvere · 1") && JSON.parse(gh.file("dati", `dati/app/stanze/${sid}.json`)).nome === "Versione repository", "conflitto mostrato, repository non sovrascritto");
+if (FOTO) await page.screenshot({ path: join(FOTO, "impostazioni.png"), fullPage: true });
+await page.click('[data-risolvi="telefono"]'); await page.waitForTimeout(100); await page.click("#b-sync"); await page.waitForTimeout(900);
+ok(JSON.parse(gh.file("dati", `dati/app/stanze/${sid}.json`)).nome === "Versione telefono", "conflitto risolto scegliendo il telefono");
 
-// RETE ASSENTE
+// NOTA CONDIVISA, RETE ASSENTE, TOKEN SCADUTO
+await page.click(`text=Avanzate`);
 await page.evaluate(() => { window.__rete = false; });
-await page.goto("https://app.test/index.html#memoria"); await page.evaluate(() => { window.__rete = false; }); await page.waitForTimeout(300);
-await page.fill("#me-testo", "Nota scritta offline"); await page.fill("#me-fonte", "prova"); await page.check("#me-agenti"); await page.click("#me-save"); await page.waitForTimeout(200);
-await page.evaluate(() => { location.hash = "dati"; }); await page.waitForTimeout(100);
-await page.click("#b-sync"); await page.waitForTimeout(200);
-ok((await testo("#sync-status")).includes("Rete assente"), "offline: messaggio chiaro");
-ok((await testo("#sync-kv")).includes("1 modifiche"), "offline: 1 modifica da inviare mostrata");
-await page.evaluate(() => { window.__rete = true; }); await page.click("#b-sync"); await page.waitForTimeout(800);
-ok((await testo("#sync-kv")).includes("0 modifiche"), "rete tornata: inviata");
+await page.click("#fab").catch(() => {}); await vai("home"); await page.click("#fab"); await page.fill("#r-testo", "Progetto offline"); await page.click('#r-tipo [data-v="progetto"]'); await page.click("#f-salva"); await page.waitForTimeout(150);
+await vai("impostazioni"); await page.click("#b-sync"); await page.waitForTimeout(200);
+ok((await T("#sync-stato")).includes("Rete assente") && (await T("main")).includes("1 modifiche"), "offline: messaggio chiaro, 1 modifica in attesa");
+await page.evaluate(() => { window.__rete = true; }); await page.click("#b-sync"); await page.waitForTimeout(900);
+ok((await T("main")).includes("0 modifiche"), "rete tornata: inviata");
+gh.guasto = { tipo: "401", quando: () => true, volte: -1 }; await page.click("#b-sync"); await page.waitForTimeout(300);
+ok((await T("#sync-stato")).includes("scaduto o revocato"), "token scaduto: messaggio chiaro"); gh.guasto = null;
 
-// TOKEN SCADUTO
-gh.guasto = { tipo: "401", quando: () => true, volte: -1 };
-await page.click("#b-sync"); await page.waitForTimeout(300);
-ok((await testo("#sync-status")).includes("scaduto o revocato"), "token scaduto: messaggio chiaro");
-gh.guasto = null;
-
-// DATI FITTIZI
-const reali = JSON.parse(BACKUP).dati;
-await page.evaluate(() => { location.hash = "dati"; });
-ok((await testo("#fitt-info")).includes("9 elementi"), "dati di prova: conteggio (9: i 10 della v1 meno la stanza riscritta senza marcatore dal test)");
+// DATI DI PROVA
+const reali = Object.values((await salvato()).collezioni).flatMap((c) => Object.values(c)).filter((r) => !r.sync.eliminato && r.dati.fittizio !== true).length;
 await page.click("#b-fitt"); await page.click("#b-fitt"); await page.waitForTimeout(300);
-const dopo = JSON.parse(await page.evaluate(() => window.__mem.dati));
-const restanti = Object.values(dopo.collezioni).flatMap((c) => Object.values(c)).filter((r) => !r.sync.eliminato);
-ok(restanti.every((r) => r.dati.fittizio !== true), "dati di prova: eliminati tutti");
-ok(restanti.length === 2 && restanti.some((r) => r.dati.testo === "Nota scritta offline") && restanti.some((r) => r.dati.nome === "Versione telefono"), "dati reali (non fittizi): rimasti solo questi due");
-await page.click("#b-sync"); await page.waitForTimeout(1000);
-ok(gh.file("dati", "dati/app/agenti/ag-fittizio-sviluppatore.json") === undefined, "dati di prova: tolti anche dal repository");
-if (FOTO) {
-  for (const v of ["stanze", "memoria", "lavoro", "dati"]) { await page.evaluate((x) => { location.hash = x; }, v); await page.waitForTimeout(150); await page.screenshot({ path: join(FOTO, v + ".png") }); }
-}
+const dopo = Object.values((await salvato()).collezioni).flatMap((c) => Object.values(c)).filter((r) => !r.sync.eliminato);
+ok(dopo.every((r) => r.dati.fittizio !== true) && dopo.length === reali, `dati di prova eliminati, ${reali} elementi reali conservati`);
+if (FOTO) { for (const v of ["home", "organizza", "note"]) { await vai(v); await page.screenshot({ path: join(FOTO, v + ".png") }); } }
 ok(!(await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth)), "nessuno scorrimento orizzontale a 390 px");
-ok(errori.length === 0, "nessun errore JavaScript" + (errori.length ? ": " + errori.join(" | ") : ""));
-ok(!salvataggi.some((t) => t.includes("github_pat")), "nessun token nei dati salvati");
+
 // AVVIO CON DATI DELLA 1.0 (schema 1) già sul telefono
-const v1 = { schema: 1, collezioni: { agenti: {}, collegamenti: {}, skill: {}, stanze: {}, memoria: {
+const vecchi = { schema: 1, collezioni: { agenti: {}, collegamenti: {}, skill: {}, stanze: {}, memoria: {
   "me-a": { dati: { testo: "condivisa 1.0", tipo: "riassunto", fonte: "chat", data: "2026-11-01T00:00:00.000Z", accessibile_agenti: true }, sync: { sha: null, base: null, sporco: true, eliminato: false } },
   "me-b": { dati: { testo: "privata 1.0", tipo: "dedotto", fonte: "io", data: "2026-11-02T00:00:00.000Z" }, sync: { sha: null, base: null, sporco: false, eliminato: false } } } }, stato_lavoro: [], sync: { conflitti: {} } };
 const p2 = await ctx.newPage(); p2.on("pageerror", (e) => errori.push(e.message));
-await p2.addInitScript((t) => { window.__datiIniziali = t; }, JSON.stringify(v1));
-await p2.goto("https://app.test/index.html#memoria"); await p2.waitForTimeout(400);
-ok((await p2.textContent("#avvisi")).includes("2 memorie → 2 note"), "avvio 1.0: conversione mostrata");
+await p2.addInitScript((t) => { window.__datiIniziali = t; }, JSON.stringify(vecchi));
+await p2.goto("https://app.test/index.html#home"); await p2.waitForTimeout(400);
+ok((await p2.textContent("main")).includes("2 memorie → 2 note"), "avvio 1.0: conversione mostrata");
 const copia = await p2.evaluate(() => window.__mem.copie["dati-1.0-prima-della-migrazione.json"]);
-ok(copia && JSON.parse(copia).schema === 1, "avvio 1.0: copia di sicurezza salvata prima della conversione");
-const salvato = JSON.parse(await p2.evaluate(() => window.__mem.dati));
-ok(salvato.schema === 2 && salvato.collezioni.note["me-b"].dati.testo === "privata 1.0" && salvato.collezioni.note["me-b"].sync.sporco === false, "avvio 1.0: privata convertita e non da inviare");
-ok((await p2.textContent("#l-memoria")).includes("condivisa 1.0"), "avvio 1.0: note visibili");
+ok(copia && JSON.parse(copia).schema === 1, "avvio 1.0: copia di sicurezza salvata prima");
+const s2 = JSON.parse(await p2.evaluate(() => window.__mem.dati));
+ok(s2.schema === 2 && s2.collezioni.note["me-b"].sync.sporco === false && s2.collezioni.note["me-a"].sync.sporco === true, "avvio 1.0: privata resta privata, condivisa da inviare");
+
+ok(errori.length === 0, "nessun errore JavaScript" + (errori.length ? ": " + errori.join(" | ") : ""));
+ok(!salvataggi.some((t) => t.includes("github_pat")), "nessun token nei dati salvati");
+ok(!readFileSync(join(WWW, "index.html"), "utf8").includes("Trasloco a Bologna"), "nessun dato dimostrativo dell'anteprima nell'app");
 await browser.close();
 console.log(fallite ? `\n${fallite} prove fallite` : "\ntutte le prove superate");
 process.exit(fallite ? 1 : 0);

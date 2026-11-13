@@ -216,9 +216,32 @@
       const sk = (a.skill_ids || []).filter((id) => !via.has("skill/" + id));
       if (sk.length !== (a.skill_ids || []).length) { const { id, ...d } = a; d.skill_ids = sk; await M.salvaRecord(stato, "agenti", id, d); }
     }
-    for (const m of M.elenco(stato, "note")) if (m.stanza_id && via.has("stanze/" + m.stanza_id)) { const { id, ...d } = m; d.stanza_id = null; await M.salvaRecord(stato, "memoria", id, d); }
+    for (const m of M.elenco(stato, "note")) {
+      const d0 = { ...m }; delete d0.id; let cambia = false;
+      if (m.stanza_id && via.has("stanze/" + m.stanza_id)) { d0.stanza_id = null; cambia = true; }
+      if (m.progetto_id && via.has("progetti/" + m.progetto_id)) { d0.progetto_id = null; cambia = true; }
+      const cl = (m.collegamenti || []).filter((x) => !via.has("note/" + x));
+      if (cl.length !== (m.collegamenti || []).length) { d0.collegamenti = cl; cambia = true; }
+      if (cambia) await M.salvaRecord(stato, "note", m.id, d0);
+    }
+    for (const p of M.elenco(stato, "progetti")) if (p.stanza_id && via.has("stanze/" + p.stanza_id)) { const { id, ...d } = p; d.stanza_id = null; await M.salvaRecord(stato, "progetti", id, d); }
     return n;
   };
+  // Relazioni realmente presenti (per la mappa): solo riferimenti a elementi esistenti.
+  M.relazioni = function (stato) {
+    const esiste = (c, id) => !!(id && M.trova(stato, c, id));
+    const archi = [], visti = new Set();
+    const aggiungi = (a, b, tipo) => { const k = [a, b].sort().join("|"); if (a !== b && !visti.has(k)) { visti.add(k); archi.push({ da: a, a: b, tipo }); } };
+    for (const n of M.elenco(stato, "note")) {
+      for (const x of n.collegamenti || []) if (esiste("note", x)) aggiungi("note/" + n.id, "note/" + x, "collegamento");
+      if (esiste("stanze", n.stanza_id)) aggiungi("note/" + n.id, "stanze/" + n.stanza_id, "stanza");
+      if (esiste("progetti", n.progetto_id)) aggiungi("note/" + n.id, "progetti/" + n.progetto_id, "progetto");
+    }
+    for (const p of M.elenco(stato, "progetti")) if (esiste("stanze", p.stanza_id)) aggiungi("progetti/" + p.id, "stanze/" + p.stanza_id, "stanza");
+    return archi;
+  };
+  M.inEntrata = (stato, idNota) => M.elenco(stato, "note").filter((n) => n.id !== idNota && (n.collegamenti || []).includes(idNota));
+
   M.contaFittizi = (stato) => M.COLLEZIONI_APP.reduce((n, c) => n + M.elenco(stato, c).filter((r) => r.fittizio === true).length, 0);
 
   // ---------- sincronizzazione ----------

@@ -6,243 +6,128 @@
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'">
 <title>Second Brain</title>
 <style>
-/* Layout: app a colonna singola; barra delle sezioni fissa in alto; una vista alla volta (hash). */
+/* Layout: barra superiore, contenuto scorrevole, navigazione in basso a portata di pollice, pulsante + per l'aggiunta rapida. Tema scuro. */
 :root{
-  --bg:#f2f4f3; --surface:#ffffff; --fg:#17201d; --muted:#5a6863; --line:#d3dcd8;
-  --accent:#1f6f5c; --accent-fg:#ffffff; --accent-soft:#e1efe9;
-  --ok:#1d7a3e; --warn:#93600a; --err:#b3261e; --chip:#e8edeb; --stale:#7a6f5a;
-  --f-sans:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
-  --f-mono:ui-monospace,"Roboto Mono","SFMono-Regular",Menlo,monospace;
+  color-scheme:dark;
+  --bg:#141619; --pannello:#1b1e23; --rilievo:#23272e; --linea:#2e333b;
+  --testo:#e6e8eb; --tenue:#9aa1ab; --accento:#a78bfa; --accento-tenue:#2b2540; --su-accento:#17131f;
+  --inbox:#e07a8a; --progetto:#a78bfa; --area:#5eb5a6; --risorsa:#d4a65a; --archivio:#7d8590; --stanza:#6aa9e0;
+  --ok:#6cc58a; --att:#e0a64f; --err:#ef7a7a;
+  --f:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --m:ui-monospace,"Roboto Mono",Menlo,monospace;
 }
-@media (prefers-color-scheme: dark){:root{
-  --bg:#101614; --surface:#18201d; --fg:#e4ebe8; --muted:#97a6a0; --line:#2b3632;
-  --accent:#5cc4a7; --accent-fg:#0b1512; --accent-soft:#1d3029;
-  --ok:#5ccf86; --warn:#e3a94a; --err:#ff8a80; --chip:#222c29; --stale:#c2b08a; color-scheme:dark}}
 *{box-sizing:border-box}
-html,body{background:var(--bg);margin:0}
-body{color:var(--fg);font-family:var(--f-sans);font-size:15px;line-height:1.5;padding-bottom:48px}
-.wrap{padding-left:16px;padding-right:16px}
-.top{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
-.top .wrap{max-width:760px;margin:0 auto;padding-top:10px;display:grid;gap:4px}
-.brand{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.brand h1{font-size:1.15rem;margin:0;font-weight:600}
-nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
-nav a{flex:0 0 auto;padding:9px 10px;color:var(--muted);text-decoration:none;font-weight:500;font-size:.93rem;border-bottom:2px solid transparent}
-nav a[aria-current="page"]{color:var(--fg);border-bottom-color:var(--accent)}
-main{max-width:760px;margin:0 auto;padding-top:14px;display:grid;gap:14px}
-h2{font-size:1.1rem;margin:0;font-weight:600}
-h3{font-size:1rem;margin:0;font-weight:600}
+[hidden]{display:none!important}
+html,body{margin:0;background:var(--bg)}
+body{color:var(--testo);font-family:var(--f);font-size:15px;line-height:1.45}
+.top{position:sticky;top:0;z-index:5;background:var(--bg);border-bottom:1px solid var(--linea)}
+.top .in{max-width:640px;margin:0 auto;padding:10px 12px 8px 16px;display:flex;align-items:center;gap:6px}
+.top h1{font-size:1.15rem;margin:0;font-weight:650;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ico{width:42px;height:42px;border-radius:10px;border:none;background:transparent;color:var(--tenue);display:grid;place-items:center;cursor:pointer;flex:0 0 42px}
+.ico svg,.nav svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+main{max-width:640px;margin:0 auto;padding:14px 16px 150px;display:grid;gap:18px;align-content:start}
+h2{font-size:.76rem;letter-spacing:.08em;text-transform:uppercase;color:var(--tenue);margin:0 0 8px;font-weight:600}
 p{margin:0}
-.muted{color:var(--muted)} .small{font-size:.85rem} .mono{font-family:var(--f-mono);font-size:.8rem;overflow-wrap:anywhere}
-.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
-.item{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:6px;min-width:0}
-.item:first-child{border-top:none;padding-top:0}
-.item-head{display:flex;gap:8px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
-.item-head > div{min-width:0;overflow-wrap:anywhere}
-.chips{display:flex;flex-wrap:wrap;gap:4px;align-items:center}
-.chip{font-size:.75rem;padding:1px 8px;border-radius:999px;background:var(--chip);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
-.chip.ok{color:var(--ok);border-color:currentColor;background:transparent}
-.chip.warn{color:var(--warn);border-color:currentColor;background:transparent}
-.chip.err{color:var(--err);border-color:currentColor;background:transparent}
-.chip.cfg{color:var(--accent);border-color:currentColor;background:var(--accent-soft)}
-.chip.stale{color:var(--stale);border-color:currentColor;background:transparent;border-style:dashed}
-.banner{font-size:.88rem;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);display:grid;gap:4px}
-.banner.err{border-color:var(--err)} .banner.warn{border-color:var(--warn)} .banner.ok{border-color:var(--ok)}
-.banner.err strong{color:var(--err)} .banner.warn strong{color:var(--warn)} .banner.ok strong{color:var(--ok)}
-form{display:grid;gap:8px}
-.row{display:flex;gap:8px;flex-wrap:wrap}
-.row > *{flex:1 1 170px;min-width:0}
-label{font-size:.8rem;color:var(--muted);display:grid;gap:4px}
-input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
-textarea{min-height:76px;resize:vertical}
-fieldset{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:0;display:grid;gap:4px;min-width:0}
-legend{font-size:.8rem;color:var(--muted);padding:0 4px}
-.check{display:flex;gap:8px;align-items:center;font-size:.92rem;color:var(--fg)}
-.check input{width:auto;min-width:20px;min-height:20px}
-.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-button{font:inherit;font-weight:500;border-radius:8px;padding:9px 14px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer;min-height:40px}
-button.ghost{background:transparent;color:var(--accent)}
-button.quiet{background:transparent;border-color:transparent;color:var(--accent);padding:6px 8px;font-size:.88rem}
-button.danger{background:transparent;border-color:transparent;color:var(--err);padding:6px 8px;font-size:.88rem}
-button.danger.box{border-color:var(--err)}
-button:disabled{opacity:.45;cursor:not-allowed}
-button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,nav a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.status{font-size:.86rem;min-height:1.2em}
-.status.ok{color:var(--ok)} .status.err{color:var(--err)} .status.warn{color:var(--warn)}
-.empty{font-size:.88rem;color:var(--muted)}
-.kv{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:.86rem}
-.kv dt{color:var(--muted)} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
-.pre{white-space:pre-wrap;overflow-wrap:anywhere}
-.split{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
-ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
-.confronto{display:grid;gap:8px;grid-template-columns:1fr}
-@media (min-width:560px){.confronto{grid-template-columns:1fr 1fr}}
-.confronto pre{margin:0;font-family:var(--f-mono);font-size:.75rem;background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:220px;overflow:auto}
+.muted{color:var(--tenue)} .small{font-size:.84rem} .mono{font-family:var(--m);font-size:.78rem;overflow-wrap:anywhere}
+.cerca{display:flex;align-items:center;gap:8px;background:var(--rilievo);border:1px solid var(--linea);border-radius:12px;padding:0 12px}
+.cerca svg{width:18px;height:18px;stroke:var(--tenue);fill:none;stroke-width:2;flex:0 0 18px}
+.cerca input{flex:1;background:transparent;border:none;color:var(--testo);font:inherit;padding:12px 0;outline:none;min-width:0}
+.rapidi{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.rapido{background:var(--pannello);border:1px solid var(--linea);border-radius:12px;padding:12px 6px;color:var(--testo);font:inherit;font-size:.82rem;display:grid;gap:2px;justify-items:center;text-align:center;cursor:pointer}
+.rapido b{font-size:1.3rem;font-variant-numeric:tabular-nums}
+.lista{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);border-radius:12px;overflow:hidden}
+.riga{background:var(--pannello);padding:12px 14px;display:flex;gap:12px;align-items:center;min-width:0;border:none;color:inherit;font:inherit;text-align:left;width:100%;cursor:pointer}
+.riga:active{background:var(--rilievo)}
+.riga .t{flex:1;min-width:0}
+.riga .t b{display:block;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.riga .t span{font-size:.8rem;color:var(--tenue)}
+.vuoto{background:var(--pannello);padding:14px;color:var(--tenue);font-size:.88rem}
+.punto{width:10px;height:10px;border-radius:50%;flex:0 0 10px;display:inline-block}
+.quadro{width:10px;height:10px;border-radius:3px;flex:0 0 10px;display:inline-block}
+.conta{font-size:.8rem;color:var(--tenue);font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip{font-size:.74rem;padding:2px 9px;border-radius:999px;background:var(--rilievo);color:var(--tenue);border:1px solid var(--linea);white-space:nowrap}
+button.chip{cursor:pointer;font:inherit;font-size:.78rem;padding:5px 11px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.ok{color:var(--ok);border-color:currentColor;background:transparent}
+.att{color:var(--att);border-color:currentColor;background:transparent}
+.err{color:var(--err);border-color:currentColor;background:transparent}
+.cfg{color:var(--accento);border-color:currentColor;background:var(--accento-tenue)}
+.vecchio{border-style:dashed;color:var(--tenue)}
+.seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
+.seg button{flex:0 0 auto;font:inherit;font-size:.86rem;padding:8px 12px;border-radius:999px;border:1px solid var(--linea);background:var(--pannello);color:var(--tenue);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accento-tenue);border-color:var(--accento);color:var(--testo)}
+.blocco{background:var(--pannello);border:1px solid var(--linea);border-radius:12px;padding:12px 14px;display:grid;gap:8px;min-width:0}
+.titolo-grande{font-size:1.4rem;margin:0;font-weight:650;letter-spacing:-.015em;text-wrap:balance;overflow-wrap:anywhere}
+.meta{font-size:.8rem;color:var(--tenue);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.corpo{font-size:1rem;line-height:1.6;white-space:pre-wrap;overflow-wrap:anywhere}
+.azioni{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{font:inherit;font-weight:550;border-radius:10px;padding:9px 14px;border:1px solid var(--accento);background:var(--accento);color:var(--su-accento);cursor:pointer;min-height:42px}
+.btn.v{background:transparent;color:var(--accento)}
+.btn.r{background:transparent;border-color:var(--err);color:var(--err)}
+.btn:disabled{opacity:.45}
+.stato{font-size:.86rem;min-height:1.2em}
+.stato.ok{color:var(--ok)} .stato.err{color:var(--err)} .stato.att{color:var(--att)}
+.banner{font-size:.88rem;padding:10px 12px;border-radius:10px;border:1px solid var(--linea);background:var(--pannello);display:grid;gap:4px}
+.banner.err{border-color:var(--err)} .banner.att{border-color:var(--att)} .banner.ok{border-color:var(--ok)}
+.banner.err b{color:var(--err)} .banner.att b{color:var(--att)} .banner.ok b{color:var(--ok)}
+.mappa{position:relative;height:min(62vh,540px);background:var(--pannello);border:1px solid var(--linea);border-radius:14px;overflow:hidden;touch-action:none}
+.mappa canvas{width:100%;height:100%;display:block}
+.zoom{position:absolute;right:10px;bottom:10px;display:grid;gap:6px}
+.zoom button{width:42px;height:42px;border-radius:10px;border:1px solid var(--linea);background:var(--rilievo);color:var(--testo);font-size:1.2rem;cursor:pointer}
+.scheda-nodo{position:absolute;left:10px;right:62px;bottom:10px;background:var(--rilievo);border:1px solid var(--linea);border-radius:12px;padding:8px 10px;display:flex;gap:10px;align-items:center}
+.scheda-nodo b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.legenda{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--tenue)}
+.legenda span{display:flex;gap:5px;align-items:center}
+.agente{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.avatar{width:34px;height:34px;border-radius:10px;background:var(--accento-tenue);color:var(--accento);display:grid;place-items:center;font-weight:700;font-size:.82rem;flex:0 0 34px}
+.attivita{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--linea)}
+.attivita:first-child{border-top:none}
+.attivita input{width:22px;height:22px;accent-color:var(--accento);flex:0 0 22px}
+.attivita span{flex:1;min-width:0;overflow-wrap:anywhere}
+.attivita.fatta span{color:var(--tenue);text-decoration:line-through}
+.x{background:transparent;border:none;color:var(--tenue);font-size:1.1rem;width:36px;height:36px;cursor:pointer}
+label{font-size:.8rem;color:var(--tenue);display:grid;gap:4px}
+input,select,textarea{font:inherit;color:var(--testo);background:var(--rilievo);border:1px solid var(--linea);border-radius:10px;padding:10px;width:100%}
+textarea{min-height:110px;resize:vertical}
+.check{display:flex;gap:10px;align-items:center;color:var(--testo);font-size:.92rem}
+.check input{width:20px;height:20px;flex:0 0 20px;accent-color:var(--accento)}
+.scelte{display:grid;gap:4px;max-height:220px;overflow:auto;background:var(--rilievo);border:1px solid var(--linea);border-radius:10px;padding:8px 10px}
+.riga2{display:flex;gap:8px;flex-wrap:wrap}.riga2 > *{flex:1 1 150px;min-width:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:.84rem}.kv dt{color:var(--tenue)}.kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.confronto{display:grid;gap:8px}
+.confronto pre{margin:0;font-family:var(--m);font-size:.74rem;background:var(--rilievo);border:1px solid var(--linea);border-radius:8px;padding:8px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:200px;overflow:auto}
+ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.88rem}
+details.blocco summary{cursor:pointer;color:var(--tenue)}
+.nav{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--pannello);border-top:1px solid var(--linea)}
+.nav div{max-width:640px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.nav a{display:grid;justify-items:center;gap:2px;padding:9px 0 8px;color:var(--tenue);text-decoration:none;font-size:.7rem}
+.nav a[aria-current="page"]{color:var(--accento)}
+.fab{position:fixed;z-index:7;right:max(16px,calc(50% - 320px + 16px));bottom:74px;width:56px;height:56px;border-radius:16px;border:none;background:var(--accento);color:var(--su-accento);display:grid;place-items:center;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.45)}
+.fab svg{width:26px;height:26px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round}
+.foglio{position:fixed;inset:0;z-index:20;background:rgba(8,9,11,.65);display:flex;align-items:flex-end;justify-content:center}
+.foglio > form{width:100%;max-width:640px;max-height:92vh;overflow:auto;background:var(--pannello);border-top:1px solid var(--linea);border-radius:18px 18px 0 0;padding:16px;display:grid;gap:12px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:140px;z-index:30;background:var(--rilievo);border:1px solid var(--linea);border-radius:12px;padding:10px 14px;font-size:.88rem;max-width:calc(100% - 32px)}
+button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accento);outline-offset:2px}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
-<div class="top">
-  <div class="wrap">
-    <div class="brand"><h1>Second Brain</h1><span class="chip" id="chip-sync">avvio…</span></div>
-    <nav aria-label="Sezioni">
-      <a href="#stanze">Stanze</a><a href="#agenti">Agenti</a><a href="#skill">Skill</a><a href="#memoria">Memoria</a><a href="#lavoro">Lavoro</a><a href="#dati">Dati</a>
-    </nav>
-  </div>
-</div>
-
-<main class="wrap">
-  <div id="avvisi"></div>
-
-  <section data-view="stanze" class="view" aria-labelledby="h-stanze">
-    <div class="card">
-      <h2 id="h-stanze">Stanze</h2>
-      <form id="f-stanze">
-        <input type="hidden" id="st-id">
-        <label>Nome <input id="st-nome" required maxlength="100"></label>
-        <label>Descrizione <input id="st-desc" maxlength="300"></label>
-        <label>Obiettivi (uno per riga) <textarea id="st-obj" maxlength="2000"></textarea></label>
-        <fieldset><legend>Agenti assegnati</legend><div id="st-agenti" class="chips"></div></fieldset>
-        <div class="actions"><button type="submit" id="st-save">Crea stanza</button><button type="button" class="ghost" id="st-cancel" hidden>Annulla modifica</button></div>
-        <p class="status" id="st-status"></p>
-      </form>
-    </div>
-    <div class="card"><div class="row"><label>Mostra
-      <select id="st-filtro"><option value="attiva">Attive</option><option value="archiviata">Archiviate</option><option value="tutte">Tutte</option></select></label></div>
-      <div id="l-stanze"></div>
-    </div>
-  </section>
-
-  <section data-view="agenti" class="view" aria-labelledby="h-agenti" hidden>
-    <div class="card">
-      <h2 id="h-agenti">Catalogo agenti</h2>
-      <p class="small muted">Un agente qui è una <strong>configurazione</strong>: non indica che stia lavorando. Le esecuzioni reali arrivano dalle istantanee di Claude Code e compaiono qui solo se le hai collegate.</p>
-      <form id="f-agenti">
-        <input type="hidden" id="ag-id">
-        <div class="row"><label>Nome <input id="ag-nome" required maxlength="100"></label><label>Ruolo <input id="ag-ruolo" maxlength="150"></label></div>
-        <label>Istruzioni <textarea id="ag-istr" maxlength="8000"></textarea></label>
-        <div class="row">
-          <label>Strumenti (separati da virgola) <input id="ag-strum" maxlength="500" placeholder="es. Bash, GitHub, ricerca web"></label>
-          <label>Accesso alla memoria
-            <select id="ag-mem"><option value="nessuno">Nessuno</option><option value="stanza">Solo stanze assegnate</option><option value="tutta">Tutta la memoria condivisa</option></select></label>
-        </div>
-        <fieldset><legend>Skill</legend><div id="ag-skill" class="chips"></div></fieldset>
-        <div class="actions"><button type="submit" id="ag-save">Aggiungi agente</button><button type="button" class="ghost" id="ag-cancel" hidden>Annulla modifica</button></div>
-        <p class="status" id="ag-status"></p>
-      </form>
-    </div>
-    <div class="card" id="l-agenti"></div>
-  </section>
-
-  <section data-view="skill" class="view" aria-labelledby="h-skill" hidden>
-    <div class="card">
-      <h2 id="h-skill">Skill</h2>
-      <p class="small muted">Procedure riutilizzabili. Si assegnano agli agenti dalla scheda dell'agente.</p>
-      <form id="f-skill">
-        <input type="hidden" id="sk-id">
-        <label>Nome <input id="sk-nome" required maxlength="100"></label>
-        <label>Descrizione <input id="sk-desc" maxlength="300"></label>
-        <label>Procedura <textarea id="sk-proc" maxlength="8000"></textarea></label>
-        <div class="actions"><button type="submit" id="sk-save">Aggiungi skill</button><button type="button" class="ghost" id="sk-cancel" hidden>Annulla modifica</button></div>
-        <p class="status" id="sk-status"></p>
-      </form>
-    </div>
-    <div class="card" id="l-skill"></div>
-  </section>
-
-  <section data-view="memoria" class="view" aria-labelledby="h-memoria" hidden>
-    <div class="card">
-      <h2 id="h-memoria">Memoria</h2>
-      <form id="f-memoria">
-        <input type="hidden" id="me-id">
-        <label>Contenuto <textarea id="me-testo" required maxlength="8000"></textarea></label>
-        <div class="row">
-          <label>Tipo
-            <select id="me-tipo"><option value="originale">Originale (testo della fonte)</option><option value="riassunto">Riassunto</option><option value="dedotto">Dedotto (non detto esplicitamente)</option></select></label>
-          <label>Fonte <input id="me-fonte" required maxlength="200" placeholder="es. chat Claude del 3/11, sessione session_…"></label>
-        </div>
-        <div class="row">
-          <label>Data dell'informazione <input type="date" id="me-data" required></label>
-          <label>Stanza <select id="me-stanza"></select></label>
-        </div>
-        <label class="check"><input type="checkbox" id="me-agenti"> Accessibile agli agenti (copiata nel repository GitHub privato)</label>
-        <div class="actions"><button type="submit" id="me-save">Salva in memoria</button><button type="button" class="ghost" id="me-cancel" hidden>Annulla modifica</button></div>
-        <p class="status" id="me-status"></p>
-      </form>
-    </div>
-    <div class="card">
-      <div class="row">
-        <label>Cerca <input id="me-cerca" type="search" placeholder="parole nel contenuto o nella fonte"></label>
-        <label>Tipo <select id="me-ftipo"><option value="">Tutti</option><option value="originale">Originale</option><option value="riassunto">Riassunto</option><option value="dedotto">Dedotto</option></select></label>
-        <label>Stanza <select id="me-fstanza"></select></label>
-      </div>
-      <div id="l-memoria"></div>
-    </div>
-  </section>
-
-  <section data-view="lavoro" class="view" aria-labelledby="h-lavoro" hidden>
-    <div class="card">
-      <h2 id="h-lavoro">Esecuzioni reali</h2>
-      <div id="snap-head"></div>
-      <div class="actions">
-        <button type="button" class="ghost" id="b-snap">Scarica istantanea dal repository</button>
-        <span class="small muted">Legge il file scritto da Claude Code. Per una nuova rilevazione scrivi «aggiorna stato» in Claude Code.</span>
-      </div>
-      <p class="status" id="lv-status"></p>
-    </div>
-    <div class="card"><h3>Sessioni nell'ultima istantanea</h3><div id="l-sessioni"></div></div>
-    <div class="card" id="c-orfani" hidden><h3>Collegamenti a sessioni non presenti nell'istantanea</h3><div id="l-orfani"></div></div>
-  </section>
-
-  <section data-view="dati" class="view" aria-labelledby="h-dati" hidden>
-    <div class="card">
-      <h2 id="h-dati">Sincronizzazione</h2>
-      <dl class="kv" id="sync-kv"></dl>
-      <div class="actions"><button type="button" id="b-sync">Sincronizza ora</button><button type="button" class="ghost" id="b-token-apri">Accesso GitHub</button></div>
-      <p class="status" id="sync-status"></p>
-      <div class="banner small"><strong>Cosa resta sul telefono e cosa va su GitHub</strong>
-        <span>Stanze, agenti, skill, collegamenti e le memorie che rendi accessibili agli agenti vengono copiati nel repository privato second-brain (ramo «dati»). Le altre memorie restano solo sul telefono e nelle esportazioni.</span>
-        <span>Eliminare un dato dall'app lo toglie dalla versione attuale del repository alla sincronizzazione successiva, ma <strong>non lo cancella dalla cronologia Git</strong>: le versioni precedenti restano consultabili nel repository.</span></div>
-    </div>
-    <div class="card" id="c-conflitti" hidden><h2>Conflitti da risolvere</h2><p class="small muted">Lo stesso dato è stato modificato sia sul telefono sia nel repository. Nessuna delle due versioni è stata sovrascritta: scegli quale tenere.</p><div id="l-conflitti"></div></div>
-    <div class="card" id="c-token" hidden>
-      <h2>Accesso GitHub</h2>
-      <p class="small" id="token-stato"></p>
-      <ol class="guida">
-        <li>Tocca <strong>Apri GitHub</strong>: si apre la pagina per creare un token a grana fine (accedi se richiesto).</li>
-        <li><em>Token name</em>: «Second Brain telefono». <em>Expiration</em>: 90 giorni (o la scadenza che preferisci).</li>
-        <li><em>Resource owner</em>: il tuo account. <em>Repository access</em>: <strong>Only select repositories</strong> → <strong>second-brain</strong>.</li>
-        <li><em>Permissions → Repository permissions → Contents</em>: <strong>Read and write</strong>. Nient'altro (Metadata in sola lettura viene aggiunto da GitHub).</li>
-        <li>Tocca <em>Generate token</em>, copia il token (inizia con <span class="mono">github_pat_</span>) e incollalo qui sotto.</li>
-      </ol>
-      <div class="actions"><button type="button" class="ghost" id="b-github">Apri GitHub</button></div>
-      <label>Token <input type="password" id="token" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="github_pat_…"></label>
-      <div class="actions"><button type="button" id="b-token-salva">Salva e verifica</button><button type="button" class="danger box" id="b-token-via">Rimuovi token dal telefono</button></div>
-      <p class="small muted">Il token viene cifrato con una chiave del telefono (Android Keystore) e non compare mai nell'app, nelle esportazioni o nei registri. Per revocarlo: GitHub › Settings › Developer settings › Fine-grained tokens.</p>
-      <p class="status" id="token-status"></p>
-    </div>
-    <div class="card">
-      <h2>Esportazione</h2>
-      <p class="small muted">Salva un file JSON con tutti i dati (anche le memorie private) e la loro impronta SHA-256. Il token non è mai incluso.</p>
-      <div class="actions"><button type="button" id="b-exp">Esporta su file</button></div>
-      <p class="status" id="exp-status"></p>
-    </div>
-    <div class="card">
-      <h2>Ripristino e migrazione</h2>
-      <p class="small muted">Scegli un backup di Second Brain (anche quello della versione web). L'impronta viene verificata prima di cambiare qualsiasi cosa.</p>
-      <div class="actions"><button type="button" class="ghost" id="b-imp">Scegli file di backup</button></div>
-      <div id="imp-preview"></div>
-      <p class="status" id="imp-status"></p>
-    </div>
-    <div class="card">
-      <h2>Dati di prova</h2>
-      <p class="small" id="fitt-info"></p>
-      <div class="actions"><button type="button" class="danger box" id="b-fitt">Elimina solo i dati di prova</button></div>
-      <p class="status" id="fitt-status"></p>
-    </div>
-    <div class="card"><h2>Informazioni</h2><dl class="kv" id="info-kv"></dl></div>
-  </section>
-</main>
+<header class="top"><div class="in">
+  <button class="ico" id="indietro" aria-label="Indietro" hidden><svg viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+  <h1 id="titolo">Second Brain</h1>
+  <span class="chip" id="chip-sync">avvio…</span>
+  <a class="ico" href="#impostazioni" aria-label="Impostazioni"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1V21a2 2 0 1 1-4 0v-.1a1.6 1.6 0 0 0-2.7-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.6 1.6 0 0 0 3.5 15H3a2 2 0 1 1 0-4h.1a1.6 1.6 0 0 0 1.1-2.7l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 1.8.3H9a1.6 1.6 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.6 1.6 0 0 0 2.7 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0-.3 1.8V9a1.6 1.6 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.6 1.6 0 0 0-1.5 1z"/></svg></a>
+</div></header>
+<main id="vista"></main>
+<button class="fab" id="fab" aria-label="Aggiunta rapida"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+<nav class="nav" aria-label="Sezioni"><div>
+  <a href="#home"><svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</a>
+  <a href="#organizza"><svg viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h12"/></svg>Organizza</a>
+  <a href="#note"><svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/></svg>Note</a>
+  <a href="#mappa"><svg viewBox="0 0 24 24"><circle cx="6" cy="6" r="2.5"/><circle cx="18" cy="8" r="2.5"/><circle cx="12" cy="18" r="2.5"/><path d="M8 7l7.6 1M7.3 8.2l3.6 7.6M16.9 10.2l-3.7 5.8"/></svg>Mappa</a>
+  <a href="#stanze"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg>Stanze</a>
+</div></nav>
+<div class="foglio" id="foglio" hidden></div>
+<div class="toast" id="toast" role="status" hidden></div>
 
 <script src="motore.js"></script>
 <script>
@@ -251,447 +136,573 @@ ol.guida{margin:0;padding-left:20px;display:grid;gap:6px;font-size:.9rem}
   const M = window.SBMotore;
   const OWNER = "salvatorevirgillito04-code", REPO = "second-brain";
   const FRESCO_MIN = 15;
-  const BUCKET = { WORKING: ["in esecuzione", "warn"], BLOCKED: ["in attesa di intervento", "err"], REVIEW_READY: ["pronta per revisione", "ok"], COMPLETED: ["completata", "ok"], FAILED: ["fallita", "err"], IDLE: ["inattiva", ""] };
+  const CAT = { inbox: ["Da organizzare", "--inbox"], area: ["Aree", "--area"], risorsa: ["Risorse", "--risorsa"], archivio: ["Archivio", "--archivio"] };
+  const BUCKET = { WORKING: ["in esecuzione", "ok"], BLOCKED: ["attende te", "att"], REVIEW_READY: ["pronta per revisione", "ok"], COMPLETED: ["completata", ""], FAILED: ["fallita", "err"], IDLE: ["inattiva", ""] };
   const $ = (s) => document.querySelector(s);
+  const V = $("#vista");
   const A = window.Android || null;
-  const S = { stato: M.statoVuoto(), inSync: false, pending: null, timerSync: null, origine: "nuovo", erroreArchivio: null };
+  const S = { stato: M.statoVuoto(), origine: "nuovo", erroreArchivio: null, migrazione: null, inSync: false, timerSync: null,
+    cerca: "", cercaNote: "", org: "inbox", sub: "stanze", nota: null, stanza: null, progetto: null, nodo: null, isolati: false, pending: null };
 
   // ---------- utilità ----------
   const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-  const nowIso = () => new Date().toISOString();
-  const newId = (p) => p + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
-  const L = (col) => M.elenco(S.stato, col);
-  const T = (col, id) => (id ? M.trova(S.stato, col, id) : null);
-  function status(id, text, kind) { const el = $(id); el.textContent = text || ""; el.className = "status" + (kind ? " " + kind : ""); }
-  function quando(iso) { const d = new Date(iso); return isNaN(d) ? "mai" : d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }); }
-  function giorno(iso) { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("it-IT"); }
-  function minutiDa(iso) { const t = Date.parse(iso); return isNaN(t) ? Infinity : (Date.now() - t) / 60000; }
-  function eta(iso) {
-    const m = minutiDa(iso); if (!isFinite(m)) return "mai";
-    if (m < 1) return "meno di un minuto fa"; if (m < 60) return Math.round(m) + " min fa";
-    const h = m / 60; if (h < 48) return Math.round(h) + " h fa"; return Math.round(h / 24) + " giorni fa";
-  }
+  const ora = () => new Date().toISOString();
+  const nuovoId = (p) => p + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+  const L = (c) => M.elenco(S.stato, c);
+  const T = (c, id) => (id ? M.trova(S.stato, c, id) : null);
   const norm = (t) => String(t || "").toLowerCase().replace(/\s+/g, " ").trim();
-  const bucketKey = (b) => String(b || "").replace("SESSION_STATUS_BUCKET_", "");
+  const quando = (iso) => { const d = new Date(iso); return isNaN(d) ? "mai" : d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }); };
+  const giorno = (iso) => { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("it-IT"); };
+  const minutiDa = (iso) => { const t = Date.parse(iso); return isNaN(t) ? Infinity : (Date.now() - t) / 60000; };
+  function eta(iso) { const m = minutiDa(iso); if (!isFinite(m)) return "mai"; if (m < 1) return "ora"; if (m < 60) return Math.round(m) + " min fa"; const h = m / 60; if (h < 48) return Math.round(h) + " h fa"; return Math.round(h / 24) + " giorni fa"; }
+  const recente = (r) => r.aggiornato_il || r.corretto_il || r.registrato_il || r.creato_il || r.data || "";
+  const titoloNota = (n) => (n.titolo && n.titolo.trim()) || String(n.testo || "").split("\n")[0].slice(0, 80) || "(nota vuota)";
+  const catNota = (n) => (CAT[n.categoria] ? n.categoria : "inbox");
   const statoStanza = (s) => s.stato || (s.archiviata ? "archiviata" : "attiva");
+  const pallino = (cat) => `<span class="punto" style="background:var(${CAT[cat][1]})"></span>`;
+  function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 3200); }
+  function stato(sel, t, k) { const el = $(sel); if (el) { el.textContent = t || ""; el.className = "stato" + (k ? " " + k : ""); } }
   function conferma(btn, fn) {
     if (btn.dataset.armato) { delete btn.dataset.armato; fn(); return; }
     btn.dataset.armato = "1"; const t = btn.textContent; btn.textContent = "Tocca di nuovo per confermare";
     setTimeout(() => { if (btn.isConnected && btn.dataset.armato) { delete btn.dataset.armato; btn.textContent = t; } }, 4000);
   }
 
-  // ---------- ponte con Android ----------
+  // ---------- ponte Android ----------
   const attese = new Map(); let seq = 0;
   window.__risposta = (id, st, corpo) => { const r = attese.get(id); if (!r) return; attese.delete(id); let c = null; try { c = corpo ? JSON.parse(corpo) : null; } catch (_) { c = corpo; } r({ status: st, corpo: c }); };
-  const api = { richiesta: (metodo, percorso, corpo) => new Promise((res) => {
-    if (!A) { res({ status: 0, corpo: null }); return; }
-    const id = "r" + (++seq); attese.set(id, res); A.github(id, metodo, percorso, corpo ? JSON.stringify(corpo) : "");
-  }) };
+  const api = { richiesta: (m, p, c) => new Promise((res) => { if (!A) { res({ status: 0, corpo: null }); return; } const id = "r" + ++seq; attese.set(id, res); A.github(id, m, p, c ? JSON.stringify(c) : ""); }) };
   const haToken = () => !!(A && A.haToken());
   const inRete = () => !!(A && A.retePresente());
-
+  const bloccato = () => S.origine === "illeggibile" || S.origine === "migrazione_fallita";
   async function salva() {
     if (!A) return;
-    // dati illeggibili: non sovrascriverli con uno stato vuoto finché non ripristini un backup
-    if (S.origine === "illeggibile" || S.origine === "migrazione_fallita") { S.erroreArchivio = "salvataggio sospeso finché non ripristini un backup"; avvisi(); return; }
-    const r = A.salvaDati(JSON.stringify(S.stato));
-    S.erroreArchivio = r === "ok" ? null : r;
-    if (S.erroreArchivio) avvisi();
+    if (bloccato()) { S.erroreArchivio = "salvataggio sospeso finché non ripristini un backup"; return; }
+    const r = A.salvaDati(JSON.stringify(S.stato)); S.erroreArchivio = r === "ok" ? null : r;
+  }
+  async function scrivi(col, id, campi) {
+    const prima = id ? T(col, id) : null;
+    const dati = prima ? { ...prima, ...campi, aggiornato_il: ora() } : { ...campi, creato_il: ora() };
+    delete dati.id; const nid = id || nuovoId(col.slice(0, 2));
+    await M.salvaRecord(S.stato, col, nid, dati); await salva(); programmaSync(); return nid;
+  }
+  function elimina(col, id) {
+    const sinc = !!(S.stato.collezioni[col][id] && S.stato.collezioni[col][id].sync.sha);
+    M.eliminaRecord(S.stato, col, id); salva(); programmaSync();
+    toast(sinc ? "Eliminato. Sarà tolto dal repository alla prossima sincronizzazione; resta nella cronologia Git." : "Eliminato.");
   }
 
-  // ---------- navigazione ----------
-  const VISTE = ["stanze", "agenti", "skill", "memoria", "lavoro", "dati"];
-  function mostra() {
-    const v = VISTE.includes(location.hash.slice(1)) ? location.hash.slice(1) : "stanze";
-    document.querySelectorAll(".view").forEach((s) => (s.hidden = s.dataset.view !== v));
-    document.querySelectorAll("nav a").forEach((a) => (a.getAttribute("href") === "#" + v ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
-  }
-  window.addEventListener("hashchange", mostra); mostra();
-
-  function caselle(sel, items, scelti) {
-    const box = $(sel);
-    const correnti = scelti ?? new Set([...box.querySelectorAll("input:checked")].map((i) => i.value));
-    box.innerHTML = items.length ? items.map((it) => `<label class="check"><input type="checkbox" value="${esc(it.id)}"${correnti.has(it.id) ? " checked" : ""}> ${esc(it.nome)}</label>`).join("") : `<span class="empty">Nessun elemento nel catalogo.</span>`;
-  }
-  const valoriCaselle = (sel) => [...$(sel).querySelectorAll("input:checked")].map((i) => i.value);
-  function opzioniStanze(sel, primo) {
-    const el = $(sel); const v = el.value;
-    el.innerHTML = `<option value="">${esc(primo)}</option>` + L("stanze").map((s) => `<option value="${esc(s.id)}">${esc(s.nome)}${statoStanza(s) === "archiviata" ? " (archiviata)" : ""}</option>`).join("");
-    el.value = [...el.options].some((o) => o.value === v) ? v : "";
-  }
-
-  // ---------- istantanea ----------
+  // ---------- istantanea e collegamenti ----------
   const istantanea = () => (S.stato.stato_lavoro || []).find((x) => x.id === "istantanea") || null;
   const tentativo = () => (S.stato.stato_lavoro || []).find((x) => x.id === "ultimo_tentativo") || null;
   const collegamentiDi = (campo, id) => L("collegamenti").filter((c) => c[campo] === id);
-  function rilevazione(sid) { const ist = istantanea(); if (!ist) return null; const s = (ist.sessioni || []).find((x) => x.id === sid); return s ? { s, rilevato_il: ist.rilevato_il } : null; }
-  function chipRilevazione(r) {
-    if (!r) return `<span class="chip stale">non presente nell'ultima istantanea</span>`;
-    const [lab, kind] = BUCKET[bucketKey(r.s.status_bucket)] || [bucketKey(r.s.status_bucket).toLowerCase() || "sconosciuto", ""];
+  function rilevazione(sid) { const ist = istantanea(); const s = ist && (ist.sessioni || []).find((x) => x.id === sid); return s ? { s, rilevato_il: ist.rilevato_il } : null; }
+  const bk = (b) => String(b || "").replace("SESSION_STATUS_BUCKET_", "");
+  function chipRil(r) {
+    if (!r) return `<span class="chip vecchio">non nell'ultima istantanea</span>`;
+    const [lab, k] = BUCKET[bk(r.s.status_bucket)] || [bk(r.s.status_bucket).toLowerCase() || "sconosciuto", ""];
     const vecchio = minutiDa(r.rilevato_il) > FRESCO_MIN;
-    const attivo = ["WORKING", "BLOCKED"].includes(bucketKey(r.s.status_bucket));
-    return `<span class="chip ${vecchio ? "stale" : kind}">rilevata: ${esc(lab)}</span><span class="chip ${vecchio ? "stale" : ""}">${esc(eta(r.rilevato_il))}</span>` + (vecchio && attivo ? `<span class="chip stale">stato attuale non noto</span>` : "");
+    return `<span class="chip ${vecchio ? "vecchio" : k}">rilevata: ${esc(lab)} · ${esc(eta(r.rilevato_il))}</span>` + (vecchio && ["WORKING", "BLOCKED"].includes(bk(r.s.status_bucket)) ? `<span class="chip vecchio">stato attuale non noto</span>` : "");
+  }
+
+  // ---------- righe ----------
+  function syncChip(col, id) { const r = S.stato.collezioni[col][id]; if (!r) return ""; if (S.stato.sync.conflitti[col + "/" + id]) return `<span class="chip err">conflitto</span>`; return r.sync.sporco ? `<span class="chip att">da inviare</span>` : ""; }
+  const rigaNota = (n) => `<button class="riga" data-apri="nota" data-id="${esc(n.id)}">${pallino(catNota(n))}<span class="t"><b>${esc(titoloNota(n))}</b><span>${esc(CAT[catNota(n)][0])} · ${esc(n.tipo || "nota")} · ${esc(giorno(recente(n)))}</span></span><span class="conta">${M.inEntrata(S.stato, n.id).length}↙</span></button>`;
+  const rigaProgetto = (p) => { const nn = L("note").filter((n) => n.progetto_id === p.id).length; return `<button class="riga" data-apri="progetto" data-id="${esc(p.id)}"><span class="quadro" style="background:var(--progetto)"></span><span class="t"><b>${esc(p.nome)}</b><span>${esc(p.stato || "attivo")} · ${nn} note · ${esc(giorno(recente(p)))}</span></span>${syncChip("progetti", p.id)}</button>`; };
+  const rigaStanza = (s) => `<button class="riga" data-apri="stanza" data-id="${esc(s.id)}"><span class="quadro" style="background:var(--stanza)"></span><span class="t"><b>${esc(s.nome)}</b><span>${(s.agenti_ids || []).length} agenti · ${(s.attivita || []).filter((a) => !a.fatta).length} attività aperte</span></span>${statoStanza(s) === "archiviata" ? `<span class="chip">archiviata</span>` : ""}</button>`;
+  const lista = (righe, vuoto) => `<div class="lista">${righe.join("") || `<p class="vuoto">${vuoto}</p>`}</div>`;
+
+  // ---------- viste ----------
+  const VISTE = {
+    home() {
+      const q = norm(S.cerca);
+      if (q) {
+        const n = L("note").filter((x) => norm(titoloNota(x) + " " + x.testo + " " + (x.fonte || "") + " " + (x.tag || []).join(" ")).includes(q));
+        const p = L("progetti").filter((x) => norm(x.nome + " " + (x.obiettivo || "")).includes(q));
+        const s = L("stanze").filter((x) => norm(x.nome + " " + (x.descrizione || "")).includes(q));
+        return campoCerca() + `<section><h2>${n.length + p.length + s.length} risultati</h2>${lista([...p.map(rigaProgetto), ...s.map(rigaStanza), ...n.map(rigaNota)], "Nessun risultato.")}</section>`;
+      }
+      const inbox = L("note").filter((n) => catNota(n) === "inbox").length;
+      const attivi = L("progetti").filter((p) => (p.stato || "attivo") === "attivo");
+      const ist = istantanea(); const lavoro = ist ? (ist.sessioni || []).filter((x) => bk(x.status_bucket) === "WORKING").length : 0;
+      return campoCerca() + avvisi() + `
+        <div class="rapidi">
+          <button class="rapido" data-vai="organizza" data-org="inbox"><b style="color:var(--inbox)">${inbox}</b>Da organizzare</button>
+          <button class="rapido" data-vai="organizza" data-org="progetti"><b style="color:var(--progetto)">${attivi.length}</b>Progetti attivi</button>
+          <button class="rapido" data-vai="stanze" data-sub="esecuzioni"><b style="color:var(--area)">${ist ? lavoro : "–"}</b>${ist ? "in esecuzione · " + esc(eta(ist.rilevato_il)) : "nessuna rilevazione"}</button>
+        </div>
+        <section><h2>Progetti recenti</h2>${lista(attivi.sort((a, b) => recente(b).localeCompare(recente(a))).slice(0, 4).map(rigaProgetto), "Nessun progetto. Crealo con il pulsante +.")}</section>
+        <section><h2>Ultime note</h2>${lista(L("note").sort((a, b) => recente(b).localeCompare(recente(a))).slice(0, 5).map(rigaNota), "Nessuna nota. Aggiungine una con il pulsante +.")}</section>`;
+    },
+    organizza() {
+      const voci = [["inbox", "Da organizzare"], ["progetti", "Progetti"], ["area", "Aree"], ["risorsa", "Risorse"], ["archivio", "Archivio"]];
+      const conta = (k) => k === "progetti" ? L("progetti").filter((p) => p.stato !== "archiviato").length : L("note").filter((n) => catNota(n) === k).length + (k === "archivio" ? L("progetti").filter((p) => p.stato === "archiviato").length + L("stanze").filter((s) => statoStanza(s) === "archiviata").length : 0);
+      const desc = { inbox: "Note catturate e non ancora sistemate: aprile e scegli dove vanno.", progetti: "Lavori con un obiettivo e una fine.", area: "Responsabilità continue, senza scadenza.", risorsa: "Materiale di riferimento.", archivio: "Concluso o in pausa. Resta cercabile." };
+      let righe;
+      if (S.org === "progetti") righe = L("progetti").filter((p) => p.stato !== "archiviato").map(rigaProgetto);
+      else if (S.org === "archivio") righe = [...L("progetti").filter((p) => p.stato === "archiviato").map(rigaProgetto), ...L("stanze").filter((s) => statoStanza(s) === "archiviata").map(rigaStanza), ...L("note").filter((n) => catNota(n) === "archivio").map(rigaNota)];
+      else righe = L("note").filter((n) => catNota(n) === S.org).sort((a, b) => recente(b).localeCompare(recente(a))).map(rigaNota);
+      return `<div class="seg" role="group" aria-label="Categorie">${voci.map(([k, l]) => `<button data-org="${k}" aria-pressed="${S.org === k}">${l} <span class="conta">${conta(k)}</span></button>`).join("")}</div>
+        <p class="small muted">${desc[S.org]}</p>${S.org === "progetti" ? `<div class="azioni"><button class="btn v" data-modifica="progetto">Nuovo progetto</button></div>` : ""}${lista(righe, "Niente qui.")}`;
+    },
+    note() {
+      const q = norm(S.cercaNote);
+      const tutte = L("note").filter((n) => !q || norm(titoloNota(n) + " " + n.testo + " " + (n.fonte || "") + " " + (n.tag || []).join(" ")).includes(q)).sort((a, b) => recente(b).localeCompare(recente(a)));
+      const gruppi = {}; for (const n of L("note")) (gruppi[norm(n.testo)] ||= []).push(n.id);
+      const doppi = Object.values(gruppi).filter((g) => g.length > 1).length;
+      return `<label class="cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="cerca-note" type="search" placeholder="Cerca nelle note e nei tag" value="${esc(S.cercaNote)}"></label>
+        ${doppi ? `<p class="banner att"><b>${doppi} gruppi di possibili duplicati</b><span>Note con lo stesso testo: aprile e decidi tu se eliminarne una.</span></p>` : ""}
+        <section><h2>${tutte.length} note</h2>${lista(tutte.map(rigaNota), "Nessuna nota trovata.")}</section>`;
+    },
+    nota() {
+      const n = T("note", S.nota); if (!n) return `<p class="vuoto">Nota non trovata.</p>`;
+      const usc = (n.collegamenti || []).map((id) => T("note", id)).filter(Boolean);
+      const ent = M.inEntrata(S.stato, n.id);
+      const st = T("stanze", n.stanza_id), pr = T("progetti", n.progetto_id);
+      const doppi = L("note").filter((x) => x.id !== n.id && norm(x.testo) === norm(n.testo));
+      return `<article class="blocco"><h3 class="titolo-grande">${esc(titoloNota(n))}</h3>
+          <div class="meta">${pallino(catNota(n))}${esc(CAT[catNota(n)][0])}<span class="chip">${esc(n.tipo || "tipo non indicato")}</span><span class="chip">fonte: ${esc(n.fonte || "non indicata")}</span><span class="chip">del ${esc(giorno(n.data) || "?")}</span>
+            ${n.accessibile_agenti === true ? `<span class="chip cfg">accessibile agli agenti</span>` : `<span class="chip">privata, solo sul telefono</span>`}${n.corretto_il ? `<span class="chip att">corretta il ${esc(giorno(n.corretto_il))}</span>` : ""}${n.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("note", n.id)}</div>
+          ${(n.tag || []).length ? `<div class="chips">${n.tag.map((t) => `<span class="chip">#${esc(t)}</span>`).join("")}</div>` : ""}
+          <div class="corpo">${esc(n.testo)}</div>
+          <div class="chips">${pr ? `<button class="chip cfg" data-apri="progetto" data-id="${esc(pr.id)}">progetto: ${esc(pr.nome)}</button>` : ""}${st ? `<button class="chip cfg" data-apri="stanza" data-id="${esc(st.id)}">stanza: ${esc(st.nome)}</button>` : ""}</div>
+          ${doppi.length ? `<p class="banner att"><b>Possibile duplicato</b><span>Stesso testo in: ${doppi.map((d) => esc(titoloNota(d))).join(", ")}</span></p>` : ""}
+          <div class="azioni"><button class="btn" data-modifica="nota" data-id="${esc(n.id)}">Modifica</button><button class="btn r" data-elimina="note" data-id="${esc(n.id)}">Elimina</button></div></article>
+        <section><h2>Sposta in</h2><div class="chips">${Object.entries(CAT).map(([k, [l]]) => `<button class="chip ${catNota(n) === k ? "cfg" : ""}" data-categoria="${k}">${l}</button>`).join("")}</div></section>
+        <section><h2>Riferimenti in entrata · ${ent.length}</h2>${lista(ent.map(rigaNota), "Nessuna nota rimanda qui.")}</section>
+        <section><h2>Collegamenti in uscita · ${usc.length}</h2>${lista(usc.map(rigaNota), "Nessun collegamento. Aggiungili con Modifica.")}</section>`;
+    },
+    progetto() {
+      const p = T("progetti", S.progetto); if (!p) return `<p class="vuoto">Progetto non trovato.</p>`;
+      const st = T("stanze", p.stanza_id);
+      return `<article class="blocco"><h3 class="titolo-grande">${esc(p.nome)}</h3><div class="meta"><span class="quadro" style="background:var(--progetto)"></span>Progetto · ${esc(p.stato || "attivo")}${st ? ` <button class="chip cfg" data-apri="stanza" data-id="${esc(st.id)}">stanza: ${esc(st.nome)}</button>` : ""}${syncChip("progetti", p.id)}</div>
+          ${p.obiettivo ? `<p>${esc(p.obiettivo)}</p>` : ""}
+          <div class="azioni"><button class="btn" data-modifica="progetto" data-id="${esc(p.id)}">Modifica</button><button class="btn v" data-archivia-progetto="${esc(p.id)}">${p.stato === "archiviato" ? "Riattiva" : "Archivia"}</button><button class="btn r" data-elimina="progetti" data-id="${esc(p.id)}">Elimina</button></div></article>
+        <section><h2>Note del progetto</h2>${lista(L("note").filter((n) => n.progetto_id === p.id).map(rigaNota), "Nessuna nota collegata. Collegala dalla nota con Modifica.")}</section>`;
+    },
+    mappa() {
+      return `<div class="legenda"><span><i class="quadro" style="background:var(--progetto)"></i>Progetti</span><span><i class="quadro" style="background:var(--stanza)"></i>Stanze</span>${Object.entries(CAT).map(([, [l, c]]) => `<span><i class="punto" style="background:var(${c})"></i>${l}</span>`).join("")}</div>
+        <div class="mappa" id="mappa"><canvas id="tela" aria-label="Mappa delle relazioni"></canvas>
+          <div class="zoom"><button id="zp" aria-label="Avvicina">+</button><button id="zm" aria-label="Allontana">−</button></div>
+          <div class="scheda-nodo" id="scheda" hidden><b id="scheda-t"></b><button class="btn" id="scheda-apri">Apri</button></div></div>
+        <label class="check"><input type="checkbox" id="isolati"${S.isolati ? " checked" : ""}> Mostra anche gli elementi senza relazioni</label>
+        <p class="small muted" id="mappa-info"></p>`;
+    },
+    stanze() {
+      const voci = [["stanze", "Stanze"], ["agenti", "Agenti"], ["skill", "Skill"], ["esecuzioni", "Esecuzioni"]];
+      let corpo = "";
+      if (S.sub === "stanze") corpo = `<div class="azioni"><button class="btn v" data-modifica="stanza">Nuova stanza</button></div>${lista(L("stanze").filter((s) => statoStanza(s) !== "archiviata").map(rigaStanza), "Nessuna stanza attiva.")}`;
+      if (S.sub === "agenti") corpo = `<p class="small muted">Un agente qui è una configurazione: non indica che stia lavorando. Le esecuzioni reali arrivano dalle istantanee di Claude Code e compaiono solo se le colleghi.</p><div class="azioni"><button class="btn v" data-modifica="agente">Nuovo agente</button></div>${L("agenti").map(schedaAgente).join("") || `<p class="vuoto">Nessun agente.</p>`}`;
+      if (S.sub === "skill") corpo = `<div class="azioni"><button class="btn v" data-modifica="skill">Nuova skill</button></div>${L("skill").map((k) => `<div class="blocco"><b>${esc(k.nome)}</b>${k.descrizione ? `<span class="small muted">${esc(k.descrizione)}</span>` : ""}${k.procedura ? `<div class="corpo small">${esc(k.procedura)}</div>` : ""}<div class="chips"><span class="chip">usata da ${L("agenti").filter((a) => (a.skill_ids || []).includes(k.id)).length} agenti</span>${syncChip("skill", k.id)}</div><div class="azioni"><button class="btn v" data-modifica="skill" data-id="${esc(k.id)}">Modifica</button><button class="btn r" data-elimina="skill" data-id="${esc(k.id)}">Elimina</button></div></div>`).join("") || `<p class="vuoto">Nessuna skill.</p>`}`;
+      if (S.sub === "esecuzioni") corpo = esecuzioni();
+      return `<div class="seg" role="group">${voci.map(([k, l]) => `<button data-sub="${k}" aria-pressed="${S.sub === k}">${l}</button>`).join("")}</div>${corpo}`;
+    },
+    stanza() {
+      const s = T("stanze", S.stanza); if (!s) return `<p class="vuoto">Stanza non trovata.</p>`;
+      const agenti = (s.agenti_ids || []).map((id) => T("agenti", id)).filter(Boolean);
+      const att = s.attivita || [];
+      return `<article class="blocco"><h3 class="titolo-grande">${esc(s.nome)}</h3>${s.descrizione ? `<p class="muted">${esc(s.descrizione)}</p>` : ""}
+          ${(s.obiettivi || []).length ? `<ul style="margin:0;padding-left:18px">${s.obiettivi.map((o) => `<li>${esc(o)}</li>`).join("")}</ul>` : ""}
+          <div class="chips">${statoStanza(s) === "archiviata" ? `<span class="chip">archiviata</span>` : `<span class="chip ok">attiva</span>`}${syncChip("stanze", s.id)}</div>
+          <div class="azioni"><button class="btn" data-modifica="stanza" data-id="${esc(s.id)}">Modifica</button><button class="btn v" data-archivia-stanza="${esc(s.id)}">${statoStanza(s) === "archiviata" ? "Riattiva" : "Archivia"}</button><button class="btn r" data-elimina="stanze" data-id="${esc(s.id)}">Elimina</button></div></article>
+        <section><h2>Attività · ${att.filter((a) => !a.fatta).length} aperte</h2><div class="blocco">
+          ${att.map((a) => `<div class="attivita${a.fatta ? " fatta" : ""}"><input type="checkbox" data-att="${esc(a.id)}"${a.fatta ? " checked" : ""} aria-label="Fatta"><span>${esc(a.testo)}</span><button class="x" data-att-via="${esc(a.id)}" aria-label="Elimina attività">×</button></div>`).join("") || `<p class="small muted">Nessuna attività.</p>`}
+          <form id="f-att" class="riga2"><input id="att-testo" placeholder="Nuova attività" maxlength="300" required><button class="btn" style="flex:0 0 auto">Aggiungi</button></form></div></section>
+        <section><h2>Agenti</h2><div class="blocco">${agenti.map((a) => { const ese = collegamentiDi("agente_id", a.id).filter((c) => !c.stanza_id || c.stanza_id === s.id); return `<div class="agente"><span class="avatar">${esc(a.nome.slice(0, 2))}</span><span style="flex:1;min-width:0"><b>${esc(a.nome)}</b><br><span class="small muted">${esc(a.ruolo || "")}</span></span><span class="chip cfg">configurato</span>${ese.map((c) => chipRil(rilevazione(c.session_id))).join("")}</div>`; }).join("") || `<p class="small muted">Nessun agente assegnato: assegnali con Modifica.</p>`}
+          <p class="small muted">Lo stato delle esecuzioni è l'ultima rilevazione di Claude Code, non è in tempo reale.</p></div></section>
+        <section><h2>Progetti</h2>${lista(L("progetti").filter((p) => p.stanza_id === s.id).map(rigaProgetto), "Nessun progetto in questa stanza.")}</section>
+        <section><h2>Note</h2>${lista(L("note").filter((n) => n.stanza_id === s.id).map(rigaNota), "Nessuna nota in questa stanza.")}</section>
+        <section><h2>Esecuzioni collegate</h2>${lista(collegamentiDi("stanza_id", s.id).map((c) => { const r = rilevazione(c.session_id); return `<div class="riga" style="cursor:default"><span class="t"><b>${esc(r ? r.s.titolo || c.session_id : c.session_id)}</b><span class="chips">${chipRil(r)}</span></span></div>`; }), "Nessuna esecuzione collegata.")}</section>`;
+    },
+    impostazioni() {
+      const sy = S.stato.sync; const n = M.inAttesa(S.stato); const ks = Object.entries(sy.conflitti || {}); const nf = M.contaFittizi(S.stato);
+      let info = null; try { info = A ? JSON.parse(A.infoApp()) : null; } catch (_) {}
+      const TIPI = { modificato_entrambi: "modificato sia qui sia nel repository", eliminato_remoto_modificato_locale: "eliminato nel repository, modificato qui", eliminato_locale_modificato_remoto: "eliminato qui, modificato nel repository", privata_locale_modificata_remota: "reso privato qui, modificato nel repository", stesso_id: "stesso identificativo con contenuti diversi", migrazione: "conflitto in sospeso al momento della conversione in note" };
+      return avvisi() + `<section><h2>Sincronizzazione</h2><div class="blocco"><dl class="kv">
+            <dt>Stato</dt><dd>${haToken() ? (sy.errore ? `<span style="color:var(--err)">${esc(sy.errore.messaggio)}</span>` : "attiva") : "spenta: i dati restano solo sul telefono"}</dd>
+            <dt>Ultima riuscita</dt><dd>${esc(sy.ultimo_ok ? quando(sy.ultimo_ok) + " (" + eta(sy.ultimo_ok) + ")" : "mai")}</dd>
+            <dt>Da inviare</dt><dd>${n} modifiche</dd><dt>Rete</dt><dd>${inRete() ? "disponibile" : "assente"}</dd></dl>
+          <div class="azioni"><button class="btn" id="b-sync">Sincronizza ora</button><button class="btn v" data-modifica="token">Accesso GitHub</button></div><p class="stato" id="sync-stato"></p>
+          <p class="small muted">Vanno nel repository privato stanze, progetti, agenti, skill, collegamenti e le note che rendi accessibili agli agenti. Eliminare un dato lo toglie dalla versione attuale del repository, non dalla cronologia Git.</p></div></section>
+        ${ks.length ? `<section><h2>Conflitti da risolvere · ${ks.length}</h2>${ks.map(([k, c]) => `<div class="blocco"><b>${esc(c.col)} · ${esc((c.locale || c.remoto || {}).nome || titoloNota(c.locale || c.remoto || {}) || c.id)}</b><span class="small muted">${esc(TIPI[c.tipo] || c.tipo)} · ${esc(quando(c.rilevato_il))}</span>
+            <div class="confronto"><div><h2>Sul telefono</h2><pre>${esc(c.locale ? JSON.stringify(c.locale, null, 1) : "(eliminato)")}</pre></div><div><h2>Nel repository</h2><pre>${esc(c.remoto ? JSON.stringify(c.remoto, null, 1) : "(eliminato)")}</pre></div></div>
+            <div class="azioni"><button class="btn v" data-risolvi="telefono" data-id="${esc(k)}">Tieni quella del telefono</button><button class="btn v" data-risolvi="repository" data-id="${esc(k)}">Tieni quella del repository</button></div></div>`).join("")}</section>` : ""}
+        <section><h2>I tuoi dati</h2><div class="blocco">
+          <div class="azioni"><button class="btn" id="b-exp">Esporta su file</button><button class="btn v" id="b-imp">Ripristina da file</button></div>
+          <p class="small muted">L'esportazione include tutto, anche le note private, con impronta di controllo. Il ripristino accetta anche i backup della versione 1.0.</p>
+          <p class="stato" id="exp-stato"></p><div id="imp-anteprima"></div><p class="stato" id="imp-stato"></p></div></section>
+        <section><h2>Dati di prova</h2><div class="blocco"><p class="small">${nf ? `${nf} elementi marcati come dati di prova. Vengono eliminati solo questi e i riferimenti che li usano.` : "Nessun dato di prova."}</p>
+          <div class="azioni"><button class="btn r" id="b-fitt"${nf ? "" : " disabled"}>Elimina solo i dati di prova</button></div><p class="stato" id="fitt-stato"></p></div></section>
+        <details class="blocco"><summary>Avanzate</summary><dl class="kv">
+          <dt>Versione</dt><dd>${esc(info ? info.versione + " (" + info.codice + ")" : "anteprima")}</dd><dt>Identificativo</dt><dd class="mono">${esc(info ? info.pacchetto : "it.secondbrain.app")}</dd>
+          <dt>Repository</dt><dd class="mono">${esc(OWNER + "/" + REPO)} · ramo dati</dd><dt>Accesso GitHub</dt><dd>${haToken() ? "token salvato cifrato" : "nessun token"}</dd>
+          <dt>Istantanea agenti</dt><dd>${istantanea() ? "rilevata " + esc(quando(istantanea().rilevato_il)) + ", scaricata " + esc(sy.istantanea_scaricata_il ? quando(sy.istantanea_scaricata_il) : "mai") : "nessuna"}</dd>
+          <dt>Ultimo tentativo</dt><dd>${esc(sy.ultimo_tentativo ? quando(sy.ultimo_tentativo) : "mai")}</dd>
+          <dt>Conversione 1.0</dt><dd>${S.migrazione ? (S.migrazione.ok ? `${S.migrazione.memorie} memorie → ${S.migrazione.note} note, ${S.migrazione.condivise} condivise; copia salvata` : "non riuscita") : "non necessaria in questo avvio"}</dd>
+          <dt>Dati locali</dt><dd>${M.COLLEZIONI_APP.map((c) => L(c).length + " " + c).join(", ")}</dd></dl></details>`;
+    },
+  };
+  const TITOLI = { home: "Second Brain", organizza: "Organizza", note: "Note", nota: "Nota", progetto: "Progetto", mappa: "Mappa", stanze: "Stanze", stanza: "Stanza", impostazioni: "Impostazioni" };
+  const NAV = { nota: "note", progetto: "organizza", stanza: "stanze" };
+
+  function campoCerca() { return `<label class="cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="cerca" type="search" placeholder="Cerca in note, progetti, stanze" value="${esc(S.cerca)}"></label>`; }
+  function avvisi() {
+    let h = "";
+    if (S.erroreArchivio) h += `<p class="banner err"><b>Salvataggio sul telefono non riuscito.</b><span>${esc(S.erroreArchivio)}. Esporta un backup dalle impostazioni.</span></p>`;
+    if (S.origine === "precedente") h += `<p class="banner att"><b>Il file dati era danneggiato.</b><span>È stata caricata la copia precedente: controlla gli ultimi inserimenti.</span></p>`;
+    if (S.origine === "illeggibile") h += `<p class="banner err"><b>Dati non leggibili.</b><span>Non sono stati sovrascritti. Ripristina un backup dalle impostazioni.</span></p>`;
+    if (S.origine === "migrazione_fallita") h += `<p class="banner err"><b>Conversione delle memorie interrotta.</b><span>I dati sul telefono non sono stati modificati. Dettagli: ${esc((S.migrazione && S.migrazione.errori || []).join("; "))}</span></p>`;
+    if (S.migrazione && S.migrazione.ok && !S.migrazioneVista) h += `<p class="banner ok"><b>Memorie convertite in note.</b><span>${S.migrazione.memorie} memorie → ${S.migrazione.note} note con stessi contenuti, fonti, date, tipo e permessi (${S.migrazione.condivise} accessibili agli agenti). Copia dei dati precedenti salvata sul telefono.</span></p>`;
+    if (!bloccato() && M.COLLEZIONI_APP.every((c) => !L(c).length)) h += `<p class="banner"><b>Archivio vuoto.</b><span>Per portare qui un backup vai in Impostazioni › Ripristina da file. Oppure inizia con il pulsante +.</span></p>`;
+    return h;
+  }
+  function schedaAgente(a) {
+    const sk = (a.skill_ids || []).map((id) => T("skill", id)).filter(Boolean);
+    const stanze = L("stanze").filter((s) => (s.agenti_ids || []).includes(a.id));
+    const ese = collegamentiDi("agente_id", a.id);
+    const mem = { nessuno: "nessun accesso alla memoria", stanza: "note condivise delle sue stanze", tutta: "tutte le note condivise" }[a.accesso_memoria] || "accesso non indicato";
+    return `<div class="blocco"><div class="agente"><span class="avatar">${esc(a.nome.slice(0, 2))}</span><span style="flex:1;min-width:0"><b>${esc(a.nome)}</b><br><span class="small muted">${esc(a.ruolo || "")}</span></span><span class="chip cfg">configurato</span>${syncChip("agenti", a.id)}</div>
+      ${a.istruzioni ? `<div class="corpo small">${esc(a.istruzioni)}</div>` : ""}
+      <dl class="kv"><dt>Strumenti</dt><dd>${esc((a.strumenti || []).join(", ") || "nessuno")}</dd><dt>Skill</dt><dd>${esc(sk.map((x) => x.nome).join(", ") || "nessuna")}</dd><dt>Memoria</dt><dd>${esc(mem)}</dd><dt>Stanze</dt><dd>${esc(stanze.map((s) => s.nome).join(", ") || "nessuna")}</dd></dl>
+      <div><h2>Esecuzioni reali collegate</h2>${ese.length ? ese.map((c) => { const r = rilevazione(c.session_id); return `<div class="chips"><span class="mono">${esc(r ? r.s.titolo || c.session_id : c.session_id)}</span>${chipRil(r)}</div>`; }).join("") : `<p class="small muted">Nessuna: questo agente non risulta al lavoro.</p>`}</div>
+      <div class="azioni"><button class="btn v" data-modifica="agente" data-id="${esc(a.id)}">Modifica</button><button class="btn r" data-elimina="agenti" data-id="${esc(a.id)}">Elimina</button></div></div>`;
+  }
+  function esecuzioni() {
+    const ist = istantanea(), t = tentativo(); let h = "";
+    if (t && t.esito === "errore") h += `<p class="banner err"><b>Ultimo aggiornamento di Claude Code non riuscito (${esc(quando(t.quando))})</b><span>${esc(t.messaggio)}</span><span class="small">Resta visibile l'istantanea precedente.</span></p>`;
+    if (!ist) h += `<p class="banner att"><b>Nessuna istantanea.</b><span>L'app non legge le sessioni in tempo reale. Scrivi «aggiorna stato» in Claude Code, poi scarica l'istantanea.</span></p>`;
+    else h += `<p class="banner ${minutiDa(ist.rilevato_il) > FRESCO_MIN ? "att" : ""}"><b>Istantanea del ${esc(quando(ist.rilevato_il))} · non in tempo reale</b><span>Rilevata ${esc(eta(ist.rilevato_il))} da Claude Code${minutiDa(ist.rilevato_il) > FRESCO_MIN ? ": gli stati descrivono quel momento, non adesso" : ""}. ${esc(ist.totale)} sessioni${ist.troncato ? ", elenco troncato" : ""}.</span></p>`;
+    h += `<div class="azioni"><button class="btn v" id="b-snap">Scarica istantanea dal repository</button></div><p class="stato" id="lv-stato"></p>`;
+    const sess = ist ? ist.sessioni || [] : [];
+    const agOpt = `<option value="">nessun agente</option>` + L("agenti").map((a) => `<option value="${esc(a.id)}">${esc(a.nome)}</option>`).join("");
+    const stOpt = `<option value="">nessuna stanza</option>` + L("stanze").map((s) => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join("");
+    h += sess.map((s) => { const links = collegamentiDi("session_id", s.id); return `<div class="blocco"><b>${esc(s.titolo || "(senza titolo)")}</b><span class="mono muted">${esc(s.id)}${s.rilevatore ? " · sessione che ha eseguito l'aggiornamento" : ""}</span>
+      <div class="chips">${chipRil({ s, rilevato_il: ist.rilevato_il })}<span class="chip">ultima attività ${esc(quando(s.updated_at))}</span></div>
+      ${links.map((c) => `<div class="chips"><span class="chip cfg">collegata a ${esc((T("agenti", c.agente_id) || {}).nome || "nessun agente")} · ${esc((T("stanze", c.stanza_id) || {}).nome || "nessuna stanza")}</span><button class="chip err" data-elimina="collegamenti" data-id="${esc(c.id)}">Scollega</button></div>`).join("")}
+      ${links.length ? "" : `<div class="riga2"><label>Agente <select data-link-ag="${esc(s.id)}">${agOpt}</select></label><label>Stanza <select data-link-st="${esc(s.id)}">${stOpt}</select></label></div><div class="azioni"><button class="btn v" data-collega="${esc(s.id)}">Collega</button><span class="small muted">Nessun collegamento automatico.</span></div>`}</div>`; }).join("");
+    const ids = new Set(sess.map((s) => s.id)); const orfani = L("collegamenti").filter((c) => !ids.has(c.session_id));
+    if (orfani.length) h += `<section><h2>Collegamenti a sessioni non nell'istantanea</h2>${orfani.map((c) => `<div class="blocco"><span class="mono">${esc(c.session_id)}</span><div class="chips"><span class="chip vecchio">stato non rilevato</span><button class="chip err" data-elimina="collegamenti" data-id="${esc(c.id)}">Scollega</button></div></div>`).join("")}</section>`;
+    return h;
   }
 
   // ---------- render ----------
-  function render() { avvisi(); chipSync(); renderStanze(); renderAgenti(); renderSkill(); renderMemoria(); renderLavoro(); renderDati(); }
-
-  function avvisi() {
-    let h = "";
-    if (!A) h += `<p class="banner warn"><strong>Anteprima fuori dall'app.</strong><span>Qui i dati non vengono salvati.</span></p>`;
-    if (S.erroreArchivio) h += `<p class="banner err"><strong>Salvataggio sul telefono non riuscito.</strong><span>${esc(S.erroreArchivio)}. Esporta subito un backup da Dati.</span></p>`;
-    if (S.origine === "precedente") h += `<p class="banner warn"><strong>Il file dati era danneggiato.</strong><span>È stata caricata la copia salvata subito prima. Controlla gli ultimi inserimenti.</span></p>`;
-    if (S.origine === "illeggibile") h += `<p class="banner err"><strong>Dati non leggibili.</strong><span>Non sono stati sovrascritti. Ripristina un backup da Dati › Ripristino.</span></p>`;
-    if (S.migrazione && S.migrazione.ok) h += `<p class="banner ok"><strong>Memorie convertite in note.</strong><span>${S.migrazione.memorie} memorie → ${S.migrazione.note} note con gli stessi contenuti, fonti, date e permessi (${S.migrazione.condivise} accessibili agli agenti). Copia dei dati precedenti salvata sul telefono.</span></p>`;
-    if (S.origine === "migrazione_fallita") h += `<p class="banner err"><strong>Conversione delle memorie interrotta.</strong><span>I dati sul telefono non sono stati modificati. Esporta un backup ed scrivimi questi dettagli: ${esc((S.migrazione.errori || []).join("; "))}</span></p>`;
-    const vuoto = M.COLLEZIONI_APP.every((c) => !L(c).length);
-    if (vuoto && S.origine !== "illeggibile" && S.origine !== "migrazione_fallita") h += `<p class="banner"><strong>Nessun dato sul telefono.</strong><span>Per portare qui i dati della versione web vai in Dati › Ripristino e migrazione e scegli il file di backup. Se hai già configurato GitHub, puoi anche sincronizzare.</span></p>`;
-    $("#avvisi").innerHTML = h;
+  function vistaCorrente() { const v = location.hash.slice(1); return VISTE[v] ? v : "home"; }
+  function render() {
+    const v = vistaCorrente();
+    const scelte = [...document.querySelectorAll("[data-link-ag],[data-link-st]")].map((el) => [el.hasAttribute("data-link-ag") ? "ag" : "st", el.dataset.linkAg || el.dataset.linkSt, el.value]);
+    const attivo = document.activeElement && document.activeElement.id; const pos = attivo && document.activeElement.selectionStart;
+    V.innerHTML = VISTE[v]();
+    for (const [k, sid, val] of scelte) { const el = document.querySelector(`[data-link-${k}="${CSS.escape(sid)}"]`); if (el && [...el.options].some((o) => o.value === val)) el.value = val; }
+    if (attivo === "cerca" || attivo === "cerca-note") { const el = $("#" + attivo); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (_) {} } }
+    $("#titolo").textContent = TITOLI[v];
+    $("#indietro").hidden = !NAV[v] && v !== "impostazioni";
+    $("#fab").hidden = v === "mappa" || v === "impostazioni";
+    const n = NAV[v] || v;
+    document.querySelectorAll(".nav a").forEach((a) => (a.getAttribute("href") === "#" + n ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
+    chipSync();
+    if (v === "mappa") disegnaMappa();
+    if (v === "home" && S.migrazione && S.migrazione.ok) S.migrazioneVista = true;
   }
-
   function chipSync() {
-    const c = $("#chip-sync"); const n = M.inAttesa(S.stato); const sy = S.stato.sync;
-    const nk = Object.keys(sy.conflitti || {}).length;
+    const c = $("#chip-sync"); const n = M.inAttesa(S.stato), sy = S.stato.sync, nk = Object.keys(sy.conflitti || {}).length;
     let t, k;
-    if (S.inSync) { t = "sincronizzazione…"; k = ""; }
-    else if (nk) { t = nk + " conflitti"; k = "err"; }
-    else if (sy.errore) { t = sy.errore.tipo === "rete" ? "offline · " + n + " da inviare" : "errore sync"; k = sy.errore.tipo === "rete" ? "warn" : "err"; }
-    else if (!haToken()) { t = "solo telefono"; k = ""; }
-    else if (n) { t = n + " da inviare"; k = "warn"; }
-    else { t = "sincronizzato " + eta(sy.ultimo_ok); k = "ok"; }
+    if (S.inSync) [t, k] = ["sincronizzo…", ""];
+    else if (nk) [t, k] = [nk + " conflitti", "err"];
+    else if (sy.errore && haToken()) [t, k] = sy.errore.tipo === "rete" ? ["offline · " + n, "att"] : ["errore sync", "err"];
+    else if (!haToken()) [t, k] = ["solo telefono", ""];
+    else if (n) [t, k] = [n + " da inviare", "att"];
+    else [t, k] = ["sincronizzato", "ok"];
     c.textContent = t; c.className = "chip " + k;
   }
+  window.addEventListener("hashchange", () => { $("#foglio").hidden = true; render(); window.scrollTo(0, 0); });
+  $("#indietro").onclick = () => history.back();
+  const vai = (v) => { if (location.hash === "#" + v) { render(); window.scrollTo(0, 0); } else location.hash = v; };
 
-  function nota(m) { return m && m.accessibile_agenti === true ? `<span class="chip cfg">accessibile agli agenti</span>` : `<span class="chip">solo sul telefono</span>`; }
-  function syncChip(col, id) { const r = S.stato.collezioni[col][id]; if (!r) return ""; if (S.stato.sync.conflitti[col + "/" + id]) return `<span class="chip err">conflitto</span>`; return r.sync.sporco ? `<span class="chip warn">da inviare</span>` : ""; }
-
-  function renderStanze() {
-    caselle("#st-agenti", L("agenti"));
-    const f = $("#st-filtro").value;
-    const lista = L("stanze").filter((s) => f === "tutte" || statoStanza(s) === f);
-    $("#l-stanze").innerHTML = lista.length ? lista.map((s) => {
-      const agenti = (s.agenti_ids || []).map((id) => T("agenti", id)).filter(Boolean);
-      const mem = L("note").filter((m) => m.stanza_id === s.id).length;
-      const esec = collegamentiDi("stanza_id", s.id);
-      const obj = (s.obiettivi || []).filter(Boolean);
-      return `<div class="item">
-        <div class="item-head"><div><h3>${esc(s.nome)}</h3>${s.descrizione ? `<p class="small muted">${esc(s.descrizione)}</p>` : ""}</div>
-          <div class="chips">${statoStanza(s) === "archiviata" ? `<span class="chip">archiviata</span>` : `<span class="chip ok">attiva</span>`}${s.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("stanze", s.id)}</div></div>
-        ${obj.length ? `<div class="small"><span class="split">Obiettivi</span><ul style="margin:2px 0 0;padding-left:18px">${obj.map((o) => `<li>${esc(o)}</li>`).join("")}</ul></div>` : ""}
-        <div class="chips">${agenti.map((a) => `<span class="chip cfg">agente configurato: ${esc(a.nome)}</span>`).join("") || `<span class="chip">nessun agente assegnato</span>`}
-          <span class="chip">${mem} in memoria</span><span class="chip">${esec.length} esecuzioni collegate</span></div>
-        <div class="actions"><button type="button" class="quiet" data-act="mod-stanza" data-id="${esc(s.id)}">Modifica</button>
-          <button type="button" class="quiet" data-act="arch-stanza" data-id="${esc(s.id)}">${statoStanza(s) === "archiviata" ? "Riattiva" : "Archivia"}</button>
-          <button type="button" class="danger" data-act="del-stanza" data-id="${esc(s.id)}">Elimina</button></div>
-      </div>`;
-    }).join("") : `<p class="empty">${L("stanze").length ? "Nessuna stanza in questo filtro." : "Nessuna stanza ancora. Creane una con il modulo qui sopra."}</p>`;
-  }
-
-  function renderAgenti() {
-    caselle("#ag-skill", L("skill"));
-    $("#l-agenti").innerHTML = L("agenti").length ? L("agenti").map((a) => {
-      const sk = (a.skill_ids || []).map((id) => T("skill", id)).filter(Boolean);
-      const stanze = L("stanze").filter((s) => (s.agenti_ids || []).includes(a.id));
-      const esec = collegamentiDi("agente_id", a.id).map((c) => ({ c, r: rilevazione(c.session_id) }));
-      const memLab = { nessuno: "nessun accesso alla memoria", stanza: "memoria condivisa delle stanze assegnate", tutta: "tutta la memoria condivisa" }[a.accesso_memoria] || "accesso non indicato";
-      return `<div class="item">
-        <div class="item-head"><div><h3>${esc(a.nome)}</h3>${a.ruolo ? `<p class="small muted">${esc(a.ruolo)}</p>` : ""}</div><div class="chips"><span class="chip cfg">configurato</span>${a.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("agenti", a.id)}</div></div>
-        ${a.istruzioni ? `<p class="small pre">${esc(a.istruzioni)}</p>` : ""}
-        <dl class="kv"><dt>Strumenti</dt><dd>${esc((a.strumenti || []).join(", ") || "nessuno indicato")}</dd>
-          <dt>Skill</dt><dd>${esc(sk.map((x) => x.nome).join(", ") || "nessuna")}</dd>
-          <dt>Memoria</dt><dd>${esc(memLab)}</dd>
-          <dt>Stanze</dt><dd>${esc(stanze.map((s) => s.nome).join(", ") || "nessuna")}</dd></dl>
-        <div><span class="split">Esecuzioni reali collegate</span>
-          ${esec.length ? esec.map(({ c, r }) => `<div class="chips" style="margin-top:4px"><span class="mono">${esc(r ? r.s.titolo || c.session_id : c.session_id)}</span>${chipRilevazione(r)}</div>`).join("") : `<p class="empty small">Nessuna esecuzione collegata. Questo agente non risulta al lavoro.</p>`}</div>
-        <div class="actions"><button type="button" class="quiet" data-act="mod-agente" data-id="${esc(a.id)}">Modifica</button>
-          <button type="button" class="danger" data-act="del-agente" data-id="${esc(a.id)}">Elimina</button></div>
-      </div>`;
-    }).join("") : `<p class="empty">Nessun agente nel catalogo. Aggiungine uno con il modulo qui sopra.</p>`;
-  }
-
-  function renderSkill() {
-    $("#l-skill").innerHTML = L("skill").length ? L("skill").map((k) => {
-      const usata = L("agenti").filter((a) => (a.skill_ids || []).includes(k.id));
-      return `<div class="item">
-        <div class="item-head"><div><h3>${esc(k.nome)}</h3>${k.descrizione ? `<p class="small muted">${esc(k.descrizione)}</p>` : ""}</div><div class="chips"><span class="chip">usata da ${usata.length} agenti</span>${k.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("skill", k.id)}</div></div>
-        ${k.procedura ? `<p class="small pre">${esc(k.procedura)}</p>` : ""}
-        <div class="actions"><button type="button" class="quiet" data-act="mod-skill" data-id="${esc(k.id)}">Modifica</button>
-          <button type="button" class="danger" data-act="del-skill" data-id="${esc(k.id)}">Elimina</button></div>
-      </div>`;
-    }).join("") : `<p class="empty">Nessuna skill ancora. Aggiungine una con il modulo qui sopra.</p>`;
-  }
-
-  function renderMemoria() {
-    opzioniStanze("#me-stanza", "nessuna stanza"); opzioniStanze("#me-fstanza", "tutte le stanze");
-    const q = norm($("#me-cerca").value), ft = $("#me-ftipo").value, fs = $("#me-fstanza").value;
-    const tutte = L("note"); const gruppi = {}; for (const m of tutte) (gruppi[norm(m.testo)] ||= []).push(m.id);
-    const lista = tutte.filter((m) => (!q || norm(m.testo + " " + m.fonte).includes(q)) && (!ft || m.tipo === ft) && (!fs || m.stanza_id === fs)).sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
-    $("#l-memoria").innerHTML = lista.length ? lista.map((m) => {
-      const st = T("stanze", m.stanza_id);
-      const dup = (gruppi[norm(m.testo)] || []).length > 1;
-      const tipoK = { originale: "ok", riassunto: "", dedotto: "warn" }[m.tipo] ?? "";
-      return `<div class="item">
-        <p class="pre">${esc(m.testo)}</p>
-        <div class="chips"><span class="chip ${tipoK}">${esc(m.tipo || "tipo non indicato")}</span><span class="chip">fonte: ${esc(m.fonte || "non indicata")}</span>
-          <span class="chip">del ${esc(giorno(m.data) || "data non indicata")}</span>${st ? `<span class="chip">${esc(st.nome)}</span>` : ""}
-          ${m.corretto_il ? `<span class="chip warn">corretto il ${esc(giorno(m.corretto_il))}</span>` : ""}${dup ? `<span class="chip err">possibile duplicato</span>` : ""}
-          ${nota(m)}${m.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("note", m.id)}</div>
-        <div class="actions"><button type="button" class="quiet" data-act="mod-mem" data-id="${esc(m.id)}">Correggi</button>
-          <button type="button" class="quiet" data-act="cond-mem" data-id="${esc(m.id)}">${m.accessibile_agenti === true ? "Rendi privata" : "Rendi accessibile agli agenti"}</button>
-          <button type="button" class="danger" data-act="del-mem" data-id="${esc(m.id)}">Elimina</button></div>
-      </div>`;
-    }).join("") : `<p class="empty">${tutte.length ? "Nessun elemento corrisponde alla ricerca." : "La memoria è vuota. Aggiungi il primo elemento con il modulo qui sopra."}</p>`;
-  }
-
-  function renderLavoro() {
-    const ist = istantanea(), t = tentativo(); let h = "";
-    if (t && t.esito === "errore") h += `<div class="banner err"><strong>Ultimo aggiornamento di Claude Code non riuscito (${esc(quando(t.quando))})</strong><span>${esc(t.messaggio)}</span><span class="small muted">Sotto resta visibile l'istantanea precedente.</span></div>`;
-    if (!ist) h += `<div class="banner warn"><strong>Nessuna istantanea.</strong><span>L'app non legge le sessioni in tempo reale. Scrivi «aggiorna stato» in Claude Code, poi scarica l'istantanea dal repository.</span></div>`;
-    else {
-      const vecchio = minutiDa(ist.rilevato_il) > FRESCO_MIN;
-      h += `<div class="banner ${vecchio ? "warn" : ""}"><strong>Istantanea del ${esc(quando(ist.rilevato_il))} · non in tempo reale</strong>
-        <span>Rilevata ${esc(eta(ist.rilevato_il))} da Claude Code. ${vecchio ? "Gli stati qui sotto descrivono quel momento, non adesso." : ""}</span>
-        <span class="small muted">${esc(ist.totale)} sessioni${ist.troncato ? ", elenco troncato" : ""} · scaricata dal repository: ${esc(S.stato.sync.istantanea_scaricata_il ? quando(S.stato.sync.istantanea_scaricata_il) : "mai (copia migrata)")}</span></div>`;
+  // ---------- mappa: solo relazioni esistenti ----------
+  function disegnaMappa() {
+    const box = $("#mappa"), tela = $("#tela"), ctx = tela.getContext("2d"), dpr = window.devicePixelRatio || 1;
+    const W = box.clientWidth, H = box.clientHeight; tela.width = W * dpr; tela.height = H * dpr; ctx.scale(dpr, dpr);
+    const archi = M.relazioni(S.stato);
+    const conGrado = new Map(); for (const r of archi) { conGrado.set(r.da, (conGrado.get(r.da) || 0) + 1); conGrado.set(r.a, (conGrado.get(r.a) || 0) + 1); }
+    const tutti = [...L("note").map((n) => ({ k: "note/" + n.id, nome: titoloNota(n), col: CAT[catNota(n)][1], forma: "c", apri: ["nota", n.id] })),
+      ...L("progetti").map((p) => ({ k: "progetti/" + p.id, nome: p.nome, col: "--progetto", forma: "q", apri: ["progetto", p.id] })),
+      ...L("stanze").map((s) => ({ k: "stanze/" + s.id, nome: s.nome, col: "--stanza", forma: "q", apri: ["stanza", s.id] }))];
+    const nodi = tutti.filter((x) => S.isolati || conGrado.has(x.k)).map((x, i) => ({ ...x, x: Math.cos(i * 2.4) * (40 + i * 6), y: Math.sin(i * 2.4) * (40 + i * 6), vx: 0, vy: 0, r: 6 + Math.min(10, (conGrado.get(x.k) || 0) * 2) }));
+    const idx = new Map(nodi.map((n) => [n.k, n])); const E = archi.map((r) => [idx.get(r.da), idx.get(r.a)]).filter(([a, b]) => a && b);
+    $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Trascina per spostarti, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
+    for (let it = 0; it < 300; it++) {
+      for (const a of nodi) for (const b of nodi) if (a !== b) { const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01, d = Math.sqrt(d2), f = 16000 / d2; a.vx += dx / d * f; a.vy += dy / d * f; }
+      for (const [a, b] of E) { const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - 140) * 0.02; a.vx += dx / d * f; a.vy += dy / d * f; b.vx -= dx / d * f; b.vy -= dy / d * f; }
+      for (const a of nodi) { a.vx -= a.x * 0.004; a.vy -= a.y * 0.004; a.x += a.vx * 0.5; a.y += a.vy * 0.5; a.vx *= 0.6; a.vy *= 0.6; }
     }
-    $("#snap-head").innerHTML = h;
-    const sessioni = ist ? ist.sessioni || [] : [];
-    const scelte = [...document.querySelectorAll("[data-link-ag],[data-link-st]")].map((el) => [el.hasAttribute("data-link-ag") ? "ag" : "st", el.dataset.linkAg || el.dataset.linkSt, el.value]);
-    const agOpt = `<option value="">nessun agente</option>` + L("agenti").map((a) => `<option value="${esc(a.id)}">${esc(a.nome)}</option>`).join("");
-    const stOpt = `<option value="">nessuna stanza</option>` + L("stanze").map((s) => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join("");
-    $("#l-sessioni").innerHTML = sessioni.length ? sessioni.map((s) => {
-      const links = collegamentiDi("session_id", s.id);
-      return `<div class="item">
-        <div class="item-head"><div><h3>${esc(s.titolo || "(senza titolo)")}</h3><p class="mono muted">${esc(s.id)}${s.origin ? " · origine " + esc(s.origin) : ""}${s.rilevatore ? " · sessione che ha eseguito l'aggiornamento" : ""}</p></div></div>
-        <div class="chips">${chipRilevazione({ s, rilevato_il: ist.rilevato_il })}<span class="chip">ultima attività ${esc(quando(s.updated_at))}</span></div>
-        ${links.map((c) => `<div class="chips"><span class="chip cfg">collegata a ${esc(c.agente_id ? (T("agenti", c.agente_id) || {}).nome || "agente eliminato" : "nessun agente")} · ${esc(c.stanza_id ? (T("stanze", c.stanza_id) || {}).nome || "stanza eliminata" : "nessuna stanza")}</span>
-          <button type="button" class="danger" data-act="del-link" data-id="${esc(c.id)}">Scollega</button></div>`).join("")}
-        ${links.length ? "" : `<div class="row"><label>Agente <select data-link-ag="${esc(s.id)}">${agOpt}</select></label><label>Stanza <select data-link-st="${esc(s.id)}">${stOpt}</select></label></div>
-          <div class="actions"><button type="button" class="ghost" data-act="add-link" data-id="${esc(s.id)}">Collega questa sessione</button><span class="small muted">Nessun collegamento automatico: scegli tu agente e stanza.</span></div>`}
-      </div>`;
-    }).join("") : `<p class="empty">Nessuna sessione da mostrare.</p>`;
-    for (const [k, sid, v] of scelte) { const el = document.querySelector(`[data-link-${k}="${CSS.escape(sid)}"]`); if (el && [...el.options].some((o) => o.value === v)) el.value = v; }
-    const ids = new Set(sessioni.map((s) => s.id));
-    const orfani = L("collegamenti").filter((c) => !ids.has(c.session_id));
-    $("#c-orfani").hidden = !orfani.length;
-    $("#l-orfani").innerHTML = orfani.map((c) => `<div class="item"><p class="mono">${esc(c.session_id)}</p><div class="chips"><span class="chip stale">stato non rilevato nell'ultima istantanea</span>
-      <span class="chip cfg">${esc((T("agenti", c.agente_id) || {}).nome || "nessun agente")} · ${esc((T("stanze", c.stanza_id) || {}).nome || "nessuna stanza")}</span>
-      <button type="button" class="danger" data-act="del-link" data-id="${esc(c.id)}">Scollega</button></div></div>`).join("");
+    const xs = nodi.map((p) => p.x), ys = nodi.map((p) => p.y);
+    const bx = nodi.length ? [Math.min(...xs), Math.max(...xs)] : [0, 0], by = nodi.length ? [Math.min(...ys), Math.max(...ys)] : [0, 0];
+    const z0 = Math.min((W - 120) / (bx[1] - bx[0] || 1), (H - 80) / (by[1] - by[0] || 1), 1.4);
+    const vista = { x: W / 2 - (bx[0] + bx[1]) / 2 * z0, y: H / 2 - (by[0] + by[1]) / 2 * z0, z: z0 };
+    const css = getComputedStyle(document.documentElement), C = (v) => css.getPropertyValue(v).trim();
+    function disegna() {
+      ctx.clearRect(0, 0, W, H);
+      const sel = S.nodo && idx.get(S.nodo), vicini = new Set(sel ? E.filter(([a, b]) => a === sel || b === sel).flat() : []);
+      ctx.lineWidth = 1.3;
+      for (const [a, b] of E) { ctx.strokeStyle = sel && (a === sel || b === sel) ? C("--accento") : C("--linea"); ctx.beginPath(); ctx.moveTo(vista.x + a.x * vista.z, vista.y + a.y * vista.z); ctx.lineTo(vista.x + b.x * vista.z, vista.y + b.y * vista.z); ctx.stroke(); }
+      for (const p of nodi) {
+        const x = vista.x + p.x * vista.z, y = vista.y + p.y * vista.z, r = p.r * Math.sqrt(vista.z);
+        ctx.globalAlpha = sel && p !== sel && !vicini.has(p) ? 0.3 : 1; ctx.fillStyle = C(p.col); ctx.beginPath();
+        if (p.forma === "q") ctx.rect(x - r, y - r, r * 2, r * 2); else ctx.arc(x, y, r, 0, 7);
+        ctx.fill(); if (p === sel) { ctx.strokeStyle = C("--testo"); ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1.3; }
+        if (vista.z > 0.55 || p === sel) { ctx.fillStyle = C("--testo"); ctx.font = "12px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.fillText(p.nome.length > 22 ? p.nome.slice(0, 21) + "…" : p.nome, x, y + r + 14); }
+        ctx.globalAlpha = 1;
+      }
+    }
+    let tocco = null;
+    tela.onpointerdown = (e) => { tela.setPointerCapture(e.pointerId); tocco = { x: e.clientX, y: e.clientY, vx: vista.x, vy: vista.y, mosso: false }; };
+    tela.onpointermove = (e) => { if (!tocco) return; const dx = e.clientX - tocco.x, dy = e.clientY - tocco.y; if (Math.hypot(dx, dy) > 6) tocco.mosso = true; if (tocco.mosso) { vista.x = tocco.vx + dx; vista.y = tocco.vy + dy; disegna(); } };
+    tela.onpointerup = (e) => {
+      if (tocco && !tocco.mosso) {
+        const b = tela.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
+        const p = nodi.find((q) => Math.hypot(vista.x + q.x * vista.z - x, vista.y + q.y * vista.z - y) < q.r * Math.sqrt(vista.z) + 12);
+        S.nodo = p ? p.k : null; $("#scheda").hidden = !p;
+        if (p) { $("#scheda-t").textContent = p.nome; $("#scheda-apri").onclick = () => apri(p.apri[0], p.apri[1]); }
+        disegna();
+      }
+      tocco = null;
+    };
+    $("#zp").onclick = () => { vista.z = Math.min(3, vista.z * 1.25); disegna(); };
+    $("#zm").onclick = () => { vista.z = Math.max(0.3, vista.z / 1.25); disegna(); };
+    $("#isolati").onchange = (e) => { S.isolati = e.target.checked; S.nodo = null; render(); };
+    S.nodo = null; disegna();
   }
 
-  function renderDati() {
-    const sy = S.stato.sync; const n = M.inAttesa(S.stato);
-    $("#sync-kv").innerHTML = `<dt>Accesso GitHub</dt><dd>${haToken() ? "configurato" : "non configurato (i dati restano solo sul telefono)"}</dd>
-      <dt>Rete</dt><dd>${inRete() ? "disponibile" : "assente"}</dd>
-      <dt>Ultima riuscita</dt><dd>${esc(sy.ultimo_ok ? quando(sy.ultimo_ok) + " (" + eta(sy.ultimo_ok) + ")" : "mai")}</dd>
-      <dt>Da inviare</dt><dd>${n} modifiche</dd>
-      <dt>Ultimo errore</dt><dd>${sy.errore ? `<span style="color:var(--err)">${esc(sy.errore.messaggio)}</span> <span class="muted">(${esc(quando(sy.errore.quando))})</span>` : "nessuno"}</dd>`;
-    const ks = Object.entries(sy.conflitti || {});
-    $("#c-conflitti").hidden = !ks.length;
-    const TIPI = { modificato_entrambi: "modificato sia qui sia nel repository", eliminato_remoto_modificato_locale: "eliminato nel repository, modificato qui", eliminato_locale_modificato_remoto: "eliminato qui, modificato nel repository", privata_locale_modificata_remota: "reso privato qui, modificato nel repository", stesso_id: "stesso identificativo con contenuti diversi" };
-    $("#l-conflitti").innerHTML = ks.map(([k, c]) => `<div class="item"><h3>${esc(c.col)} · ${esc((c.locale || c.remoto || {}).nome || (c.locale || c.remoto || {}).testo || c.id)}</h3>
-      <p class="small muted">${esc(TIPI[c.tipo] || c.tipo)} · rilevato ${esc(quando(c.rilevato_il))}</p>
-      <div class="confronto"><div><span class="split">Sul telefono</span><pre>${esc(c.locale ? JSON.stringify(c.locale, null, 1) : "(eliminato)")}</pre></div><div><span class="split">Nel repository</span><pre>${esc(c.remoto ? JSON.stringify(c.remoto, null, 1) : "(eliminato)")}</pre></div></div>
-      <div class="actions"><button type="button" class="ghost" data-act="ris-tel" data-id="${esc(k)}">Tieni la versione del telefono</button><button type="button" class="ghost" data-act="ris-repo" data-id="${esc(k)}">Tieni la versione del repository</button></div></div>`).join("");
-    $("#token-stato").textContent = haToken() ? "Un token è salvato in modo cifrato su questo telefono." : "Nessun token salvato: la sincronizzazione è spenta.";
-    const nf = M.contaFittizi(S.stato);
-    $("#fitt-info").textContent = nf ? `${nf} elementi sono marcati come dati di prova (fittizi). Vengono eliminati solo questi e i collegamenti che li usano; i tuoi dati reali restano.` : "Nessun dato di prova presente.";
-    $("#b-fitt").disabled = !nf;
-    let info = null; try { info = A ? JSON.parse(A.infoApp()) : null; } catch (_) {}
-    $("#info-kv").innerHTML = `<dt>Versione</dt><dd>${esc(info ? info.versione + " (" + info.codice + ")" : "anteprima")}</dd><dt>Repository</dt><dd class="mono">${esc(OWNER + "/" + REPO)} · ramo dati</dd><dt>Dati locali</dt><dd>${M.COLLEZIONI_APP.map((c) => L(c).length + " " + c).join(", ")}</dd>`;
+  function apri(tipo, id) { if (tipo === "nota") S.nota = id; if (tipo === "stanza") S.stanza = id; if (tipo === "progetto") S.progetto = id; vai(tipo); }
+
+  // ---------- fogli (modifica e aggiunta rapida): non vengono ridisegnati dalla sincronizzazione ----------
+  const F = $("#foglio");
+  function foglio(html, invio) {
+    F.innerHTML = `<form id="f-foglio" autocomplete="off">${html}<p class="stato" id="f-stato"></p><div class="azioni" style="justify-content:flex-end"><button type="button" class="btn v" id="f-annulla">Annulla</button><button class="btn" id="f-salva">Salva</button></div></form>`;
+    F.hidden = false;
+    $("#f-annulla").onclick = () => (F.hidden = true);
+    $("#f-foglio").onsubmit = async (e) => { e.preventDefault(); try { const msg = await invio(); F.hidden = true; render(); if (msg) toast(msg); } catch (err) { stato("#f-stato", "Non salvato: " + (err.message || err), "err"); } };
+    const primo = F.querySelector("input:not([type=checkbox]),textarea"); if (primo) primo.focus();
   }
+  F.onclick = (e) => { if (e.target === F) F.hidden = true; };
+  const opz = (arr, sel, vuota) => `<option value="">${esc(vuota)}</option>` + arr.map((x) => `<option value="${esc(x.id)}"${x.id === sel ? " selected" : ""}>${esc(x.nome || titoloNota(x))}</option>`).join("");
+  const caselle = (nome, arr, scelti) => `<div class="scelte" id="${nome}">${arr.map((x) => `<label class="check"><input type="checkbox" value="${esc(x.id)}"${scelti.includes(x.id) ? " checked" : ""}> ${esc(x.nome || titoloNota(x))}</label>`).join("") || `<span class="small muted">Nessun elemento.</span>`}</div>`;
+  const valori = (nome) => [...document.querySelectorAll(`#${nome} input:checked`)].map((i) => i.value);
+
+  const EDITOR = {
+    rapido() {
+      let tipo = "nota";
+      foglio(`<h2>Aggiunta rapida</h2><textarea id="r-testo" required maxlength="8000" placeholder="Scrivi un'idea, una nota o un'attività"></textarea>
+        <div class="seg" id="r-tipo"><button type="button" data-v="nota" aria-pressed="true">Nota</button><button type="button" data-v="attivita" aria-pressed="false">Attività</button><button type="button" data-v="progetto" aria-pressed="false">Progetto</button></div>
+        <label id="r-stanza-l" hidden>Stanza dell'attività <select id="r-stanza">${opz(L("stanze").filter((s) => statoStanza(s) !== "archiviata"), "", "scegli una stanza")}</select></label>
+        <p class="small muted" id="r-nota">La nota finisce in «Da organizzare», privata: la sistemi dopo.</p>`, async () => {
+        const t = $("#r-testo").value.trim();
+        if (tipo === "attivita") {
+          const sid = $("#r-stanza").value; if (!sid) throw new Error("scegli la stanza");
+          const s = T("stanze", sid); await scrivi("stanze", sid, { attivita: [...(s.attivita || []), { id: nuovoId("at"), testo: t, fatta: false, creato_il: ora() }] }); return "Attività aggiunta a " + s.nome;
+        }
+        if (tipo === "progetto") { await scrivi("progetti", "", { nome: t.split("\n")[0].slice(0, 120), obiettivo: t.split("\n").slice(1).join("\n").trim(), stato: "attivo" }); return "Progetto creato"; }
+        await scrivi("note", "", { testo: t, tipo: "originale", fonte: "aggiunta rapida", data: ora(), registrato_il: ora(), categoria: "inbox", accessibile_agenti: false, tag: [], collegamenti: [] });
+        return "Nota aggiunta a «Da organizzare»";
+      });
+      $("#r-tipo").onclick = (e) => { const b = e.target.closest("button"); if (!b) return; tipo = b.dataset.v; $("#r-tipo").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", x === b)); $("#r-stanza-l").hidden = tipo !== "attivita"; $("#r-nota").hidden = tipo !== "nota"; };
+    },
+    nota(id) {
+      const n = T("note", id) || { tipo: "originale", fonte: "", data: ora(), categoria: "inbox", tag: [], collegamenti: [] };
+      foglio(`<h2>${id ? "Modifica nota" : "Nuova nota"}</h2>
+        <label>Titolo (facoltativo) <input id="n-titolo" maxlength="150" value="${esc(n.titolo || "")}"></label>
+        <label>Contenuto <textarea id="n-testo" required maxlength="20000">${esc(n.testo || "")}</textarea></label>
+        <div class="riga2"><label>Tipo <select id="n-tipo">${["originale", "riassunto", "dedotto"].map((t) => `<option${n.tipo === t ? " selected" : ""}>${t}</option>`).join("")}</select></label>
+          <label>Fonte <input id="n-fonte" required maxlength="200" value="${esc(n.fonte || "")}"></label></div>
+        <div class="riga2"><label>Data dell'informazione <input id="n-data" type="date" required value="${esc(String(n.data || ora()).slice(0, 10))}"></label>
+          <label>Categoria <select id="n-cat">${Object.entries(CAT).map(([k, [l]]) => `<option value="${k}"${catNota(n) === k ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
+        <div class="riga2"><label>Progetto <select id="n-prog">${opz(L("progetti"), n.progetto_id, "nessuno")}</select></label><label>Stanza <select id="n-stanza">${opz(L("stanze"), n.stanza_id, "nessuna")}</select></label></div>
+        <label>Tag (separati da virgola) <input id="n-tag" maxlength="300" value="${esc((n.tag || []).join(", "))}"></label>
+        <label>Collegamenti ad altre note</label>${caselle("n-link", L("note").filter((x) => x.id !== id), n.collegamenti || [])}
+        <label class="check"><input type="checkbox" id="n-agenti"${n.accessibile_agenti === true ? " checked" : ""}> Accessibile agli agenti (copiata nel repository GitHub privato)</label>`, async () => {
+        const campi = { titolo: $("#n-titolo").value.trim(), testo: $("#n-testo").value.trim(), tipo: $("#n-tipo").value, fonte: $("#n-fonte").value.trim(), data: (n.data && String(n.data).slice(0, 10) === $("#n-data").value) ? n.data : $("#n-data").value + "T00:00:00.000Z",
+          categoria: $("#n-cat").value, progetto_id: $("#n-prog").value || null, stanza_id: $("#n-stanza").value || null,
+          tag: $("#n-tag").value.split(",").map((x) => x.trim().replace(/^#/, "")).filter(Boolean), collegamenti: valori("n-link"), accessibile_agenti: $("#n-agenti").checked };
+        if (id && n.accessibile_agenti === undefined && !campi.accessibile_agenti) delete campi.accessibile_agenti; // assente = privata: non aggiungere il campo
+        if (!campi.titolo) delete campi.titolo;
+        if (id) campi.corretto_il = ora(); else campi.registrato_il = ora();
+        const nid = await scrivi("note", id, campi); S.nota = nid;
+        const doppio = L("note").find((x) => x.id !== nid && norm(x.testo) === norm(campi.testo));
+        return doppio ? "Salvata. Esiste un'altra nota con lo stesso testo (possibile duplicato)." : "Nota salvata";
+      });
+    },
+    progetto(id) {
+      const p = T("progetti", id) || { stato: "attivo" };
+      foglio(`<h2>${id ? "Modifica progetto" : "Nuovo progetto"}</h2><label>Nome <input id="p-nome" required maxlength="120" value="${esc(p.nome || "")}"></label>
+        <label>Obiettivo <textarea id="p-obj" maxlength="2000">${esc(p.obiettivo || "")}</textarea></label>
+        <div class="riga2"><label>Stato <select id="p-stato">${["attivo", "in pausa", "concluso", "archiviato"].map((t) => `<option${(p.stato || "attivo") === t ? " selected" : ""}>${t}</option>`).join("")}</select></label><label>Stanza <select id="p-stanza">${opz(L("stanze"), p.stanza_id, "nessuna")}</select></label></div>`, async () => {
+        S.progetto = await scrivi("progetti", id, { nome: $("#p-nome").value.trim(), obiettivo: $("#p-obj").value.trim(), stato: $("#p-stato").value, stanza_id: $("#p-stanza").value || null }); return "Progetto salvato";
+      });
+    },
+    stanza(id) {
+      const s = T("stanze", id) || {};
+      foglio(`<h2>${id ? "Modifica stanza" : "Nuova stanza"}</h2><label>Nome <input id="s-nome" required maxlength="100" value="${esc(s.nome || "")}"></label>
+        <label>Descrizione <input id="s-desc" maxlength="300" value="${esc(s.descrizione || "")}"></label>
+        <label>Obiettivi (uno per riga) <textarea id="s-obj" maxlength="2000">${esc((s.obiettivi || []).join("\n"))}</textarea></label>
+        <label>Agenti assegnati</label>${caselle("s-ag", L("agenti"), s.agenti_ids || [])}`, async () => {
+        const campi = { nome: $("#s-nome").value.trim(), descrizione: $("#s-desc").value.trim(), obiettivi: $("#s-obj").value.split("\n").map((x) => x.trim()).filter(Boolean), agenti_ids: valori("s-ag") };
+        if (!id) { campi.stato = "attiva"; campi.attivita = []; }
+        S.stanza = await scrivi("stanze", id, campi); return "Stanza salvata";
+      });
+    },
+    agente(id) {
+      const a = T("agenti", id) || { accesso_memoria: "nessuno" };
+      foglio(`<h2>${id ? "Modifica agente" : "Nuovo agente"}</h2><div class="riga2"><label>Nome <input id="a-nome" required maxlength="100" value="${esc(a.nome || "")}"></label><label>Ruolo <input id="a-ruolo" maxlength="150" value="${esc(a.ruolo || "")}"></label></div>
+        <label>Istruzioni <textarea id="a-istr" maxlength="8000">${esc(a.istruzioni || "")}</textarea></label>
+        <div class="riga2"><label>Strumenti (virgole) <input id="a-strum" maxlength="500" value="${esc((a.strumenti || []).join(", "))}"></label>
+          <label>Accesso alla memoria <select id="a-mem">${[["nessuno", "Nessuno"], ["stanza", "Note condivise delle sue stanze"], ["tutta", "Tutte le note condivise"]].map(([v, l]) => `<option value="${v}"${a.accesso_memoria === v ? " selected" : ""}>${l}</option>`).join("")}</select></label></div>
+        <label>Skill</label>${caselle("a-skill", L("skill"), a.skill_ids || [])}`, async () => {
+        await scrivi("agenti", id, { nome: $("#a-nome").value.trim(), ruolo: $("#a-ruolo").value.trim(), istruzioni: $("#a-istr").value.trim(), strumenti: $("#a-strum").value.split(",").map((x) => x.trim()).filter(Boolean), accesso_memoria: $("#a-mem").value, skill_ids: valori("a-skill") }); return "Agente salvato";
+      });
+    },
+    skill(id) {
+      const k = T("skill", id) || {};
+      foglio(`<h2>${id ? "Modifica skill" : "Nuova skill"}</h2><label>Nome <input id="k-nome" required maxlength="100" value="${esc(k.nome || "")}"></label><label>Descrizione <input id="k-desc" maxlength="300" value="${esc(k.descrizione || "")}"></label><label>Procedura <textarea id="k-proc" maxlength="8000">${esc(k.procedura || "")}</textarea></label>`, async () => {
+        await scrivi("skill", id, { nome: $("#k-nome").value.trim(), descrizione: $("#k-desc").value.trim(), procedura: $("#k-proc").value.trim() }); return "Skill salvata";
+      });
+    },
+    token() {
+      foglio(`<h2>Accesso GitHub</h2><p class="small">${haToken() ? "Un token è salvato cifrato su questo telefono." : "Nessun token: la sincronizzazione è spenta."}</p>
+        <ol class="guida"><li>Tocca <b>Apri GitHub</b> (accedi se richiesto).</li><li>Nome «Second Brain telefono», scadenza 90 giorni.</li><li><i>Repository access</i>: <b>Only select repositories → second-brain</b>.</li><li><i>Repository permissions → Contents</i>: <b>Read and write</b>. Nient'altro.</li><li><i>Generate token</i>, copia (inizia con <span class="mono">github_pat_</span>) e incolla qui.</li></ol>
+        <div class="azioni"><button type="button" class="btn v" id="b-github">Apri GitHub</button>${haToken() ? `<button type="button" class="btn r" id="b-token-via">Rimuovi token</button>` : ""}</div>
+        <label>Token <input type="password" id="token" autocapitalize="off" spellcheck="false" placeholder="github_pat_…" required></label>`, async () => {
+        const v = $("#token").value.trim(); $("#token").value = "";
+        const r = A ? A.impostaToken(v) : "anteprima"; if (r !== "ok") throw new Error(r);
+        if (!inRete()) return "Token salvato. Verrà verificato alla prima sincronizzazione.";
+        const res = await api.richiesta("GET", `/repos/${OWNER}/${REPO}`);
+        if (res.status === 200 && res.corpo && res.corpo.permissions && res.corpo.permissions.push) { setTimeout(() => sincronizza(true), 50); return "Accesso verificato: lettura e scrittura su second-brain."; }
+        if (res.status === 200) return "Il token non può scrivere: imposta Contents su «Read and write».";
+        if (res.status === 401) return "Token non valido o scaduto.";
+        if (res.status === 404) return "Il token non dà accesso a second-brain.";
+        return "Verifica non riuscita (" + res.status + "): riprova la sincronizzazione.";
+      });
+      $("#b-github").onclick = () => A && A.apriLink("https://github.com/settings/personal-access-tokens/new");
+      const via = $("#b-token-via"); if (via) via.onclick = (e) => conferma(e.currentTarget, () => { A.rimuoviToken(); F.hidden = true; render(); toast("Token rimosso. Revocalo anche su GitHub se non serve più."); });
+    },
+  };
+  $("#fab").onclick = () => EDITOR.rapido();
+
+  // ---------- azioni ----------
+  const BLOCCHI = {
+    stanze: (id) => L("note").filter((n) => n.stanza_id === id).length + L("progetti").filter((p) => p.stanza_id === id).length + collegamentiDi("stanza_id", id).length ? "La stanza ha note, progetti o esecuzioni collegate: archiviala o sposta prima i collegamenti." : null,
+    agenti: (id) => L("stanze").some((s) => (s.agenti_ids || []).includes(id)) || collegamentiDi("agente_id", id).length ? "L'agente è assegnato a stanze o collegato a esecuzioni: rimuovi prima le assegnazioni." : null,
+    skill: (id) => L("agenti").some((a) => (a.skill_ids || []).includes(id)) ? "La skill è usata da un agente: toglila prima dalla sua scheda." : null,
+    progetti: (id) => L("note").some((n) => n.progetto_id === id) ? "Il progetto ha note collegate: archivialo o scollega prima le note." : null,
+  };
+  document.addEventListener("click", async (e) => {
+    const b = e.target.closest("button,[data-apri]"); if (!b || F.contains(b)) return;
+    const d = b.dataset;
+    if (d.apri) { e.preventDefault(); apri(d.apri, d.id); return; }
+    if (d.org) { S.org = d.org; if (d.vai) vai(d.vai); else render(); return; }
+    if (d.sub) { S.sub = d.sub; if (d.vai) vai(d.vai); else render(); return; }
+    if (d.vai) { vai(d.vai); return; }
+    if (d.modifica) { EDITOR[d.modifica](d.id || ""); return; }
+    if (d.elimina) { conferma(b, () => { const blocco = BLOCCHI[d.elimina] && BLOCCHI[d.elimina](d.id); if (blocco) { toast(blocco); return; } elimina(d.elimina, d.id); if (["note", "progetti", "stanze"].includes(d.elimina) && NAV[vistaCorrente()]) history.back(); else render(); }); return; }
+    if (d.categoria) { await scrivi("note", S.nota, { categoria: d.categoria }); render(); toast("Spostata in " + CAT[d.categoria][0]); return; }
+    if (d.archiviaStanza) { const s = T("stanze", d.archiviaStanza); const arch = statoStanza(s) !== "archiviata"; await scrivi("stanze", s.id, { stato: arch ? "archiviata" : "attiva", archiviata: arch }); render(); return; }
+    if (d.archiviaProgetto) { const p = T("progetti", d.archiviaProgetto); await scrivi("progetti", p.id, { stato: p.stato === "archiviato" ? "attivo" : "archiviato" }); render(); return; }
+    if (d.attVia) { const s = T("stanze", S.stanza); await scrivi("stanze", s.id, { attivita: (s.attivita || []).filter((a) => a.id !== d.attVia) }); render(); return; }
+    if (d.collega) {
+      const ag = document.querySelector(`[data-link-ag="${CSS.escape(d.collega)}"]`).value, st = document.querySelector(`[data-link-st="${CSS.escape(d.collega)}"]`).value;
+      if (!ag && !st) { stato("#lv-stato", "Scegli almeno un agente o una stanza.", "att"); return; }
+      await scrivi("collegamenti", "", { session_id: d.collega, agente_id: ag || null, stanza_id: st || null }); render(); toast("Collegamento salvato"); return;
+    }
+    if (d.risolvi) { await M.risolviConflitto(S.stato, d.id, d.risolvi); await salva(); render(); programmaSync(); toast("Conflitto risolto"); return; }
+    if (b.id === "b-sync") { sincronizza(true); return; }
+    if (b.id === "b-snap") { scaricaIstantanea(); return; }
+    if (b.id === "b-exp") { esporta(); return; }
+    if (b.id === "b-imp") { if (A) { stato("#imp-stato", "Scegli il file…"); A.importa(); } return; }
+    if (b.id === "b-imp-ok") { ripristina(b); return; }
+    if (b.id === "b-fitt") { conferma(b, async () => { const n = await M.eliminaFittizi(S.stato); await salva(); programmaSync(); render(); toast(`Eliminati ${n} elementi di prova; i dati reali sono rimasti.`); }); return; }
+  });
+  document.addEventListener("change", async (e) => {
+    if (e.target.dataset.att) { const s = T("stanze", S.stanza); await scrivi("stanze", s.id, { attivita: (s.attivita || []).map((a) => (a.id === e.target.dataset.att ? { ...a, fatta: e.target.checked, fatta_il: e.target.checked ? ora() : null } : a)) }); render(); }
+  });
+  document.addEventListener("input", (e) => { if (e.target.id === "cerca") { S.cerca = e.target.value; render(); } if (e.target.id === "cerca-note") { S.cercaNote = e.target.value; render(); } });
+  document.addEventListener("submit", async (e) => {
+    if (e.target.id !== "f-att") return; e.preventDefault();
+    const t = $("#att-testo").value.trim(); if (!t) return; const s = T("stanze", S.stanza);
+    await scrivi("stanze", s.id, { attivita: [...(s.attivita || []), { id: nuovoId("at"), testo: t, fatta: false, creato_il: ora() }] }); render(); const el = $("#att-testo"); if (el) el.focus();
+  });
 
   // ---------- sincronizzazione ----------
   async function sincronizza(manuale) {
-    if (S.inSync) return;
-    if (!haToken()) { if (manuale) status("#sync-status", "Configura prima l'accesso GitHub.", "warn"); return; }
-    if (!inRete()) {
-      S.stato.sync.errore = { tipo: "rete", messaggio: "Rete assente: le modifiche restano sul telefono e verranno inviate più tardi.", quando: nowIso() };
-      await salva(); render(); if (manuale) status("#sync-status", "Rete assente: riprova quando sei connesso.", "warn"); return;
-    }
-    S.inSync = true; chipSync(); if (manuale) status("#sync-status", "Sincronizzazione in corso…");
+    if (S.inSync || bloccato()) return;
+    if (!haToken()) { if (manuale) stato("#sync-stato", "Configura prima l'accesso GitHub.", "att"); return; }
+    if (!inRete()) { S.stato.sync.errore = { tipo: "rete", messaggio: "Rete assente: le modifiche restano sul telefono e verranno inviate più tardi.", quando: ora() }; await salva(); render(); if (manuale) stato("#sync-stato", "Rete assente: riprova quando sei connesso.", "att"); return; }
+    S.inSync = true; chipSync();
     try {
       const e = await M.sincronizza(S.stato, api, { owner: OWNER, repo: REPO, salva });
       const parti = [`${e.inviati} inviati`, `${e.ricevuti} ricevuti`];
-      if (e.eliminati_remoto) parti.push(`${e.eliminati_remoto} eliminati dal repository`);
-      if (e.eliminati_locale) parti.push(`${e.eliminati_locale} eliminati qui perché tolti dal repository`);
+      if (e.eliminati_remoto) parti.push(`${e.eliminati_remoto} tolti dal repository`);
+      if (e.eliminati_locale) parti.push(`${e.eliminati_locale} tolti qui perché eliminati nel repository`);
       if (e.conflitti_nuovi) parti.push(`${e.conflitti_nuovi} conflitti da risolvere`);
-      status("#sync-status", "Sincronizzato: " + parti.join(", ") + (e.ramo_creato ? ". Creato il ramo «dati»." : "."), e.conflitti_nuovi ? "warn" : "ok");
-    } catch (err) {
-      status("#sync-status", err.message || String(err), err.tipo === "rete" ? "warn" : "err");
-    } finally { S.inSync = false; render(); }
+      S.esitoSync = ["Sincronizzato: " + parti.join(", ") + (e.ramo_creato ? ". Creato il ramo «dati»." : "."), e.conflitti_nuovi ? "att" : "ok"];
+    } catch (err) { S.esitoSync = [err.message || String(err), err.tipo === "rete" ? "att" : "err"]; if (manuale) toast(S.esitoSync[0]); }
+    finally { S.inSync = false; if (!F.hidden) chipSync(); else render(); if (S.esitoSync) stato("#sync-stato", ...S.esitoSync); }
   }
   function programmaSync() { clearTimeout(S.timerSync); if (haToken()) S.timerSync = setTimeout(() => sincronizza(false), 20000); }
-  window.__ripresa = () => { render(); sincronizza(false); };
-
-  // ---------- moduli ----------
-  function modoModifica(pref, id, n, m) { $(`#${pref}-id`).value = id || ""; $(`#${pref}-save`).textContent = id ? m : n; $(`#${pref}-cancel`).hidden = !id; }
-  async function scrivi(col, id, campi, sel, msg) {
-    try {
-      const prima = id ? T(col, id) : null;
-      const dati = prima ? { ...prima, ...campi, aggiornato_il: nowIso() } : { ...campi, creato_il: nowIso() };
-      delete dati.id;
-      await M.salvaRecord(S.stato, col, id || newId(col.slice(0, 2)), dati);
-      await salva(); render(); programmaSync();
-      status(sel, msg || (id ? "Modifiche salvate sul telefono." : "Salvato sul telefono."), "ok"); return true;
-    } catch (e) { status(sel, "Non salvato: " + (e.message || e), "err"); return false; }
+  window.__ripresa = () => { if (F.hidden) render(); sincronizza(false); };
+  async function scaricaIstantanea() {
+    if (!haToken()) { stato("#lv-stato", "Configura l'accesso GitHub nelle impostazioni.", "att"); return; }
+    if (!inRete()) { stato("#lv-stato", "Rete assente: resta l'ultima istantanea scaricata.", "att"); return; }
+    stato("#lv-stato", "Lettura del repository…");
+    try { const n = await M.scaricaIstantanea(S.stato, api, { owner: OWNER, repo: REPO }); await salva(); render(); stato("#lv-stato", n ? "Istantanea scaricata dal repository." : "Nel repository non c'è ancora un'istantanea.", n ? "ok" : "att"); }
+    catch (e) { stato("#lv-stato", (e.message || e) + " Resta l'istantanea precedente.", "err"); }
   }
-  async function elimina(col, id, sel, blocco) {
-    if (blocco) { status(sel, blocco, "warn"); return; }
-    const sincronizzato = !!(S.stato.collezioni[col][id] && S.stato.collezioni[col][id].sync.sha);
-    M.eliminaRecord(S.stato, col, id); await salva(); render(); programmaSync();
-    status(sel, sincronizzato ? "Eliminato. Alla prossima sincronizzazione sarà tolto dal repository; resta nella cronologia Git." : "Eliminato.", "ok");
-  }
-
-  $("#f-stanze").addEventListener("submit", async (ev) => {
-    ev.preventDefault(); const id = $("#st-id").value;
-    const campi = { nome: $("#st-nome").value.trim(), descrizione: $("#st-desc").value.trim(), obiettivi: $("#st-obj").value.split("\n").map((x) => x.trim()).filter(Boolean), agenti_ids: valoriCaselle("#st-agenti") };
-    if (!id) campi.stato = "attiva";
-    if (await scrivi("stanze", id, campi, "#st-status")) { ev.target.reset(); caselle("#st-agenti", L("agenti"), new Set()); modoModifica("st", "", "Crea stanza", "Salva modifiche"); }
-  });
-  $("#st-cancel").onclick = () => { $("#f-stanze").reset(); caselle("#st-agenti", L("agenti"), new Set()); modoModifica("st", "", "Crea stanza", "Salva modifiche"); status("#st-status", ""); };
-  $("#st-filtro").onchange = renderStanze;
-
-  $("#f-agenti").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    const campi = { nome: $("#ag-nome").value.trim(), ruolo: $("#ag-ruolo").value.trim(), istruzioni: $("#ag-istr").value.trim(), strumenti: $("#ag-strum").value.split(",").map((x) => x.trim()).filter(Boolean), accesso_memoria: $("#ag-mem").value, skill_ids: valoriCaselle("#ag-skill") };
-    if (await scrivi("agenti", $("#ag-id").value, campi, "#ag-status")) { ev.target.reset(); caselle("#ag-skill", L("skill"), new Set()); modoModifica("ag", "", "Aggiungi agente", "Salva modifiche"); }
-  });
-  $("#ag-cancel").onclick = () => { $("#f-agenti").reset(); caselle("#ag-skill", L("skill"), new Set()); modoModifica("ag", "", "Aggiungi agente", "Salva modifiche"); status("#ag-status", ""); };
-
-  $("#f-skill").addEventListener("submit", async (ev) => {
-    ev.preventDefault();
-    const campi = { nome: $("#sk-nome").value.trim(), descrizione: $("#sk-desc").value.trim(), procedura: $("#sk-proc").value.trim() };
-    if (await scrivi("skill", $("#sk-id").value, campi, "#sk-status")) { ev.target.reset(); modoModifica("sk", "", "Aggiungi skill", "Salva modifiche"); }
-  });
-  $("#sk-cancel").onclick = () => { $("#f-skill").reset(); modoModifica("sk", "", "Aggiungi skill", "Salva modifiche"); status("#sk-status", ""); };
-
-  const oggi = () => new Date().toISOString().slice(0, 10);
-  $("#me-data").value = oggi();
-  $("#f-memoria").addEventListener("submit", async (ev) => {
-    ev.preventDefault(); const id = $("#me-id").value; const testo = $("#me-testo").value.trim();
-    const campi = { testo, tipo: $("#me-tipo").value, fonte: $("#me-fonte").value.trim(), data: $("#me-data").value + "T00:00:00.000Z", stanza_id: $("#me-stanza").value || null, accessibile_agenti: $("#me-agenti").checked };
-    if (id) campi.corretto_il = nowIso(); else campi.registrato_il = nowIso();
-    const doppio = L("note").find((m) => m.id !== id && norm(m.testo) === norm(testo));
-    if (await scrivi("note", id, campi, "#me-status")) {
-      if (doppio) status("#me-status", "Salvato. Esiste già un elemento con lo stesso testo: è segnato come possibile duplicato.", "warn");
-      ev.target.reset(); $("#me-data").value = oggi(); modoModifica("me", "", "Salva in memoria", "Salva correzione");
-    }
-  });
-  $("#me-cancel").onclick = () => { $("#f-memoria").reset(); $("#me-data").value = oggi(); modoModifica("me", "", "Salva in memoria", "Salva correzione"); status("#me-status", ""); };
-  ["#me-cerca", "#me-ftipo", "#me-fstanza"].forEach((s) => $(s).addEventListener("input", renderMemoria));
-
-  document.addEventListener("click", async (ev) => {
-    const b = ev.target.closest("button[data-act]"); if (!b) return;
-    const id = b.dataset.id, act = b.dataset.act;
-    if (act === "mod-stanza") { const s = T("stanze", id); $("#st-nome").value = s.nome || ""; $("#st-desc").value = s.descrizione || ""; $("#st-obj").value = (s.obiettivi || []).join("\n"); caselle("#st-agenti", L("agenti"), new Set(s.agenti_ids || [])); modoModifica("st", id, "Crea stanza", "Salva modifiche"); $("#f-stanze").scrollIntoView({ block: "start" }); }
-    if (act === "arch-stanza") { const s = T("stanze", id); const arch = statoStanza(s) !== "archiviata"; await scrivi("stanze", id, { stato: arch ? "archiviata" : "attiva", archiviata: arch }, "#st-status", arch ? "Stanza archiviata." : "Stanza riattivata."); }
-    if (act === "del-stanza") conferma(b, () => { const usi = L("note").filter((m) => m.stanza_id === id).length + collegamentiDi("stanza_id", id).length; elimina("stanze", id, "#st-status", usi ? `Questa stanza ha ${usi} elementi di memoria o collegamenti: spostali o archivia la stanza.` : null); });
-    if (act === "mod-agente") { const a = T("agenti", id); $("#ag-nome").value = a.nome || ""; $("#ag-ruolo").value = a.ruolo || ""; $("#ag-istr").value = a.istruzioni || ""; $("#ag-strum").value = (a.strumenti || []).join(", "); $("#ag-mem").value = a.accesso_memoria || "nessuno"; caselle("#ag-skill", L("skill"), new Set(a.skill_ids || [])); modoModifica("ag", id, "Aggiungi agente", "Salva modifiche"); $("#f-agenti").scrollIntoView({ block: "start" }); }
-    if (act === "del-agente") conferma(b, () => { const usi = L("stanze").filter((s) => (s.agenti_ids || []).includes(id)).length + collegamentiDi("agente_id", id).length; elimina("agenti", id, "#ag-status", usi ? `Questo agente è assegnato a stanze o collegato a esecuzioni (${usi}): rimuovi prima le assegnazioni.` : null); });
-    if (act === "mod-skill") { const k = T("skill", id); $("#sk-nome").value = k.nome || ""; $("#sk-desc").value = k.descrizione || ""; $("#sk-proc").value = k.procedura || ""; modoModifica("sk", id, "Aggiungi skill", "Salva modifiche"); $("#f-skill").scrollIntoView({ block: "start" }); }
-    if (act === "del-skill") conferma(b, () => { const usi = L("agenti").filter((a) => (a.skill_ids || []).includes(id)).length; elimina("skill", id, "#sk-status", usi ? `Questa skill è usata da ${usi} agenti: toglila prima dalle loro schede.` : null); });
-    if (act === "mod-mem") { const m = T("note", id); $("#me-testo").value = m.testo || ""; $("#me-tipo").value = m.tipo || "originale"; $("#me-fonte").value = m.fonte || ""; $("#me-data").value = String(m.data || "").slice(0, 10); $("#me-stanza").value = m.stanza_id || ""; $("#me-agenti").checked = m.accessibile_agenti === true; modoModifica("me", id, "Salva in memoria", "Salva correzione"); $("#f-memoria").scrollIntoView({ block: "start" }); }
-    if (act === "cond-mem") { const m = T("note", id); const si = m.accessibile_agenti !== true; await scrivi("note", id, { accessibile_agenti: si }, "#me-status", si ? "Resa accessibile agli agenti: sarà copiata nel repository alla prossima sincronizzazione." : "Resa privata: sarà tolta dal repository alla prossima sincronizzazione (resta nella cronologia Git)."); }
-    if (act === "del-mem") conferma(b, () => elimina("note", id, "#me-status"));
-    if (act === "add-link") {
-      const ag = document.querySelector(`[data-link-ag="${CSS.escape(id)}"]`).value, st = document.querySelector(`[data-link-st="${CSS.escape(id)}"]`).value;
-      if (!ag && !st) { status("#lv-status", "Scegli almeno un agente o una stanza da collegare.", "warn"); return; }
-      await scrivi("collegamenti", "", { session_id: id, agente_id: ag || null, stanza_id: st || null }, "#lv-status", "Collegamento salvato.");
-    }
-    if (act === "del-link") conferma(b, () => elimina("collegamenti", id, "#lv-status"));
-    if (act === "ris-tel" || act === "ris-repo") { await M.risolviConflitto(S.stato, id, act === "ris-tel" ? "telefono" : "repository"); await salva(); render(); status("#sync-status", act === "ris-tel" ? "Terrai la versione del telefono: sarà inviata alla prossima sincronizzazione." : "Tenuta la versione del repository.", "ok"); programmaSync(); }
-  });
-
-  // ---------- sincronizzazione e token ----------
-  $("#b-sync").onclick = () => sincronizza(true);
-  $("#b-token-apri").onclick = () => { $("#c-token").hidden = !$("#c-token").hidden; if (!$("#c-token").hidden) $("#c-token").scrollIntoView({ block: "start" }); };
-  $("#b-github").onclick = () => { if (A) A.apriLink("https://github.com/settings/personal-access-tokens/new"); };
-  $("#b-token-salva").onclick = async () => {
-    const v = $("#token").value.trim(); $("#token").value = "";
-    if (!A) return;
-    const r = A.impostaToken(v);
-    if (r !== "ok") { status("#token-status", r, "err"); return; }
-    if (!inRete()) { status("#token-status", "Token salvato. Rete assente: la verifica avverrà alla prima sincronizzazione.", "warn"); render(); return; }
-    status("#token-status", "Verifica dell'accesso in corso…");
-    const res = await api.richiesta("GET", `/repos/${OWNER}/${REPO}`);
-    if (res.status === 200 && res.corpo && res.corpo.permissions && res.corpo.permissions.push) { status("#token-status", "Accesso verificato: lettura e scrittura su second-brain.", "ok"); render(); sincronizza(true); }
-    else if (res.status === 200) status("#token-status", "Il token legge il repository ma non può scrivere: imposta Contents su «Read and write».", "err");
-    else if (res.status === 401) status("#token-status", "Token non valido o scaduto: creane uno nuovo.", "err");
-    else if (res.status === 404) status("#token-status", "Il token non dà accesso a second-brain: in «Repository access» scegli Only select repositories → second-brain.", "err");
-    else if (res.status === 0) status("#token-status", "Rete assente durante la verifica: riprova.", "warn");
-    else status("#token-status", "Verifica non riuscita (" + res.status + ").", "err");
-    render();
-  };
-  $("#b-token-via").onclick = (ev) => conferma(ev.currentTarget, () => { if (A) A.rimuoviToken(); status("#token-status", "Token rimosso dal telefono. Ricordati di revocarlo anche su GitHub se non ti serve più.", "ok"); render(); });
-
-  $("#b-snap").onclick = async () => {
-    if (!haToken()) { status("#lv-status", "Configura l'accesso GitHub in Dati per scaricare l'istantanea.", "warn"); return; }
-    if (!inRete()) { status("#lv-status", "Rete assente: resta visibile l'ultima istantanea scaricata.", "warn"); return; }
-    status("#lv-status", "Lettura del repository…");
-    try { const n = await M.scaricaIstantanea(S.stato, api, { owner: OWNER, repo: REPO }); await salva(); render(); status("#lv-status", n ? "Istantanea scaricata dal repository." : "Nel repository non c'è ancora un'istantanea: resta quella precedente.", n ? "ok" : "warn"); }
-    catch (e) { status("#lv-status", (e.message || e) + " Resta visibile l'istantanea precedente.", "err"); }
-  };
 
   // ---------- esporta / ripristina ----------
-  window.__esportato = (ok, msg) => status("#exp-status", msg, ok ? "ok" : "err");
-  $("#b-exp").onclick = async () => {
-    const file = await M.creaBackup(S.stato);
-    const nome = "second-brain-" + nowIso().slice(0, 10) + ".json";
-    if (!A) return;
-    S.ultimoExport = file.hash_sha256;
-    status("#exp-status", "Scegli dove salvare il file…");
-    A.esporta(nome, JSON.stringify(file, null, 2), "Esportato: " + M.COLLEZIONI_BACKUP.map((c) => file.dati[c].length + " " + c).join(", ") + ". Impronta " + file.hash_sha256.slice(0, 16) + "…");
-  };
+  window.__esportato = (ok, msg) => stato("#exp-stato", msg, ok ? "ok" : "err");
+  async function esporta() {
+    const file = await M.creaBackup(S.stato); if (!A) return;
+    stato("#exp-stato", "Scegli dove salvare il file…");
+    A.esporta("second-brain-" + ora().slice(0, 10) + ".json", JSON.stringify(file, null, 2), "Esportato: " + M.COLLEZIONI_BACKUP.map((c) => file.dati[c].length + " " + c).join(", ") + ". Impronta " + file.hash_sha256.slice(0, 16) + "…");
+  }
   window.__importato = async (ok, testo) => {
-    $("#imp-preview").innerHTML = ""; S.pending = null;
-    if (!ok) { status("#imp-status", testo || "Nessun file scelto.", testo ? "err" : ""); return; }
+    const box = $("#imp-anteprima"); if (box) box.innerHTML = ""; S.pending = null;
+    if (!ok) { stato("#imp-stato", testo || "Nessun file scelto.", testo ? "err" : ""); return; }
     try {
-      const file = JSON.parse(testo); const h = (await M.verificaBackup(file)).hashFile; S.pending = file;
-      $("#imp-preview").innerHTML = `<div class="banner"><strong>Backup del ${esc(quando(file.esportato_il))}</strong>
-        <span>${M.COLLEZIONI_BACKUP.map((c) => (file.dati[c] || []).length + " " + c).join(", ")}</span><span class="mono">impronta ${esc(h.slice(0, 16))}… verificata</span>
-        <span class="small">I dati attuali del telefono saranno sostituiti. Ciò che era già sincronizzato e differisce verrà inviato alla prossima sincronizzazione.</span>
-        <div class="actions"><button type="button" id="b-imp-ok">Sostituisci i dati del telefono</button></div></div>`;
-      status("#imp-status", "File valido. Controlla il riepilogo e conferma.", "ok");
-    } catch (e) { status("#imp-status", "File non utilizzabile: " + (e.message || e), "err"); }
+      const file = JSON.parse(testo); const v = await M.verificaBackup(file); S.pending = file;
+      const cols = v.versione === 1 ? M.COLLEZIONI_BACKUP_V1 : M.COLLEZIONI_BACKUP;
+      $("#imp-anteprima").innerHTML = `<div class="banner"><b>Backup ${v.versione === 1 ? "della 1.0 " : ""}del ${esc(quando(file.esportato_il))}</b><span>${cols.map((c) => (file.dati[c] || []).length + " " + c).join(", ")}${v.versione === 1 ? " (le memorie diventeranno note identiche)" : ""}</span><span class="mono">impronta ${esc(v.hashFile.slice(0, 16))}… verificata</span><span class="small">I dati del telefono saranno sostituiti.</span><div class="azioni"><button class="btn" id="b-imp-ok">Sostituisci i dati del telefono</button></div></div>`;
+      stato("#imp-stato", "File valido. Controlla e conferma.", "ok");
+    } catch (e) { stato("#imp-stato", "File non utilizzabile: " + (e.message || e), "err"); }
   };
-  $("#b-imp").onclick = () => { if (A) { status("#imp-status", "Scegli il file…"); A.importa(); } };
-  document.addEventListener("click", async (ev) => {
-    if (ev.target.id !== "b-imp-ok" || !S.pending) return;
-    ev.target.disabled = true;
+  async function ripristina(btn) {
+    if (!S.pending) return; btn.disabled = true;
     try {
-      const base = (S.origine === "illeggibile" || S.origine === "migrazione_fallita") ? M.statoVuoto() : S.stato;
+      const base = bloccato() ? M.statoVuoto() : S.stato;
       const r = await M.ripristina(base, S.pending); S.stato = base; S.origine = "ripristinato"; await salva();
-      // ricarica dal file salvato e ricalcola: verifica che sia stato scritto davvero
-      let suDisco = r.hashDopo;
-      if (A) { const c = M.carica(A.caricaDati(), null); suDisco = await M.impronta(M.datiPuliti(c.stato)); }
-      const ok = r.identico && suDisco === r.hashAtteso;
-      status("#imp-status", ok ? `Importazione verificata${r.versione === 1 ? " (backup 1.0: memorie importate come note)" : ""}: impronta ${r.hashAtteso.slice(0, 16)}… corrispondente al file, anche dopo il salvataggio sul telefono.` : `Attenzione: impronta diversa dopo l'importazione (${suDisco.slice(0, 12)}…). Non cancellare il file di backup.`, ok ? "ok" : "err");
-      $("#imp-preview").innerHTML = ""; S.pending = null; render(); programmaSync();
-    } catch (e) { status("#imp-status", "Ripristino non riuscito: " + (e.message || e) + ". I dati del telefono non sono stati salvati.", "err"); ev.target.disabled = false; }
-  });
-
-  $("#b-fitt").onclick = (ev) => conferma(ev.currentTarget, async () => {
-    const n = await M.eliminaFittizi(S.stato); await salva(); render(); programmaSync();
-    status("#fitt-status", `Eliminati ${n} elementi di prova. I dati reali sono rimasti. Se erano già sincronizzati, saranno tolti dal repository (restano nella cronologia Git).`, "ok");
-  });
+      let suDisco = r.hashDopo; if (A) { const c = M.carica(A.caricaDati(), null); suDisco = await M.impronta(M.datiPuliti(c.stato)); }
+      const ok = r.identico && suDisco === r.hashAtteso; S.pending = null; render();
+      stato("#imp-stato", ok ? `Importazione verificata${r.versione === 1 ? " (backup 1.0: memorie importate come note)" : ""}: impronta ${r.hashAtteso.slice(0, 16)}… corrispondente al file, anche dopo il salvataggio.` : `Attenzione: impronta diversa dopo l'importazione (${suDisco.slice(0, 12)}…). Conserva il file di backup.`, ok ? "ok" : "err");
+      programmaSync();
+    } catch (e) { stato("#imp-stato", "Ripristino non riuscito: " + (e.message || e) + ". I dati del telefono non sono stati salvati.", "err"); btn.disabled = false; }
+  }
 
   // ---------- avvio ----------
   if (A) {
     const c = M.carica(A.caricaDati(), A.caricaDatiPrecedenti());
     S.origine = c.origine;
-    if (c.origine === "migrazione_fallita") { S.stato = M.statoVuoto(); S.migrazione = c.migrazione; } // dati su disco intatti, salvataggio sospeso
+    if (c.origine === "migrazione_fallita") { S.stato = M.statoVuoto(); S.migrazione = c.migrazione; }
     else {
       S.stato = c.stato;
       if (c.migrazione) {
         const copia = A.salvaCopia("dati-1.0-prima-della-migrazione.json", c.testoOriginale);
         S.migrazione = c.migrazione;
-        if (copia === "ok" || copia === "esiste") salva(); else { S.origine = "migrazione_fallita"; S.migrazione = { ...c.migrazione, ok: false, errori: ["copia di sicurezza non salvata: " + copia] }; }
+        if (copia === "ok" || copia === "esiste") salva();
+        else { S.origine = "migrazione_fallita"; S.migrazione = { ...c.migrazione, ok: false, errori: ["copia di sicurezza non salvata: " + copia] }; }
       }
     }
   }
   render();
-  setInterval(() => { if (!document.hidden) { chipSync(); renderLavoro(); renderAgenti(); } }, 60000);
-  if (S.origine !== "illeggibile" && S.origine !== "migrazione_fallita") sincronizza(false);
+  setInterval(() => { if (!document.hidden && F.hidden && !document.activeElement.matches("input,textarea,select")) render(); }, 60000);
+  if (!bloccato()) sincronizza(false);
 })();
 </script>
 </body>
