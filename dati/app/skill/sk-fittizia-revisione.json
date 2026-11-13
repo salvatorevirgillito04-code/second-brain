@@ -1,0 +1,7 @@
+{
+  "creato_il": "2026-11-13T07:00:00.000Z",
+  "descrizione": "Controllo di un diff prima del commit",
+  "fittizio": true,
+  "nome": "Revisione del codice (fittizia)",
+  "procedura": "1. Leggi il diff\n2. Elenca errori e rischi\n3. Proponi correzioni"
+}
