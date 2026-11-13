@@ -26,7 +26,7 @@ ALLINEATO="$OUT/second-brain-$NOME-allineato.apk"
 FINALE="$OUT/second-brain-$NOME.apk"
 "$BT/zipalign" -f -p 4 "$NON_FIRMATO" "$ALLINEATO"
 "$BT/apksigner" sign --ks "$SB_KEYSTORE" --ks-type PKCS12 --ks-key-alias secondbrain \
-  --ks-pass "file:$SB_PASS_FILE" --key-pass "file:$SB_PASS_FILE" \
+  --ks-pass "file:$SB_PASS_FILE" \
   --v1-signing-enabled false --v2-signing-enabled true --v3-signing-enabled true \
   --out "$FINALE" "$ALLINEATO"
 rm -f "$ALLINEATO" "$FINALE.idsig"
