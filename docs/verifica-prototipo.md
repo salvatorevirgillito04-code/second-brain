@@ -40,7 +40,7 @@ Azioni (dichiarate per le fasi future, **non chiamate** dal prototipo): create_s
 
 - `list_sessions` restituisce per ogni sessione `session_status`, `status_bucket` (WORKING, COMPLETED, FAILED…), `origin` (es. `android`), `updated_at`: è la base reale per mostrare un agente "al lavoro".
 - `list_events` di una sessione include l'esito del turno e una stima del costo a listino: utile per mostrare risultati ed errori.
-- La sessione di prova creata per il punto 6 ha consumato limiti del piano (stima a listino ≈ 0,58 $, nessun addebito extra).
+- La sessione di prova creata per il punto 6 riporta nei propri dati un valore equivalente a listino di circa 0,58 $ (`costUSD`, `costBasis: list`). È una stima del consumo, non un addebito: non è stata verificata alcuna fatturazione.
 
 ## Prova dal telefono (eseguita)
 

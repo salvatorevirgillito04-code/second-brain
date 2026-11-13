@@ -14,7 +14,8 @@ import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync, readdirSync, mkdirSync, existsSync, statSync } from "node:fs";
 import { join, basename } from "node:path";
 
-const COLLEZIONI = ["memoria", "stanze"];
+// Stesso elenco della pagina (app/index.html → COLLEZIONI)
+const COLLEZIONI = ["agenti", "collegamenti", "memoria", "skill", "stanze", "stato_lavoro"];
 
 export function canon(v) {
   if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
@@ -47,7 +48,7 @@ if (cmd === "componi") {
   const dati = leggiCartella(a);
   const file = { formato: "second-brain-backup", versione: 1, esportato_il: new Date().toISOString(), hash_sha256: impronta(dati), dati };
   writeFileSync(b, JSON.stringify(file, null, 2) + "\n");
-  console.log(`backup scritto: ${b}\nstanze=${dati.stanze.length} memoria=${dati.memoria.length}\nsha256=${file.hash_sha256}`);
+  console.log(`backup scritto: ${b}\n` + COLLEZIONI.map((c) => `${c}=${dati[c].length}`).join(" ") + `\nsha256=${file.hash_sha256}`);
 } else if (cmd === "scomponi") {
   const f = JSON.parse(readFileSync(a, "utf8"));
   if (f.hash_sha256 !== impronta(f.dati)) throw new Error("Impronta non valida: il file è stato alterato.");

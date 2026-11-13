@@ -1,0 +1,600 @@
+<title>Second Brain</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: app a colonna singola per il telefono; barra di sezioni fissa in alto, una vista alla volta (hash). */
+:root{
+  --bg:#f2f4f3; --surface:#ffffff; --fg:#17201d; --muted:#5a6863; --line:#d3dcd8;
+  --accent:#1f6f5c; --accent-fg:#ffffff; --accent-soft:#e1efe9;
+  --ok:#1d7a3e; --warn:#93600a; --err:#b3261e; --chip:#e8edeb; --stale:#7a6f5a;
+  --f-sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101614; --surface:#18201d; --fg:#e4ebe8; --muted:#97a6a0; --line:#2b3632;
+  --accent:#5cc4a7; --accent-fg:#0b1512; --accent-soft:#1d3029;
+  --ok:#5ccf86; --warn:#e3a94a; --err:#ff8a80; --chip:#222c29; --stale:#c2b08a; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101614; --surface:#18201d; --fg:#e4ebe8; --muted:#97a6a0; --line:#2b3632;
+  --accent:#5cc4a7; --accent-fg:#0b1512; --accent-soft:#1d3029;
+  --ok:#5ccf86; --warn:#e3a94a; --err:#ff8a80; --chip:#222c29; --stale:#c2b08a; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg)}
+body{color:var(--fg);font-family:var(--f-sans);font-size:15px;line-height:1.5;padding-block:0 56px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+.top .wrap{max-width:760px;margin:0 auto;padding-block:10px 0;display:grid;gap:6px}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.brand h1{font-size:1.15rem;margin:0;font-weight:600}
+nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+nav a{flex:0 0 auto;padding:8px 10px;color:var(--muted);text-decoration:none;font-weight:500;font-size:.92rem;border-bottom:2px solid transparent}
+nav a[aria-current="page"]{color:var(--fg);border-bottom-color:var(--accent)}
+nav a:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+main{max-width:760px;margin:0 auto;padding-block:16px;display:grid;gap:14px}
+h2{font-size:1.1rem;margin:0;font-weight:600;text-wrap:balance}
+h3{font-size:1rem;margin:0;font-weight:600}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:.85rem} .mono{font-family:var(--f-mono);font-size:.8rem;overflow-wrap:anywhere}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px;display:grid;gap:10px;min-width:0}
+.item{border-top:1px solid var(--line);padding-top:10px;display:grid;gap:6px;min-width:0}
+.item:first-child{border-top:none;padding-top:0}
+.item-head{display:flex;gap:8px;justify-content:space-between;align-items:flex-start;flex-wrap:wrap}
+.item-head > div{min-width:0;overflow-wrap:anywhere}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:.75rem;padding:1px 8px;border-radius:999px;background:var(--chip);color:var(--muted);border:1px solid var(--line);white-space:nowrap}
+.chip.ok{color:var(--ok);border-color:currentColor;background:transparent}
+.chip.warn{color:var(--warn);border-color:currentColor;background:transparent}
+.chip.err{color:var(--err);border-color:currentColor;background:transparent}
+.chip.cfg{color:var(--accent);border-color:currentColor;background:var(--accent-soft)}
+.chip.stale{color:var(--stale);border-color:currentColor;background:transparent;border-style:dashed}
+.banner{font-size:.88rem;padding:10px 12px;border-radius:8px;border:1px solid var(--line);background:var(--bg);display:grid;gap:4px}
+.banner.err{border-color:var(--err)} .banner.warn{border-color:var(--warn)}
+.banner.err strong{color:var(--err)} .banner.warn strong{color:var(--warn)}
+form{display:grid;gap:8px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+.row > *{flex:1 1 170px;min-width:0}
+label{font-size:.8rem;color:var(--muted);display:grid;gap:4px}
+input,select,textarea{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;width:100%}
+textarea{min-height:70px;resize:vertical}
+fieldset{border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin:0;display:grid;gap:4px;min-width:0}
+legend{font-size:.8rem;color:var(--muted);padding:0 4px}
+.check{display:flex;gap:8px;align-items:center;font-size:.9rem;color:var(--fg)}
+.check input{width:auto}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button{font:inherit;font-weight:500;border-radius:8px;padding:7px 13px;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg);cursor:pointer}
+button.ghost{background:transparent;color:var(--accent)}
+button.quiet{background:transparent;border-color:transparent;color:var(--accent);padding:4px 8px;font-size:.85rem}
+button.danger{background:transparent;border-color:transparent;color:var(--err);padding:4px 8px;font-size:.85rem}
+button:disabled{opacity:.45;cursor:not-allowed}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.status{font-size:.85rem;min-height:1.2em}
+.status.ok{color:var(--ok)} .status.err{color:var(--err)} .status.warn{color:var(--warn)}
+.empty{font-size:.88rem;color:var(--muted)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;font-size:.85rem}
+.kv dt{color:var(--muted)} .kv dd{margin:0;min-width:0;overflow-wrap:anywhere}
+.pre{white-space:pre-wrap;overflow-wrap:anywhere}
+.split{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:600}
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="top">
+  <div class="wrap">
+    <div class="brand"><h1>Second Brain</h1><span class="chip" id="cap">archivio: in attesa</span></div>
+    <nav aria-label="Sezioni">
+      <a href="#stanze">Stanze</a><a href="#agenti">Agenti</a><a href="#skill">Skill</a><a href="#memoria">Memoria</a><a href="#lavoro">Lavoro</a><a href="#dati">Dati</a>
+    </nav>
+  </div>
+</div>
+
+<main class="wrap">
+  <p class="banner warn" id="no-db" hidden><strong>Archivio non disponibile.</strong> Apri la pagina da claude.ai con il tuo account: fuori da Claude i dati non si possono leggere né salvare.</p>
+
+  <!-- STANZE -->
+  <section data-view="stanze" class="view" aria-labelledby="h-stanze">
+    <div class="card">
+      <h2 id="h-stanze">Stanze</h2>
+      <form id="f-stanze">
+        <input type="hidden" id="st-id">
+        <label>Nome <input id="st-nome" required maxlength="100"></label>
+        <label>Descrizione <input id="st-desc" maxlength="300"></label>
+        <label>Obiettivi (uno per riga) <textarea id="st-obj" maxlength="2000"></textarea></label>
+        <fieldset><legend>Agenti assegnati</legend><div id="st-agenti" class="chips"></div></fieldset>
+        <div class="actions"><button type="submit" id="st-save">Crea stanza</button><button type="button" class="ghost" id="st-cancel" hidden>Annulla modifica</button></div>
+        <p class="status" id="st-status"></p>
+      </form>
+    </div>
+    <div class="card"><div class="row"><label>Mostra
+      <select id="st-filtro"><option value="attiva">Attive</option><option value="archiviata">Archiviate</option><option value="tutte">Tutte</option></select></label></div>
+      <div id="l-stanze"></div>
+    </div>
+  </section>
+
+  <!-- AGENTI -->
+  <section data-view="agenti" class="view" aria-labelledby="h-agenti" hidden>
+    <div class="card">
+      <h2 id="h-agenti">Catalogo agenti</h2>
+      <p class="small muted">Un agente qui è una <strong>configurazione</strong>: non indica che stia lavorando. Le esecuzioni reali sono nella sezione Lavoro e compaiono qui solo se le hai collegate.</p>
+      <form id="f-agenti">
+        <input type="hidden" id="ag-id">
+        <div class="row"><label>Nome <input id="ag-nome" required maxlength="100"></label><label>Ruolo <input id="ag-ruolo" maxlength="150"></label></div>
+        <label>Istruzioni <textarea id="ag-istr" maxlength="8000"></textarea></label>
+        <div class="row">
+          <label>Strumenti (separati da virgola) <input id="ag-strum" maxlength="500" placeholder="es. Bash, GitHub, ricerca web"></label>
+          <label>Accesso alla memoria
+            <select id="ag-mem"><option value="nessuno">Nessuno</option><option value="stanza">Solo stanze assegnate</option><option value="tutta">Tutta la memoria</option></select></label>
+        </div>
+        <fieldset><legend>Skill</legend><div id="ag-skill" class="chips"></div></fieldset>
+        <div class="actions"><button type="submit" id="ag-save">Aggiungi agente</button><button type="button" class="ghost" id="ag-cancel" hidden>Annulla modifica</button></div>
+        <p class="status" id="ag-status"></p>
+      </form>
+    </div>
+    <div class="card" id="l-agenti"></div>
+  </section>
+
+  <!-- SKILL -->
+  <section data-view="skill" class="view" aria-labelledby="h-skill" hidden>
+    <div class="card">
+      <h2 id="h-skill">Skill</h2>
+      <p class="small muted">Procedure riutilizzabili. Si assegnano agli agenti dalla scheda dell'agente.</p>
+      <form id="f-skill">
+        <input type="hidden" id="sk-id">
+        <label>Nome <input id="sk-nome" required maxlength="100"></label>
+        <label>Descrizione <input id="sk-desc" maxlength="300"></label>
+        <label>Procedura <textarea id="sk-proc" maxlength="8000"></textarea></label>
+        <div class="actions"><button type="submit" id="sk-save">Aggiungi skill</button><button type="button" class="ghost" id="sk-cancel" hidden>Annulla modifica</button></div>
+        <p class="status" id="sk-status"></p>
+      </form>
+    </div>
+    <div class="card" id="l-skill"></div>
+  </section>
+
+  <!-- MEMORIA -->
+  <section data-view="memoria" class="view" aria-labelledby="h-memoria" hidden>
+    <div class="card">
+      <h2 id="h-memoria">Memoria</h2>
+      <form id="f-memoria">
+        <input type="hidden" id="me-id">
+        <label>Contenuto <textarea id="me-testo" required maxlength="8000"></textarea></label>
+        <div class="row">
+          <label>Tipo
+            <select id="me-tipo"><option value="originale">Originale (testo della fonte)</option><option value="riassunto">Riassunto</option><option value="dedotto">Dedotto (non detto esplicitamente)</option></select></label>
+          <label>Fonte <input id="me-fonte" required maxlength="200" placeholder="es. chat Claude del 3/11, sessione session_…"></label>
+        </div>
+        <div class="row">
+          <label>Data dell'informazione <input type="date" id="me-data" required></label>
+          <label>Stanza <select id="me-stanza"></select></label>
+        </div>
+        <div class="actions"><button type="submit" id="me-save">Salva in memoria</button><button type="button" class="ghost" id="me-cancel" hidden>Annulla modifica</button></div>
+        <p class="status" id="me-status"></p>
+      </form>
+    </div>
+    <div class="card">
+      <div class="row">
+        <label>Cerca <input id="me-cerca" type="search" placeholder="parole nel contenuto o nella fonte"></label>
+        <label>Tipo <select id="me-ftipo"><option value="">Tutti</option><option value="originale">Originale</option><option value="riassunto">Riassunto</option><option value="dedotto">Dedotto</option></select></label>
+        <label>Stanza <select id="me-fstanza"></select></label>
+      </div>
+      <div id="l-memoria"></div>
+    </div>
+  </section>
+
+  <!-- LAVORO -->
+  <section data-view="lavoro" class="view" aria-labelledby="h-lavoro" hidden>
+    <div class="card">
+      <h2 id="h-lavoro">Esecuzioni reali</h2>
+      <div id="snap-head"></div>
+      <div class="actions">
+        <button type="button" class="ghost" id="b-reload">Ricarica istantanea salvata</button>
+        <span class="small muted">Rilegge l'archivio. Per una nuova rilevazione scrivi «aggiorna stato» in Claude Code.</span>
+      </div>
+      <p class="status" id="lv-status"></p>
+    </div>
+    <div class="card"><h3>Sessioni nell'ultima istantanea</h3><div id="l-sessioni"></div></div>
+    <div class="card" id="c-orfani" hidden><h3>Collegamenti a sessioni non presenti nell'istantanea</h3><div id="l-orfani"></div></div>
+  </section>
+
+  <!-- DATI -->
+  <section data-view="dati" class="view" aria-labelledby="h-dati" hidden>
+    <div class="card">
+      <h2 id="h-dati">Esportazione</h2>
+      <p class="small muted">Crea un file JSON con tutte le stanze, gli agenti, le skill, la memoria, i collegamenti e l'ultima istantanea, con impronta SHA-256.</p>
+      <div class="actions"><button type="button" id="b-exp">Esporta tutto</button></div>
+      <p class="status" id="exp-status"></p>
+    </div>
+    <div class="card">
+      <h2>Ripristino</h2>
+      <p class="small muted">Sostituisce i dati attuali con quelli del file. Prima esporta una copia di sicurezza.</p>
+      <label>File di backup <input type="file" id="i-imp" accept="application/json,.json"></label>
+      <div id="imp-preview"></div>
+      <p class="status" id="imp-status"></p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const COLLEZIONI = ["agenti", "collegamenti", "memoria", "skill", "stanze", "stato_lavoro"];
+  const FRESCO_MIN = 15;
+  const BUCKET = { WORKING: ["in esecuzione", "warn"], BLOCKED: ["in attesa di intervento", "err"], REVIEW_READY: ["pronta per revisione", "ok"], COMPLETED: ["completata", "ok"], FAILED: ["fallita", "err"], IDLE: ["inattiva", ""] };
+  const $ = (s) => document.querySelector(s);
+  const S = { db: null, dl: null, data: Object.fromEntries(COLLEZIONI.map((c) => [c, []])), pronti: new Set(), pending: null };
+
+  // ---------- utilità ----------
+  const esc = (v) => String(v ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  const nowIso = () => new Date().toISOString();
+  const newId = (p) => p + "-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+  const byId = (col, id) => S.data[col].find((r) => r.id === id);
+  const rows = (snap) => snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  function canon(v) {
+    if (Array.isArray(v)) return "[" + v.map(canon).join(",") + "]";
+    if (v && typeof v === "object") return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canon(v[k])).join(",") + "}";
+    return JSON.stringify(v);
+  }
+  async function sha256(str) {
+    const buf = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(str));
+    return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  function status(id, text, kind) { const el = $(id); el.textContent = text || ""; el.className = "status" + (kind ? " " + kind : ""); }
+  const errText = (e) => (e && e.code ? e.code + ": " : "") + (e && e.message ? e.message : String(e));
+  function quando(iso) { const d = new Date(iso); return isNaN(d) ? "data sconosciuta" : d.toLocaleString("it-IT", { dateStyle: "short", timeStyle: "short" }); }
+  function giorno(iso) { const d = new Date(iso); return isNaN(d) ? "" : d.toLocaleDateString("it-IT"); }
+  function minutiDa(iso) { const t = Date.parse(iso); return isNaN(t) ? Infinity : (Date.now() - t) / 60000; }
+  function eta(iso) {
+    const m = minutiDa(iso);
+    if (!isFinite(m)) return "età sconosciuta";
+    if (m < 1) return "meno di un minuto fa";
+    if (m < 60) return Math.round(m) + " min fa";
+    const h = m / 60; if (h < 48) return Math.round(h) + " h fa";
+    return Math.round(h / 24) + " giorni fa";
+  }
+  const norm = (t) => String(t || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const bucketKey = (b) => String(b || "").replace("SESSION_STATUS_BUCKET_", "");
+  const statoStanza = (s) => s.stato || (s.archiviata ? "archiviata" : "attiva");
+
+  // Elimina in due tempi: il primo tocco chiede conferma
+  function conferma(btn, fn) {
+    if (btn.dataset.armato) { delete btn.dataset.armato; fn(); return; }
+    btn.dataset.armato = "1"; const t = btn.textContent; btn.textContent = "Tocca di nuovo per confermare";
+    setTimeout(() => { if (btn.isConnected && btn.dataset.armato) { delete btn.dataset.armato; btn.textContent = t; } }, 4000);
+  }
+
+  // ---------- navigazione ----------
+  const VISTE = ["stanze", "agenti", "skill", "memoria", "lavoro", "dati"];
+  function mostra() {
+    const v = VISTE.includes(location.hash.slice(1)) ? location.hash.slice(1) : "stanze";
+    document.querySelectorAll(".view").forEach((s) => (s.hidden = s.dataset.view !== v));
+    document.querySelectorAll("nav a").forEach((a) => (a.getAttribute("href") === "#" + v ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
+  }
+  window.addEventListener("hashchange", mostra); mostra();
+
+  // ---------- caselle di scelta che conservano lo stato ----------
+  function caselle(sel, items, scelti) {
+    const box = $(sel);
+    const correnti = scelti ?? new Set([...box.querySelectorAll("input:checked")].map((i) => i.value));
+    box.innerHTML = items.length
+      ? items.map((it) => `<label class="check"><input type="checkbox" value="${esc(it.id)}"${correnti.has(it.id) ? " checked" : ""}> ${esc(it.nome)}</label>`).join("")
+      : `<span class="empty">Nessun elemento nel catalogo.</span>`;
+  }
+  const valoriCaselle = (sel) => [...$(sel).querySelectorAll("input:checked")].map((i) => i.value);
+  function opzioniStanze(sel, primo) {
+    const el = $(sel); const v = el.value;
+    el.innerHTML = `<option value="">${esc(primo)}</option>` + S.data.stanze.map((s) => `<option value="${esc(s.id)}">${esc(s.nome)}${statoStanza(s) === "archiviata" ? " (archiviata)" : ""}</option>`).join("");
+    el.value = [...el.options].some((o) => o.value === v) ? v : "";
+  }
+
+  // ---------- istantanea e collegamenti ----------
+  const istantanea = () => byId("stato_lavoro", "istantanea");
+  const tentativo = () => byId("stato_lavoro", "ultimo_tentativo");
+  const collegamentiDi = (campo, id) => S.data.collegamenti.filter((c) => c[campo] === id);
+  function rilevazione(sessionId) {
+    const ist = istantanea(); if (!ist) return null;
+    const s = (ist.sessioni || []).find((x) => x.id === sessionId); if (!s) return null;
+    return { s, rilevato_il: ist.rilevato_il };
+  }
+  // Stato rilevato + freschezza, sempre insieme
+  function chipRilevazione(r) {
+    if (!r) return `<span class="chip stale">non presente nell'ultima istantanea</span>`;
+    const [lab, kind] = BUCKET[bucketKey(r.s.status_bucket)] || [bucketKey(r.s.status_bucket).toLowerCase() || "sconosciuto", ""];
+    const vecchio = minutiDa(r.rilevato_il) > FRESCO_MIN;
+    const attivo = ["WORKING", "BLOCKED"].includes(bucketKey(r.s.status_bucket));
+    return `<span class="chip ${vecchio ? "stale" : kind}">rilevata: ${esc(lab)}</span><span class="chip ${vecchio ? "stale" : ""}">${esc(eta(r.rilevato_il))}</span>` +
+      (vecchio && attivo ? `<span class="chip stale">stato attuale non noto</span>` : "");
+  }
+
+  // ---------- render ----------
+  function render() {
+    renderStanze(); renderAgenti(); renderSkill(); renderMemoria(); renderLavoro();
+  }
+
+  function renderStanze() {
+    caselle("#st-agenti", S.data.agenti);
+    const f = $("#st-filtro").value;
+    const lista = S.data.stanze.filter((s) => f === "tutte" || statoStanza(s) === f);
+    $("#l-stanze").innerHTML = lista.length ? lista.map((s) => {
+      const agenti = (s.agenti_ids || []).map((id) => byId("agenti", id)).filter(Boolean);
+      const mem = S.data.memoria.filter((m) => m.stanza_id === s.id).length;
+      const esec = collegamentiDi("stanza_id", s.id);
+      const obj = (s.obiettivi || []).filter(Boolean);
+      return `<div class="item">
+        <div class="item-head"><div><h3>${esc(s.nome)}</h3>${s.descrizione ? `<p class="small muted">${esc(s.descrizione)}</p>` : ""}</div>
+          <div class="chips">${statoStanza(s) === "archiviata" ? `<span class="chip">archiviata</span>` : `<span class="chip ok">attiva</span>`}</div></div>
+        ${obj.length ? `<div class="small"><span class="split">Obiettivi</span><ul style="margin:2px 0 0;padding-left:18px">${obj.map((o) => `<li>${esc(o)}</li>`).join("")}</ul></div>` : ""}
+        <div class="chips">${agenti.map((a) => `<span class="chip cfg">agente configurato: ${esc(a.nome)}</span>`).join("") || `<span class="chip">nessun agente assegnato</span>`}
+          <span class="chip">${mem} in memoria</span><span class="chip">${esec.length} esecuzioni collegate</span></div>
+        <div class="actions"><button type="button" class="quiet" data-act="mod-stanza" data-id="${esc(s.id)}">Modifica</button>
+          <button type="button" class="quiet" data-act="arch-stanza" data-id="${esc(s.id)}">${statoStanza(s) === "archiviata" ? "Riattiva" : "Archivia"}</button>
+          <button type="button" class="danger" data-act="del-stanza" data-id="${esc(s.id)}">Elimina</button></div>
+      </div>`;
+    }).join("") : `<p class="empty">${S.data.stanze.length ? "Nessuna stanza in questo filtro." : "Nessuna stanza ancora. Creane una con il modulo qui sopra."}</p>`;
+  }
+
+  function renderAgenti() {
+    caselle("#ag-skill", S.data.skill);
+    $("#l-agenti").innerHTML = S.data.agenti.length ? S.data.agenti.map((a) => {
+      const sk = (a.skill_ids || []).map((id) => byId("skill", id)).filter(Boolean);
+      const stanze = S.data.stanze.filter((s) => (s.agenti_ids || []).includes(a.id));
+      const esec = collegamentiDi("agente_id", a.id).map((c) => ({ c, r: rilevazione(c.session_id) }));
+      const memLab = { nessuno: "nessun accesso alla memoria", stanza: "memoria delle stanze assegnate", tutta: "tutta la memoria" }[a.accesso_memoria] || "accesso non indicato";
+      return `<div class="item">
+        <div class="item-head"><div><h3>${esc(a.nome)}</h3>${a.ruolo ? `<p class="small muted">${esc(a.ruolo)}</p>` : ""}</div><div class="chips"><span class="chip cfg">configurato</span></div></div>
+        ${a.istruzioni ? `<p class="small pre">${esc(a.istruzioni)}</p>` : ""}
+        <dl class="kv"><dt>Strumenti</dt><dd>${esc((a.strumenti || []).join(", ") || "nessuno indicato")}</dd>
+          <dt>Skill</dt><dd>${esc(sk.map((x) => x.nome).join(", ") || "nessuna")}</dd>
+          <dt>Memoria</dt><dd>${esc(memLab)}</dd>
+          <dt>Stanze</dt><dd>${esc(stanze.map((s) => s.nome).join(", ") || "nessuna")}</dd></dl>
+        <div><span class="split">Esecuzioni reali collegate</span>
+          ${esec.length ? esec.map(({ c, r }) => `<div class="chips" style="margin-top:4px"><span class="mono">${esc(r ? r.s.titolo || c.session_id : c.session_id)}</span>${chipRilevazione(r)}</div>`).join("") : `<p class="empty small">Nessuna esecuzione collegata. Questo agente non risulta al lavoro.</p>`}</div>
+        <div class="actions"><button type="button" class="quiet" data-act="mod-agente" data-id="${esc(a.id)}">Modifica</button>
+          <button type="button" class="danger" data-act="del-agente" data-id="${esc(a.id)}">Elimina</button></div>
+      </div>`;
+    }).join("") : `<p class="empty">Nessun agente nel catalogo. Aggiungine uno con il modulo qui sopra.</p>`;
+  }
+
+  function renderSkill() {
+    $("#l-skill").innerHTML = S.data.skill.length ? S.data.skill.map((k) => {
+      const usata = S.data.agenti.filter((a) => (a.skill_ids || []).includes(k.id));
+      return `<div class="item">
+        <div class="item-head"><div><h3>${esc(k.nome)}</h3>${k.descrizione ? `<p class="small muted">${esc(k.descrizione)}</p>` : ""}</div><div class="chips"><span class="chip">usata da ${usata.length} agenti</span></div></div>
+        ${k.procedura ? `<p class="small pre">${esc(k.procedura)}</p>` : ""}
+        <div class="actions"><button type="button" class="quiet" data-act="mod-skill" data-id="${esc(k.id)}">Modifica</button>
+          <button type="button" class="danger" data-act="del-skill" data-id="${esc(k.id)}">Elimina</button></div>
+      </div>`;
+    }).join("") : `<p class="empty">Nessuna skill ancora. Aggiungine una con il modulo qui sopra.</p>`;
+  }
+
+  function renderMemoria() {
+    opzioniStanze("#me-stanza", "nessuna stanza"); opzioniStanze("#me-fstanza", "tutte le stanze");
+    const q = norm($("#me-cerca").value), ft = $("#me-ftipo").value, fs = $("#me-fstanza").value;
+    const gruppi = {}; for (const m of S.data.memoria) (gruppi[norm(m.testo)] ||= []).push(m.id);
+    const lista = S.data.memoria.filter((m) => (!q || norm(m.testo + " " + m.fonte).includes(q)) && (!ft || m.tipo === ft) && (!fs || m.stanza_id === fs))
+      .sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+    $("#l-memoria").innerHTML = lista.length ? lista.map((m) => {
+      const st = m.stanza_id ? byId("stanze", m.stanza_id) : null;
+      const dup = (gruppi[norm(m.testo)] || []).length > 1;
+      const tipoK = { originale: "ok", riassunto: "", dedotto: "warn" }[m.tipo] ?? "";
+      return `<div class="item">
+        <p class="pre">${esc(m.testo)}</p>
+        <div class="chips"><span class="chip ${tipoK}">${esc(m.tipo || "tipo non indicato")}</span>
+          <span class="chip">fonte: ${esc(m.fonte || "non indicata")}</span>
+          <span class="chip">del ${esc(giorno(m.data) || "data non indicata")}</span>
+          ${st ? `<span class="chip">${esc(st.nome)}</span>` : ""}
+          ${m.corretto_il ? `<span class="chip warn">corretto il ${esc(giorno(m.corretto_il))}</span>` : ""}
+          ${dup ? `<span class="chip err">possibile duplicato</span>` : ""}</div>
+        <div class="actions"><button type="button" class="quiet" data-act="mod-mem" data-id="${esc(m.id)}">Correggi</button>
+          <button type="button" class="danger" data-act="del-mem" data-id="${esc(m.id)}">Elimina</button></div>
+      </div>`;
+    }).join("") : `<p class="empty">${S.data.memoria.length ? "Nessun elemento corrisponde alla ricerca." : "La memoria è vuota. Aggiungi il primo elemento con il modulo qui sopra."}</p>`;
+  }
+
+  function renderLavoro() {
+    const ist = istantanea(), t = tentativo();
+    let h = "";
+    if (t && t.esito === "errore") {
+      h += `<div class="banner err"><strong>Ultimo aggiornamento non riuscito (${esc(quando(t.quando))})</strong><span>${esc(t.messaggio)}</span><span class="small muted">Sotto resta visibile l'istantanea precedente.</span></div>`;
+    }
+    if (!ist) {
+      h += `<div class="banner warn"><strong>Nessuna istantanea salvata.</strong><span>Collegamento in tempo reale non disponibile: la pagina non può leggere le sessioni. Scrivi «aggiorna stato» in Claude Code per salvarne una.</span></div>`;
+    } else {
+      const vecchio = minutiDa(ist.rilevato_il) > FRESCO_MIN;
+      h += `<div class="banner ${vecchio ? "warn" : ""}"><strong>Istantanea del ${esc(quando(ist.rilevato_il))} · non in tempo reale</strong>
+        <span>Rilevata ${esc(eta(ist.rilevato_il))} da Claude Code su richiesta. ${vecchio ? "Gli stati qui sotto descrivono quel momento, non adesso." : ""}</span>
+        <span class="small muted">${esc(ist.totale)} sessioni lette${ist.troncato ? ", elenco troncato alle più recenti" : ""}.</span></div>`;
+    }
+    $("#snap-head").innerHTML = h;
+
+    const sessioni = ist ? ist.sessioni || [] : [];
+    const scelte = [...document.querySelectorAll("[data-link-ag],[data-link-st]")].map((el) => [el.hasAttribute("data-link-ag") ? "ag" : "st", el.dataset.linkAg || el.dataset.linkSt, el.value]);
+    const agOpt = `<option value="">nessun agente</option>` + S.data.agenti.map((a) => `<option value="${esc(a.id)}">${esc(a.nome)}</option>`).join("");
+    const stOpt = `<option value="">nessuna stanza</option>` + S.data.stanze.map((s) => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join("");
+    $("#l-sessioni").innerHTML = sessioni.length ? sessioni.map((s) => {
+      const r = { s, rilevato_il: ist.rilevato_il };
+      const links = collegamentiDi("session_id", s.id);
+      return `<div class="item">
+        <div class="item-head"><div><h3>${esc(s.titolo || "(senza titolo)")}</h3><p class="mono muted">${esc(s.id)}${s.origin ? " · origine " + esc(s.origin) : ""}${s.rilevatore ? " · sessione che ha eseguito l'aggiornamento" : ""}</p></div></div>
+        <div class="chips">${chipRilevazione(r)}<span class="chip">ultima attività ${esc(quando(s.updated_at))}</span></div>
+        ${links.map((c) => `<div class="chips"><span class="chip cfg">collegata a ${esc(c.agente_id ? (byId("agenti", c.agente_id) || {}).nome || "agente eliminato" : "nessun agente")} · ${esc(c.stanza_id ? (byId("stanze", c.stanza_id) || {}).nome || "stanza eliminata" : "nessuna stanza")}</span>
+          <button type="button" class="danger" data-act="del-link" data-id="${esc(c.id)}">Scollega</button></div>`).join("")}
+        ${links.length ? "" : `<div class="row"><label>Agente <select data-link-ag="${esc(s.id)}">${agOpt}</select></label><label>Stanza <select data-link-st="${esc(s.id)}">${stOpt}</select></label></div>
+          <div class="actions"><button type="button" class="ghost" data-act="add-link" data-id="${esc(s.id)}">Collega questa sessione</button><span class="small muted">Nessun collegamento automatico: scegli tu agente e stanza.</span></div>`}
+      </div>`;
+    }).join("") : `<p class="empty">Nessuna sessione da mostrare.</p>`;
+    for (const [k, sid, v] of scelte) { const el = document.querySelector(`[data-link-${k}="${CSS.escape(sid)}"]`); if (el && [...el.options].some((o) => o.value === v)) el.value = v; }
+
+    const ids = new Set(sessioni.map((s) => s.id));
+    const orfani = S.data.collegamenti.filter((c) => !ids.has(c.session_id));
+    $("#c-orfani").hidden = !orfani.length;
+    $("#l-orfani").innerHTML = orfani.map((c) => `<div class="item"><p class="mono">${esc(c.session_id)}</p><div class="chips"><span class="chip stale">stato non rilevato nell'ultima istantanea</span>
+      <span class="chip cfg">${esc((byId("agenti", c.agente_id) || {}).nome || "nessun agente")} · ${esc((byId("stanze", c.stanza_id) || {}).nome || "nessuna stanza")}</span>
+      <button type="button" class="danger" data-act="del-link" data-id="${esc(c.id)}">Scollega</button></div></div>`).join("");
+  }
+
+  // ---------- moduli ----------
+  function modoModifica(pref, id, etichettaNuovo, etichettaMod) {
+    $(`#${pref}-id`).value = id || ""; $(`#${pref}-save`).textContent = id ? etichettaMod : etichettaNuovo; $(`#${pref}-cancel`).hidden = !id;
+  }
+  async function salva(col, id, campi, statusSel) {
+    try {
+      if (id) { await S.db.collection(col).doc(id).update({ ...campi, aggiornato_il: nowIso() }); status(statusSel, "Modifiche salvate.", "ok"); }
+      else { await S.db.collection(col).doc(newId(col.slice(0, 2))).set({ ...campi, creato_il: nowIso() }); status(statusSel, "Salvato.", "ok"); }
+      return true;
+    } catch (e) { status(statusSel, "Non salvato: " + errText(e) + ". Riprova.", "err"); return false; }
+  }
+
+  $("#f-stanze").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); if (!S.db) return;
+    const id = $("#st-id").value;
+    const campi = { nome: $("#st-nome").value.trim(), descrizione: $("#st-desc").value.trim(), obiettivi: $("#st-obj").value.split("\n").map((x) => x.trim()).filter(Boolean), agenti_ids: valoriCaselle("#st-agenti") };
+    if (!id) campi.stato = "attiva";
+    if (await salva("stanze", id, campi, "#st-status")) { ev.target.reset(); caselle("#st-agenti", S.data.agenti, new Set()); modoModifica("st", "", "Crea stanza", "Salva modifiche"); }
+  });
+  $("#st-cancel").onclick = () => { $("#f-stanze").reset(); caselle("#st-agenti", S.data.agenti, new Set()); modoModifica("st", "", "Crea stanza", "Salva modifiche"); status("#st-status", ""); };
+  $("#st-filtro").onchange = renderStanze;
+
+  $("#f-agenti").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); if (!S.db) return;
+    const campi = { nome: $("#ag-nome").value.trim(), ruolo: $("#ag-ruolo").value.trim(), istruzioni: $("#ag-istr").value.trim(), strumenti: $("#ag-strum").value.split(",").map((x) => x.trim()).filter(Boolean), accesso_memoria: $("#ag-mem").value, skill_ids: valoriCaselle("#ag-skill") };
+    if (await salva("agenti", $("#ag-id").value, campi, "#ag-status")) { ev.target.reset(); caselle("#ag-skill", S.data.skill, new Set()); modoModifica("ag", "", "Aggiungi agente", "Salva modifiche"); }
+  });
+  $("#ag-cancel").onclick = () => { $("#f-agenti").reset(); caselle("#ag-skill", S.data.skill, new Set()); modoModifica("ag", "", "Aggiungi agente", "Salva modifiche"); status("#ag-status", ""); };
+
+  $("#f-skill").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); if (!S.db) return;
+    const campi = { nome: $("#sk-nome").value.trim(), descrizione: $("#sk-desc").value.trim(), procedura: $("#sk-proc").value.trim() };
+    if (await salva("skill", $("#sk-id").value, campi, "#sk-status")) { ev.target.reset(); modoModifica("sk", "", "Aggiungi skill", "Salva modifiche"); }
+  });
+  $("#sk-cancel").onclick = () => { $("#f-skill").reset(); modoModifica("sk", "", "Aggiungi skill", "Salva modifiche"); status("#sk-status", ""); };
+
+  $("#me-data").value = new Date().toISOString().slice(0, 10);
+  $("#f-memoria").addEventListener("submit", async (ev) => {
+    ev.preventDefault(); if (!S.db) return;
+    const id = $("#me-id").value;
+    const testo = $("#me-testo").value.trim();
+    const campi = { testo, tipo: $("#me-tipo").value, fonte: $("#me-fonte").value.trim(), data: $("#me-data").value + "T00:00:00.000Z", stanza_id: $("#me-stanza").value || null };
+    if (id) campi.corretto_il = nowIso(); else campi.registrato_il = nowIso();
+    const doppio = S.data.memoria.find((m) => m.id !== id && norm(m.testo) === norm(testo));
+    if (await salva("memoria", id, campi, "#me-status")) {
+      if (doppio) status("#me-status", "Salvato. Attenzione: esiste già un elemento con lo stesso testo, è segnato come possibile duplicato.", "warn");
+      ev.target.reset(); $("#me-data").value = new Date().toISOString().slice(0, 10); modoModifica("me", "", "Salva in memoria", "Salva correzione");
+    }
+  });
+  $("#me-cancel").onclick = () => { $("#f-memoria").reset(); $("#me-data").value = new Date().toISOString().slice(0, 10); modoModifica("me", "", "Salva in memoria", "Salva correzione"); status("#me-status", ""); };
+  ["#me-cerca", "#me-ftipo", "#me-fstanza"].forEach((s) => $(s).addEventListener("input", renderMemoria));
+
+  // ---------- azioni sulle liste ----------
+  async function elimina(col, id, motivoBlocco) {
+    if (motivoBlocco) { alertIn(col, motivoBlocco, "warn"); return; }
+    try { await S.db.collection(col).doc(id).delete(); alertIn(col, "Eliminato.", "ok"); } catch (e) { alertIn(col, "Non eliminato: " + errText(e), "err"); }
+  }
+  function alertIn(col, txt, kind) { const m = { stanze: "#st-status", agenti: "#ag-status", skill: "#sk-status", memoria: "#me-status", collegamenti: "#lv-status" }[col]; if (m) status(m, txt, kind); }
+
+  document.addEventListener("click", async (ev) => {
+    const b = ev.target.closest("button[data-act]"); if (!b || !S.db) return;
+    const id = b.dataset.id, act = b.dataset.act;
+    if (act === "mod-stanza") { const s = byId("stanze", id); $("#st-nome").value = s.nome || ""; $("#st-desc").value = s.descrizione || ""; $("#st-obj").value = (s.obiettivi || []).join("\n"); caselle("#st-agenti", S.data.agenti, new Set(s.agenti_ids || [])); modoModifica("st", id, "Crea stanza", "Salva modifiche"); $("#f-stanze").scrollIntoView({ block: "start" }); }
+    if (act === "arch-stanza") { const s = byId("stanze", id); try { await S.db.collection("stanze").doc(id).update({ stato: statoStanza(s) === "archiviata" ? "attiva" : "archiviata", archiviata: statoStanza(s) !== "archiviata", aggiornato_il: nowIso() }); } catch (e) { status("#st-status", "Non aggiornata: " + errText(e), "err"); } }
+    if (act === "del-stanza") conferma(b, () => {
+      const usi = S.data.memoria.filter((m) => m.stanza_id === id).length + collegamentiDi("stanza_id", id).length;
+      elimina("stanze", id, usi ? `Questa stanza ha ${usi} elementi di memoria o collegamenti: spostali o archivia la stanza invece di eliminarla.` : null);
+    });
+    if (act === "mod-agente") { const a = byId("agenti", id); $("#ag-nome").value = a.nome || ""; $("#ag-ruolo").value = a.ruolo || ""; $("#ag-istr").value = a.istruzioni || ""; $("#ag-strum").value = (a.strumenti || []).join(", "); $("#ag-mem").value = a.accesso_memoria || "nessuno"; caselle("#ag-skill", S.data.skill, new Set(a.skill_ids || [])); modoModifica("ag", id, "Aggiungi agente", "Salva modifiche"); $("#f-agenti").scrollIntoView({ block: "start" }); }
+    if (act === "del-agente") conferma(b, () => {
+      const usi = S.data.stanze.filter((s) => (s.agenti_ids || []).includes(id)).length + collegamentiDi("agente_id", id).length;
+      elimina("agenti", id, usi ? `Questo agente è assegnato a stanze o collegato a esecuzioni (${usi}): rimuovi prima le assegnazioni.` : null);
+    });
+    if (act === "mod-skill") { const k = byId("skill", id); $("#sk-nome").value = k.nome || ""; $("#sk-desc").value = k.descrizione || ""; $("#sk-proc").value = k.procedura || ""; modoModifica("sk", id, "Aggiungi skill", "Salva modifiche"); $("#f-skill").scrollIntoView({ block: "start" }); }
+    if (act === "del-skill") conferma(b, () => {
+      const usi = S.data.agenti.filter((a) => (a.skill_ids || []).includes(id)).length;
+      elimina("skill", id, usi ? `Questa skill è usata da ${usi} agenti: toglila prima dalle loro schede.` : null);
+    });
+    if (act === "mod-mem") { const m = byId("memoria", id); $("#me-testo").value = m.testo || ""; $("#me-tipo").value = m.tipo || "originale"; $("#me-fonte").value = m.fonte || ""; $("#me-data").value = String(m.data || "").slice(0, 10); $("#me-stanza").value = m.stanza_id || ""; modoModifica("me", id, "Salva in memoria", "Salva correzione"); $("#f-memoria").scrollIntoView({ block: "start" }); }
+    if (act === "del-mem") conferma(b, () => elimina("memoria", id));
+    if (act === "add-link") {
+      const ag = document.querySelector(`[data-link-ag="${CSS.escape(id)}"]`).value, st = document.querySelector(`[data-link-st="${CSS.escape(id)}"]`).value;
+      if (!ag && !st) { status("#lv-status", "Scegli almeno un agente o una stanza da collegare.", "warn"); return; }
+      try { await S.db.collection("collegamenti").doc(newId("co")).set({ session_id: id, agente_id: ag || null, stanza_id: st || null, creato_il: nowIso() }); status("#lv-status", "Collegamento salvato.", "ok"); }
+      catch (e) { status("#lv-status", "Collegamento non salvato: " + errText(e), "err"); }
+    }
+    if (act === "del-link") conferma(b, () => elimina("collegamenti", id));
+  });
+
+  $("#b-reload").onclick = async () => {
+    if (!S.db) return;
+    try {
+      const snap = await S.db.collection("stato_lavoro").get();
+      S.data.stato_lavoro = rows(snap); renderLavoro(); renderAgenti();
+      const ist = istantanea();
+      status("#lv-status", ist ? `Istantanea riletta dall'archivio: rilevata il ${quando(ist.rilevato_il)}.` : "Nessuna istantanea nell'archivio.", ist ? "ok" : "warn");
+    } catch (e) { status("#lv-status", "Rilettura non riuscita: " + errText(e) + ". I dati mostrati restano quelli precedenti.", "err"); }
+  };
+
+  // ---------- esporta / ripristina ----------
+  async function leggiTutto() {
+    const dati = {};
+    for (const c of COLLEZIONI) dati[c] = rows(await S.db.collection(c).get());
+    return dati;
+  }
+  $("#b-exp").onclick = async () => {
+    if (!S.db || !S.dl) return;
+    try {
+      const dati = await leggiTutto(); const hash = await sha256(canon(dati));
+      const file = { formato: "second-brain-backup", versione: 1, esportato_il: nowIso(), hash_sha256: hash, dati };
+      await S.dl.save({ filename: "second-brain-" + nowIso().slice(0, 10) + ".json", data: JSON.stringify(file, null, 2) });
+      status("#exp-status", `Esportato: ${COLLEZIONI.map((c) => dati[c].length + " " + c).join(", ")}. Impronta ${hash.slice(0, 16)}…`, "ok");
+    } catch (e) { status("#exp-status", "Esportazione non completata: " + errText(e), "err"); }
+  };
+  $("#i-imp").addEventListener("change", async (ev) => {
+    const f = ev.target.files && ev.target.files[0]; $("#imp-preview").innerHTML = ""; S.pending = null; if (!f) return;
+    try {
+      const file = JSON.parse(await f.text());
+      if (file.formato !== "second-brain-backup" || !file.dati) throw new Error("Il file non è un backup di Second Brain.");
+      const h = await sha256(canon(file.dati));
+      if (file.hash_sha256 !== h) throw new Error("L'impronta non corrisponde: il file è stato modificato o è danneggiato.");
+      S.pending = { file, h };
+      $("#imp-preview").innerHTML = `<div class="banner"><strong>Backup del ${esc(quando(file.esportato_il))}</strong>
+        <span>${COLLEZIONI.map((c) => (file.dati[c] || []).length + " " + c).join(", ")}</span><span class="mono">impronta ${esc(h.slice(0, 16))}… verificata</span>
+        <div class="actions"><button type="button" id="b-imp-ok">Sostituisci i dati attuali</button></div></div>`;
+      status("#imp-status", "File valido. Controlla il riepilogo e conferma.", "ok");
+    } catch (e) { status("#imp-status", "File non utilizzabile: " + errText(e), "err"); }
+    ev.target.value = "";
+  });
+  document.addEventListener("click", async (ev) => {
+    if (ev.target.id !== "b-imp-ok" || !S.pending) return;
+    const btn = ev.target; btn.disabled = true;
+    const { file, h } = S.pending;
+    try {
+      for (const c of COLLEZIONI) {
+        const ref = S.db.collection(c); const want = new Map((file.dati[c] || []).map((r) => [r.id, r]));
+        for (const d of (await ref.get()).docs) if (!want.has(d.id)) await ref.doc(d.id).delete();
+        for (const [id, r] of want) { const { id: _x, ...resto } = r; await ref.doc(id).set(resto); }
+      }
+      const dopo = await sha256(canon(await leggiTutto()));
+      status("#imp-status", dopo === h ? `Ripristino completato e verificato: impronta ${dopo.slice(0, 16)}… identica al file.` : `Ripristino eseguito ma l'impronta è diversa (${dopo.slice(0, 12)}…): esporta di nuovo e confronta.`, dopo === h ? "ok" : "err");
+      $("#imp-preview").innerHTML = ""; S.pending = null;
+    } catch (e) { status("#imp-status", "Ripristino interrotto: " + errText(e) + ". Alcuni dati potrebbero essere già stati sostituiti: ripeti con lo stesso file.", "err"); btn.disabled = false; }
+  });
+
+  // ---------- avvio ----------
+  const use = (n) => (window.claude && typeof window.claude.use === "function" ? window.claude.use(n).catch(() => null) : Promise.resolve(null));
+  render();
+  (async () => {
+    const [db, dl] = await Promise.all([use("db"), use("downloads")]);
+    S.db = db; S.dl = dl;
+    const cap = $("#cap");
+    if (!db) { cap.textContent = "archivio non disponibile"; cap.className = "chip err"; $("#no-db").hidden = false; document.querySelectorAll("form button, #b-exp, #b-reload, #i-imp").forEach((b) => (b.disabled = true)); return; }
+    cap.textContent = "archivio: caricamento";
+    if (!dl) { $("#b-exp").disabled = true; status("#exp-status", "Il download non è disponibile in questa vista.", "warn"); }
+    const timer = setTimeout(() => { if (S.pronti.size < COLLEZIONI.length) { cap.textContent = "archivio lento"; cap.className = "chip warn"; } }, 10000);
+    for (const c of COLLEZIONI) {
+      db.collection(c).onSnapshot((snap) => {
+        S.data[c] = rows(snap); S.pronti.add(c);
+        if (S.pronti.size === COLLEZIONI.length) { clearTimeout(timer); cap.textContent = "archivio collegato"; cap.className = "chip ok"; }
+        render();
+      }, (e) => { cap.textContent = "errore archivio"; cap.className = "chip err"; status("#lv-status", `Lettura di ${c} non riuscita: ${errText(e)}. Restano visibili gli ultimi dati letti.`, "err"); });
+    }
+  })();
+  // l'età dell'istantanea cambia col tempo
+  setInterval(() => { if (!document.hidden) { renderLavoro(); renderAgenti(); } }, 60000);
+})();
+</script>
