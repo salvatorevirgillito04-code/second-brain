@@ -24,10 +24,8 @@ import java.io.FileOutputStream;
  */
 public class WidgetGlobo extends AppWidgetProvider {
     static final String CARTELLA = "globo";
-    static final int MAX = 24, MAX_BYTE = 1024 * 1024;
-    static final int[] FOTO = {
-        R.id.g_f0, R.id.g_f1, R.id.g_f2, R.id.g_f3, R.id.g_f4, R.id.g_f5, R.id.g_f6, R.id.g_f7, R.id.g_f8, R.id.g_f9, R.id.g_f10, R.id.g_f11,
-        R.id.g_f12, R.id.g_f13, R.id.g_f14, R.id.g_f15, R.id.g_f16, R.id.g_f17, R.id.g_f18, R.id.g_f19, R.id.g_f20, R.id.g_f21, R.id.g_f22, R.id.g_f23 };
+    static final int MAX = 32, MAX_BYTE = 1024 * 1024;
+    static final int[] FOTO = { R.id.g_f0, R.id.g_f1, R.id.g_f2, R.id.g_f3, R.id.g_f4, R.id.g_f5, R.id.g_f6, R.id.g_f7, R.id.g_f8, R.id.g_f9, R.id.g_f10, R.id.g_f11, R.id.g_f12, R.id.g_f13, R.id.g_f14, R.id.g_f15, R.id.g_f16, R.id.g_f17, R.id.g_f18, R.id.g_f19, R.id.g_f20, R.id.g_f21, R.id.g_f22, R.id.g_f23, R.id.g_f24, R.id.g_f25, R.id.g_f26, R.id.g_f27, R.id.g_f28, R.id.g_f29, R.id.g_f30, R.id.g_f31 };
 
     private static File cartella(Context c) { File d = new File(c.getFilesDir(), CARTELLA); if (!d.isDirectory()) d.mkdirs(); return d; }
 

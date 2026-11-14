@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget animato: il launcher sfoglia i fotogrammi in ciclo (20 fotogrammi x 150 ms = 3 s). -->
+<!-- Widget animato: il launcher sfoglia i fotogrammi in ciclo (32 x 110 ms = 3,5 s) con dissolvenza incrociata tra un fotogramma e l'altro. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/g_radice" android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@drawable/widget_sfondo">
     <ViewFlipper android:id="@+id/g_flip" android:layout_width="match_parent" android:layout_height="match_parent"
-        android:autoStart="true" android:flipInterval="150">
+        android:autoStart="true" android:flipInterval="110"
+        android:inAnimation="@anim/globo_in" android:outAnimation="@anim/globo_out">
         <ImageView android:id="@+id/g_f0" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
         <ImageView android:id="@+id/g_f1" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
         <ImageView android:id="@+id/g_f2" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
@@ -29,6 +30,14 @@
         <ImageView android:id="@+id/g_f21" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
         <ImageView android:id="@+id/g_f22" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
         <ImageView android:id="@+id/g_f23" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f24" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f25" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f26" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f27" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f28" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f29" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f30" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f31" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
     </ViewFlipper>
     <TextView android:id="@+id/g_vuoto" android:layout_width="match_parent" android:layout_height="match_parent"
         android:gravity="center" android:padding="12dp" android:textColor="#98A0C8" android:textSize="12sp"

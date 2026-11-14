@@ -118,7 +118,7 @@
     const rs = casuale(99); for (let i = 0; i < 90; i++) { const a = 0.2 + rs() * 0.6, x = rs() * lato, y = rs() * lato, w = rs() < 0.85 ? 1 : 2; ctx.fillStyle = `rgba(255,255,255,${a * (0.75 + 0.25 * Math.sin(fase * 6.283 + i))})`; ctx.fillRect(x, y, w, 1); }
     ctx.save(); ctx.translate(0, lato * 0.02); ctx.scale(lato / 360, lato / 360);
     const base = ((quando || Date.now()) / 3.6e6) % 6.283;
-    G.disegna(ctx, 360, 360, rete, { vista: { rx: -0.3 + 0.06 * Math.cos(fase * 6.283), ry: base + 0.2 * Math.sin(fase * 6.283), z: 0.82 }, t: fase * G.PERIODO_IMPULSO, fase, etichette: false });
+    G.disegna(ctx, 360, 360, rete, { vista: { rx: -0.3 + 0.04 * Math.cos(fase * 6.283), ry: base + 0.12 * Math.sin(fase * 6.283), z: 0.82 }, t: fase * G.PERIODO_IMPULSO, fase, etichette: false });
     ctx.restore();
     ctx.fillStyle = "#e9ecff"; ctx.font = `600 ${Math.round(lato * 0.05)}px system-ui,sans-serif`; ctx.textAlign = "left"; ctx.fillText("Second Brain", lato * 0.07, lato * 0.1);
     ctx.fillStyle = "#98a0c8"; ctx.font = `${Math.round(lato * 0.038)}px system-ui,sans-serif`;
@@ -126,7 +126,7 @@
     return c.toDataURL("image/png").split(",")[1];
   };
   G.immagineWidget = (M, stato, lato, quando) => G.fotogrammaWidget(M, stato, lato, quando, 0);
-  G.FOTOGRAMMI = 20;
+  G.FOTOGRAMMI = 32; // 32 x 110 ms con dissolvenza incrociata (vedi widget_globo.xml)
   // Invia al ponte Android i fotogrammi uno alla volta (cede il passo all'interfaccia tra un fotogramma e l'altro), poi li pubblica.
   G.inviaWidget = function (A, M, stato, attesa) {
     if (!A || !A.fotogrammaGlobo || !A.pubblicaGlobo) return Promise.resolve(false);
@@ -135,7 +135,7 @@
       let i = 0;
       const passo = () => {
         try {
-          if (A.fotogrammaGlobo(i, G.fotogrammaWidget(M, stato, 300, quando, i / n, rete)) !== "ok") return fine(false);
+          if (A.fotogrammaGlobo(i, G.fotogrammaWidget(M, stato, 256, quando, i / n, rete)) !== "ok") return fine(false);
           if (++i < n) return attesa ? setTimeout(passo, attesa) : passo();
           fine(A.pubblicaGlobo(n) === "ok");
         } catch (_) { fine(false); }

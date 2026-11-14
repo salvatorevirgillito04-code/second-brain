@@ -115,3 +115,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - I widget Android non possono eseguire codice di disegno. Per questo l'app prepara **20 fotogrammi** (300×300, `files/globo/fN.png`) e il launcher li sfoglia in ciclo con un `ViewFlipper`: 150 ms ciascuno, un ciclo di 3 s senza scatti. Nel ciclo il globo oscilla, gli impulsi percorrono le connessioni e i nuclei pulsano.
 - I fotogrammi passano al launcher tramite `GloboProvider`: non esportato, in sola lettura, solo i file `fN.png`, con permesso concesso ai soli launcher installati. Vengono rigenerati quando cambiano le relazioni (al massimo ogni 15 minuti) e a ogni sincronizzazione in background, così la posizione del globo cambia nel tempo.
 - L'animazione la gestisce il launcher: di norma si ferma quando lo schermo è spento o il widget non è visibile. Alcuni launcher potrebbero non animare i `ViewFlipper`; in quel caso resta visibile il primo fotogramma.
+
+## 1.7.1: widget più fluido
+- 32 fotogrammi da 256×256, uno ogni 110 ms (ciclo di 3,5 s), con **dissolvenza incrociata** tra un fotogramma e il successivo (`res/anim/globo_in.xml` e `globo_out.xml`). Oscillazione più piccola, quindi meno salto tra un fotogramma e l'altro.
+- Memoria usata dal launcher per il widget: circa 8 MB (32 × 256 KB).
