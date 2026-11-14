@@ -83,6 +83,7 @@ fieldset.gruppo{border:0;padding:0;margin:0;min-width:0} fieldset.gruppo legend{
 .scheda-nodo b{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .legenda{display:flex;gap:12px;flex-wrap:wrap;font-size:.78rem;color:var(--tenue)}
 .legenda span{display:flex;gap:5px;align-items:center}
+.legenda{row-gap:6px}
 .agente{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 .avatar{width:34px;height:34px;border-radius:10px;background:var(--accento-tenue);color:var(--accento);display:grid;place-items:center;font-weight:700;font-size:.82rem;flex:0 0 34px}
 .attivita{display:flex;gap:10px;align-items:center;padding:6px 0;border-top:1px solid var(--linea)}
@@ -421,11 +422,22 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
         <section><h2>Note del progetto</h2>${lista(L("note").filter((n) => n.progetto_id === p.id).map(rigaNota), "Nessuna nota collegata. Collegala dalla nota con Modifica.")}</section>`;
     },
     mappa() {
-      return `<div class="legenda"><span><i class="quadro" style="background:var(--progetto)"></i>Progetti</span><span><i class="quadro" style="background:var(--stanza)"></i>Stanze</span>${Object.entries(CAT).map(([, [l, c]]) => `<span><i class="punto" style="background:var(${c})"></i>${l}</span>`).join("")}</div>
-        <div class="mappa" id="mappa"><canvas id="tela" aria-label="Mappa delle relazioni"></canvas>
+      const ico = (svg) => `<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">${svg}</svg>`;
+      return `<div class="legenda" aria-label="Legenda della mappa">
+          <span>${ico('<circle cx="8" cy="8" r="5.5" fill="none" stroke="#c9ceff" stroke-width="2"/><circle cx="8" cy="8" r="1.4" fill="#c9ceff"/>')}Stanza (ognuna con la sua tinta)</span>
+          <span>${ico('<path d="M8 2.5 13.5 8 8 13.5 2.5 8Z" fill="var(--progetto)"/>')}Progetto</span>
+          <span>${ico('<circle cx="8" cy="8" r="4" fill="var(--area)"/>')}Area</span>
+          <span>${ico('<path d="M8 3 12 8 8 13 4 8Z" fill="var(--risorsa)"/>')}Risorsa</span>
+          <span>${ico('<circle cx="8" cy="8" r="4" fill="none" stroke="var(--inbox)" stroke-width="1.6"/>')}Da organizzare</span>
+          <span>${ico('<circle cx="8" cy="8" r="2.2" fill="var(--archivio)" opacity=".6"/>')}Archivio</span>
+          <span>${ico('<path d="M2 11 14 5" stroke="#c9ceff" stroke-width="1.5"/>')}in una stanza</span>
+          <span>${ico('<path d="M2 11 14 5" stroke="var(--progetto)" stroke-width="1.6" stroke-dasharray="1 3" stroke-linecap="round"/>')}in un progetto</span>
+          <span>${ico('<path d="M2 12Q8 0 14 12" fill="none" stroke="#e9ecff" stroke-width="1.4"/>')}nota collegata a nota</span>
+          <span>${ico('<circle cx="8" cy="8" r="3" fill="#fff"/><circle cx="8" cy="8" r="6" fill="none" stroke="#fff" stroke-opacity=".4"/>')}toccata in settimana</span></div>
+        <div class="mappa" id="mappa"><canvas id="tela" role="img" aria-label="Mappa delle relazioni"></canvas>
           <div class="zoom"><button id="zp" aria-label="Avvicina">+</button><button id="zm" aria-label="Allontana">−</button></div>
           <div class="modi" role="group" aria-label="Vista"><button data-modo="sfera" aria-pressed="${S.modoMappa !== "rete"}">Sfera</button><button data-modo="rete" aria-pressed="${S.modoMappa === "rete"}">Rete</button></div>
-          <div class="scheda-nodo" id="scheda" hidden><span class="tipo" id="scheda-tipo"></span><b id="scheda-t"></b><div class="num" id="scheda-num"></div><ul id="scheda-lista"></ul><div class="azioni"><button class="btn" id="scheda-apri">Apri</button><button class="btn v" id="scheda-chiudi">Chiudi</button></div></div></div>
+          <div class="scheda-nodo" id="scheda" role="region" aria-live="polite" aria-label="Elemento scelto" tabindex="-1" hidden><span class="tipo" id="scheda-tipo"></span><b id="scheda-t"></b><div class="num" id="scheda-num"></div><ul id="scheda-lista"></ul><div class="azioni"><button class="btn" id="scheda-apri">Apri</button><button class="btn v" id="scheda-chiudi">Chiudi</button></div></div></div>
         <label class="check"><input type="checkbox" id="isolati"${S.isolati ? " checked" : ""}> Mostra anche gli elementi senza relazioni</label>
         <p class="small muted" id="mappa-info"></p>`;
     },
@@ -591,10 +603,12 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
   function disegnaMappa() {
     const G = window.SBGlobo, box = $("#mappa"), tela = $("#tela"), ctx = tela.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1);
     const W = box.clientWidth, H = box.clientHeight; tela.width = W * dpr; tela.height = H * dpr; ctx.scale(dpr, dpr);
-    const fermo = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const mq = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)"), fermo = !!(mq && mq.matches);
+    if (mq && !S.mqMappa) { S.mqMappa = true; mq.addEventListener && mq.addEventListener("change", () => { if (vistaCorrente() === "mappa") render(); }); }
     const rete = G.costruisci(M, S.stato, S.isolati), { nodi, E, idx, vicini } = rete;
     $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Ogni connessione è una relazione reale. Trascina per ruotare o spostarti, avvicina o allontana con due dita, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
     const modo = S.modoMappa === "rete" ? "rete" : "sfera";
+    tela.setAttribute("aria-label", nodi.length ? `Mappa: ${nodi.length} elementi, ${E.length} relazioni, ${nodi.filter((n) => n.forma === "e").length} stanze. Tocca un elemento per i dettagli; le note sono anche nelle pagine Note e Stanze.` : "Mappa vuota: nessuna relazione ancora.");
     nodi.forEach((n, i) => { n.x = Math.cos(i * 2.4) * (40 + i * 6); n.y = Math.sin(i * 2.4) * (40 + i * 6); n.vx = 0; n.vy = 0; });
     for (let it = 0; modo === "rete" && it < 300; it++) {
       for (const a of nodi) for (const b of nodi) if (a !== b) { const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01, d = Math.sqrt(d2), f = 16000 / d2; a.vx += dx / d * f; a.vy += dy / d * f; }
@@ -630,7 +644,8 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       $("#scheda-num").innerHTML = `<span><b>${v.length}</b>collegamenti</span><span><b>${v.filter((x) => x.forma === "c").length}</b>note</span>`;
       $("#scheda-lista").innerHTML = v.slice(0, 8).map((x, i) => `<li><button data-i="${i}">${esc(x.nome)}</button></li>`).join("");
       $("#scheda-lista").onclick = (e) => { const b = e.target.closest("button[data-i]"); if (b) scheda(v[+b.dataset.i]); };
-      $("#scheda-apri").onclick = () => apri(p.apri[0], p.apri[1]); $("#scheda-chiudi").onclick = () => scheda(null);
+      $("#scheda-apri").onclick = () => apri(p.apri[0], p.apri[1]); $("#scheda-chiudi").onclick = () => { scheda(null); tela.focus && tela.focus(); };
+      $("#scheda").setAttribute("aria-label", `${p.tipo}: ${p.nome}, ${v.length} collegamenti`);
       disegna();
     }
     let tocco = null, gira = modo === "sfera" && !fermo, vel = { x: 0, y: 0 }, ultimo = null; // vel: inerzia (radianti/ms)
@@ -660,7 +675,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       const eraPizzico = !!pizzico; fineDito(e); if (eraPizzico) return;
       if (tocco && !tocco.mosso) {
         const b = tela.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
-        let best = null, bd = 1e9; for (const n of nodi) { const q = P.get(n), d = Math.hypot(q.x - x, q.y - y) - q.z * 6; if (d < n.r * q.s + 14 && d < bd) { bd = d; best = n; } }
+        let best = null, bd = 1e9; for (const n of nodi) { const q = P.get(n), d = Math.hypot(q.x - x, q.y - y) - q.z * 6; if (d < Math.max(24, n.r * q.s + 14) && d < bd) { bd = d; best = n; } } // bersaglio di almeno 48 px
         scheda(best);
       }
       tocco = null;
