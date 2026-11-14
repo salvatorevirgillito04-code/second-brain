@@ -1,0 +1,12 @@
+{
+  "nome": "Forklift Tycoon",
+  "descrizione": "",
+  "obiettivi": [],
+  "agenti_ids": [
+    "ag-fittizio-archivista",
+    "ag-fittizio-sviluppatore"
+  ],
+  "stato": "attiva",
+  "attivita": [],
+  "creato_il": "2026-11-14T00:05:32.536Z"
+}
