@@ -239,3 +239,15 @@ test("due giri contemporanei non creano stanze doppie; una nota eliminata durant
   assert.equal(M.elenco(s, "stanze").filter((x) => x.nome === "Progetto giardino").length, 1);
   assert.equal(M.trova(s, "note", "sessione-X2"), null, "la nota eliminata resta eliminata");
 });
+
+test("opzione nomi generici: la stanza creata da una sessione privata non porta il titolo della sessione", async () => {
+  const s = M.statoVuoto(); s.impostazioni = { auto_nomi_generici: true };
+  await M.salvaRecord(s, "note", "sessione-P1", { titolo: "Sessione: Visita medica privata", testo: "", categoria: "inbox", tag: [], collegamenti: [], accessibile_agenti: false, origine: { tipo: "sessione_claude_code", id: "session_P1", stato: "in esecuzione" } });
+  await M.organizzaAutomatico(s);
+  const st = M.elenco(s, "stanze"); assert.equal(st.length, 1); assert.equal(st[0].nome, "Stanza automatica 1");
+  assert.ok(!/medica/i.test(JSON.stringify(st[0])) && !M.elenco(s, "progetti").some((p) => /medica/i.test(p.nome)));
+  await M.salvaRecord(s, "note", "sessione-P2", { titolo: "Sessione: Visita medica privata", testo: "", categoria: "inbox", tag: [], collegamenti: [], accessibile_agenti: false, origine: { tipo: "sessione_claude_code", id: "session_P2", stato: "in esecuzione" } });
+  await M.organizzaAutomatico(s);
+  assert.equal(M.elenco(s, "stanze").length, 1, "stesso argomento: stessa stanza generica");
+  assert.equal(M.trova(s, "note", "sessione-P2").stanza_id, st[0].id);
+});

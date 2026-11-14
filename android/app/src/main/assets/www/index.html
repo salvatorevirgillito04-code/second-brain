@@ -54,7 +54,7 @@ button.chip{cursor:pointer;font:inherit;font-size:.78rem;padding:5px 11px}
 .cfg{color:var(--accento);border-color:currentColor;background:var(--accento-tenue)}
 .vecchio{border-style:dashed;color:var(--tenue)}
 .auto{color:var(--accento2);border-color:currentColor;background:rgba(90,209,255,.1)}
-.chip.auto,#b-auto,#b-registro-auto{white-space:normal;max-width:100%;text-align:left}
+.chip.auto,#b-auto,#b-registro-auto,#b-nomi-generici{white-space:normal;max-width:100%;text-align:left}
 .chip.auto::before{content:"↻";font-size:.9em;opacity:.85}
 fieldset.gruppo{border:0;padding:0;margin:0;min-width:0} fieldset.gruppo legend{padding:0;font-size:.85rem;color:var(--tenue)}
 .scelte label.check{min-height:44px}
@@ -467,7 +467,9 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
               return `<button class="chip ${on ? "cfg" : ""}" id="b-auto" role="switch" aria-checked="${on}" aria-describedby="b-auto-desc">Pilota automatico: ${on ? "attivo" : "spento"}</button>
               <span id="b-auto-desc">${on ? "mette sessioni, chat e note nella stanza giusta (creata se manca), aggiunge i tag che usi già e i collegamenti alle note citate, assegna agenti adatti alle stanze senza agenti. Non rende mai condivisa una nota e non cambia il testo. Ciò che cambia su stanze e note condivise va nel repository alla sincronizzazione successiva." : "spento: nessuna azione automatica."}</span>
               ${u ? ` · ultimo giro: ${esc(quando(u.quando))} (${u.note} note, ${u.stanze} stanze nuove, ${u.tag || 0} tag, ${u.collegamenti || 0} collegamenti, ${u.agenti || 0} agenti)` : ""}
-              <button class="chip cfg" id="b-registro-auto">Vedi cosa ha fatto (${nr})</button>`; })()}</dd>
+              <button class="chip cfg" id="b-registro-auto">Vedi cosa ha fatto (${nr})</button>
+              <button class="chip ${imp.auto_nomi_generici ? "cfg" : ""}" id="b-nomi-generici" role="switch" aria-checked="${imp.auto_nomi_generici === true}">Nomi generici per le stanze nuove: ${imp.auto_nomi_generici ? "sì" : "no"}</button>
+              <span class="small muted">con «sì» il titolo di una sessione o chat privata non finisce nel repository come nome di stanza</span>`; })()}</dd>
             <dt>Agenti pianificati</dt><dd>«sblocca attese» e coordinatore 2 volte al giorno, resoconto il lunedì: rispondono da soli solo alle domande senza rischi, il resto arriva qui in «Risposte pronte»</dd>
             <dt>Stato degli agenti</dt><dd>attività pianificata in Claude Code ogni 3 ore · ultima istantanea: ${esc(istantanea() ? quando(istantanea().rilevato_il) : "nessuna")}</dd>
             <dt>«Aggiorna ora»</dt><dd>${A && A.haRoutine() ? "attivo" : "da configurare"}</dd>
@@ -896,6 +898,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (d.sessione) { if (A) A.apriLink(d.sessione); return; }
     if (b.id === "b-auto") { S.stato.impostazioni ||= {}; S.stato.impostazioni.auto_organizza = S.stato.impostazioni.auto_organizza === false; if (S.stato.impostazioni.auto_organizza) { const e = await M.organizzaAutomatico(S.stato); toast(`Pilota attivo: ${e.note} note sistemate, ${e.stanze} stanze nuove, ${e.tag || 0} tag, ${e.collegamenti || 0} collegamenti, ${e.agenti || 0} agenti assegnati`); } else toast("Pilota automatico spento"); await salva(); render(); const x = $("#b-auto"); if (x) x.focus(); return; }
     if (b.id === "b-registro-auto") { EDITOR.registroAuto(); return; }
+    if (b.id === "b-nomi-generici") { S.stato.impostazioni ||= {}; S.stato.impostazioni.auto_nomi_generici = !S.stato.impostazioni.auto_nomi_generici; await salva(); render(); const x = $("#b-nomi-generici"); if (x) x.focus(); return; }
     if (b.id === "b-sync") { sincronizza(true); return; }
     if (b.id === "b-rimanda") { S.stato.impostazioni ||= {}; S.stato.impostazioni.chat_rimandato_fino = new Date(Date.now() + 7 * 86400000).toISOString(); await salva(); render(); toast("Te lo ricordo tra 7 giorni"); return; }
     if (b.id === "b-aggiorna-ora") { aggiornaOra(); return; }

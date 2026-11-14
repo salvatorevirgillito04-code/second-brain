@@ -313,9 +313,23 @@
     }
     return punti >= soglia ? meglio : null;
   }
+  // Opzione «nomi generici» (impostazioni.auto_nomi_generici): le stanze create da sessioni o chat private non portano
+  // il loro titolo nel repository; il titolo resta solo nella nota privata, sul telefono.
+  // stanza con nome generico già creata per lo stesso argomento (abbinamento conservato solo sul telefono)
+  function stanzaGenerica(stato, nome) {
+    const g = stato.impostazioni && stato.impostazioni.stanze_generiche, id = g && g[String(nome).toLowerCase().trim()], st = id && M.trova(stato, "stanze", id);
+    return st && (st.stato || "attiva") !== "archiviata" ? st : null;
+  }
   async function nuovaStanza(stato, nome, perche) {
+    const chiave = String(nome).toLowerCase().trim();
+    if (stato.impostazioni && stato.impostazioni.auto_nomi_generici === true) {
+      stato.impostazioni.stanze_generiche ||= {};
+      const n = M.elenco(stato, "stanze").filter((s) => /^Stanza automatica \d+$/.test(s.nome || "")).length + 1;
+      nome = "Stanza automatica " + n; perche = "Creata automaticamente (nome generico: il titolo resta nella nota privata).";
+    }
     const id = "st-auto-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
     await M.salvaRecord(stato, "stanze", id, { nome, descrizione: perche, obiettivi: [], agenti_ids: [], stato: "attiva", attivita: [], automatico: true, creato_il: ora() });
+    if (stato.impostazioni && stato.impostazioni.auto_nomi_generici === true) stato.impostazioni.stanze_generiche[chiave] = id;
     return M.elenco(stato, "stanze").find((s) => s.id === id);
   }
   // ---------- 1.9: pilota automatico ----------
@@ -513,7 +527,7 @@
       const nome = M.nucleoTitolo(m ? tit.slice(m[0].length) : tit) || "Senza titolo";
       const scelta = pv && pv.stanza_id && M.trova(stato, "stanze", pv.stanza_id);
       let st = (scelta && (scelta.stato || (scelta.archiviata ? "archiviata" : "attiva")) !== "archiviata" ? scelta : null) || stanzaPiuSimile(stato, nome, 0.5)
-        || M.elenco(stato, "stanze").find((s) => s.automatico && (s.stato || (s.archiviata ? "archiviata" : "attiva")) !== "archiviata" && String(s.nome).toLowerCase() === nome.toLowerCase());
+        || stanzaGenerica(stato, nome) || M.elenco(stato, "stanze").find((s) => s.automatico && (s.stato || (s.archiviata ? "archiviata" : "attiva")) !== "archiviata" && String(s.nome).toLowerCase() === nome.toLowerCase());
       if (!st) { st = await nuovaStanza(stato, nome, `Creata automaticamente dalla sessione di Claude Code «${tit}».`); esito.stanze++; registra(stato, { tipo: "stanza_creata", col: "stanze", id: st.id, impronta: (({ id: _i, ...d }) => M.canon({ ...d, agenti_ids: [], agenti_auto: undefined }))(st), perche: `nuova sessione «${tit.slice(0, 80)}» senza stanza adatta`, titolo: st.nome }); }
       let pr = M.elenco(stato, "progetti").find((p) => p.stanza_id === st.id && (p.stato || "attivo") === "attivo");
       if (!pr) {
@@ -539,8 +553,10 @@
       if (usate.has(a.id)) continue;
       const gruppo = senza.filter((b) => !usate.has(b.id) && (b === a || affinita(M.nucleoTitolo(a.titolo), M.nucleoTitolo(b.titolo)) >= 0.6));
       if (gruppo.length < 2) continue;
-      const st = await nuovaStanza(stato, M.nucleoTitolo(a.titolo) || "Chat", `Creata automaticamente da ${gruppo.length} chat di Claude sullo stesso argomento.`); esito.stanze++;
-      registra(stato, { tipo: "stanza_creata", col: "stanze", id: st.id, impronta: (({ id: _i, ...d }) => M.canon({ ...d, agenti_ids: [], agenti_auto: undefined }))(st), perche: `${gruppo.length} chat sullo stesso argomento`, titolo: st.nome });
+      const giaG = stanzaGenerica(stato, M.nucleoTitolo(a.titolo) || "Chat");
+      const st = giaG || await nuovaStanza(stato, M.nucleoTitolo(a.titolo) || "Chat", `Creata automaticamente da ${gruppo.length} chat di Claude sullo stesso argomento.`);
+      if (!giaG) esito.stanze++;
+      if (!giaG) registra(stato, { tipo: "stanza_creata", col: "stanze", id: st.id, impronta: (({ id: _i, ...d }) => M.canon({ ...d, agenti_ids: [], agenti_auto: undefined }))(st), perche: `${gruppo.length} chat sullo stesso argomento`, titolo: st.nome });
       for (const g of gruppo) { usate.add(g.id); const n = M.trova(stato, "note", g.id); if (!n || n.stanza_id) continue; await sposta(stato, n, { stanza_id: st.id, categoria: "risorsa" }, "chat sullo stesso argomento", st.nome); esito.note++; }
     }
     // 3) pilota automatico (1.9): note scritte a mano, tag, collegamenti, agenti nelle stanze
