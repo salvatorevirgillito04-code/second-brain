@@ -211,7 +211,6 @@ textarea{line-height:1.55;font-family:var(--m);font-size:.92rem}
 pre.istr{white-space:pre-wrap;font-family:var(--m);font-size:.8rem;background:rgba(4,5,15,.75);border:1px solid var(--linea);border-radius:var(--r-s);padding:12px;max-height:46vh;overflow:auto}
 details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
 @media (min-width:700px){main{max-width:720px}.top .in{max-width:720px}}
-@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -435,7 +434,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
           <span>${ico('<path d="M2 12Q8 0 14 12" fill="none" stroke="#e9ecff" stroke-width="1.4"/>')}nota collegata a nota</span>
           <span>${ico('<circle cx="8" cy="8" r="3" fill="#fff"/><circle cx="8" cy="8" r="6" fill="none" stroke="#fff" stroke-opacity=".4"/>')}toccata in settimana</span></div>
         <div class="mappa" id="mappa"><canvas id="tela" role="img" aria-label="Mappa delle relazioni"></canvas>
-          <div class="zoom"><button id="zp" aria-label="Avvicina">+</button><button id="zm" aria-label="Allontana">−</button>${S.modoMappa === "rete" ? "" : `<button id="zg" aria-pressed="${giraMappa()}" aria-label="${giraMappa() ? "Ferma la rotazione automatica" : "Fai girare la sfera da sola"}">${giraMappa() ? "❚❚" : "▶"}</button>`}</div>
+          <div class="zoom"><button id="zp" aria-label="Avvicina">+</button><button id="zm" aria-label="Allontana">−</button></div>
           <div class="modi" role="group" aria-label="Vista"><button data-modo="sfera" aria-pressed="${S.modoMappa !== "rete"}">Sfera</button><button data-modo="rete" aria-pressed="${S.modoMappa === "rete"}">Rete</button></div>
           <div class="scheda-nodo" id="scheda" role="region" aria-live="polite" aria-label="Elemento scelto" tabindex="-1" hidden><span class="tipo" id="scheda-tipo"></span><b id="scheda-t"></b><div class="num" id="scheda-num"></div><ul id="scheda-lista"></ul><div class="azioni"><button class="btn" id="scheda-apri">Apri</button><button class="btn v" id="scheda-chiudi">Chiudi</button></div></div></div>
         <label class="check"><input type="checkbox" id="isolati"${S.isolati ? " checked" : ""}> Mostra anche gli elementi senza relazioni</label>
@@ -600,13 +599,10 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
   const vai = (v) => { if (location.hash === "#" + v) { render(); window.scrollTo(0, 0); } else location.hash = v; };
 
   // ---------- mappa: solo relazioni esistenti (1.6: globo neurale o rete) ----------
-  // 1.9.5: la sfera gira da sola (anche con «riduci animazioni», più lenta e senza impulsi); il pulsante ❚❚ la ferma e la scelta resta
-  function giraMappa() { try { return localStorage.getItem("sb-gira-mappa") !== "no"; } catch (_) { return true; } }
+  // 1.9.5: la sfera gira sempre da sola, con le animazioni complete; per scelta dell'utente (14/11/2026) l'impostazione di sistema «Rimuovi animazioni» non viene applicata alla mappa
   function disegnaMappa() {
     const G = window.SBGlobo, box = $("#mappa"), tela = $("#tela"), ctx = tela.getContext("2d"), dpr = Math.min(2, window.devicePixelRatio || 1);
     const W = box.clientWidth, H = box.clientHeight; tela.width = W * dpr; tela.height = H * dpr; ctx.scale(dpr, dpr);
-    const mq = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)"), fermo = !!(mq && mq.matches);
-    if (mq && !S.mqMappa) { S.mqMappa = true; mq.addEventListener && mq.addEventListener("change", () => { if (vistaCorrente() === "mappa") render(); }); }
     const rete = G.costruisci(M, S.stato, S.isolati), { nodi, E, idx, vicini } = rete;
     $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Ogni connessione è una relazione reale. Trascina per ruotare o spostarti, avvicina o allontana con due dita, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
     const modo = S.modoMappa === "rete" ? "rete" : "sfera";
@@ -634,7 +630,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       ctx.clearRect(0, 0, W, H);
       const sel = S.nodo && idx.get(S.nodo), vic = new Set(sel ? vicini(sel) : []);
       if (modo === "rete") disegnaRete(sel, vic);
-      else P = G.disegna(ctx, W, H, rete, { vista, t: fermo ? 0 : performance.now() - t0, sel, vic, impulsi: !fermo, dpr });
+      else P = G.disegna(ctx, W, H, rete, { vista, t: performance.now() - t0, sel, vic, impulsi: true, dpr });
     }
     // un solo disegno per fotogramma: i gesti cambiano la vista, il disegno avviene nel ciclo
     let richiesto = false;
@@ -651,11 +647,11 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       disegna();
     }
     let tocco = null, vel = { x: 0, y: 0 }, ultimo = null; // vel: inerzia (radianti/ms)
-    let gira = modo === "sfera" && giraMappa(), quiete = 0, spinta = 1; // quiete: ms senza tocchi né inerzia; spinta: 0→1, la rotazione riparte dolcemente
-    const VEL_AUTO = fermo ? 0.00008 : 0.00022; // un giro ogni ~28 s (~80 s con «riduci animazioni»)
+    let gira = modo === "sfera", quiete = 0, spinta = 1; // quiete: ms senza tocchi né inerzia; spinta: 0→1, la rotazione riparte dolcemente
+    const VEL_AUTO = 0.00022; // un giro ogni ~28 s
     const dita = new Map(); let pizzico = null; // ingrandimento con due dita
     const zoom = (z) => { vista.z = Math.max(0.3, Math.min(3, z)); if (!inCiclo) ridisegna(); };
-    const animata = modo === "sfera" && (!fermo || gira);
+    const animata = modo === "sfera";
     tela.onpointerdown = (e) => {
       tela.setPointerCapture(e.pointerId); quiete = 0; spinta = 0; dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (dita.size === 2) { const [a, b] = [...dita.values()]; pizzico = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: vista.z }; tocco = null; return; }
@@ -686,11 +682,6 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     };
     $("#zp").onclick = () => zoom(vista.z * 1.25);
     $("#zm").onclick = () => zoom(vista.z / 1.25);
-    const zg = $("#zg"); if (zg) zg.onclick = () => {
-      gira = !gira; try { localStorage.setItem("sb-gira-mappa", gira ? "si" : "no"); } catch (_) {}
-      zg.setAttribute("aria-pressed", gira); zg.setAttribute("aria-label", gira ? "Ferma la rotazione automatica" : "Fai girare la sfera da sola"); zg.textContent = gira ? "❚❚" : "▶";
-      spinta = 0; quiete = 1e9; if (gira && fermo && !inCiclo) { inCiclo = true; prima = performance.now(); requestAnimationFrame(ciclo); }
-    };
     $("#isolati").onchange = (e) => { S.isolati = e.target.checked; S.nodo = null; render(); };
     document.querySelectorAll("[data-modo]").forEach((b) => (b.onclick = () => { S.modoMappa = b.dataset.modo; S.nodo = null; render(); }));
     S.nodo = null; disegna();
@@ -707,7 +698,6 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
         vista.m = G.ruota(G.ruota(vista.m, "y", VEL_AUTO * e * dt), "x", VEL_AUTO * 0.35 * Math.sin(s * 0.21) * e * dt); // asse che ondeggia: non un giro meccanico
       }
       if (++giri % 120 === 0) vista.m = G.ortonormalizza(vista.m);
-      if (fermo && !gira && !tocco && !(Math.abs(vel.x) + Math.abs(vel.y))) { inCiclo = false; disegna(); return; } // «riduci animazioni» e rotazione ferma: nessun ciclo continuo
       disegna(); requestAnimationFrame(ciclo);
     };
     quiete = 1e9; // all'apertura gira subito
