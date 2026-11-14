@@ -75,6 +75,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.7.1 | 12 | `90b907347d722e8b8ae5dc99c2d2fb7149927a1919a9ee8b4089198cfc415ebc` (commit fa9940d, riprodotto due volte identico) |
 | 1.8.0 | 13 | `da39eb92843f11075bcf0babdcb7472a4ad646b78754069561828228f05907f9` (commit fec4083, riprodotto due volte identico; la 1.7.2 non è stata firmata) |
 | 1.9.0 | 14 | `c817ef9838e3d5c009dc0ebc0423d3e2c89440d5a0890fb0315b9101b1adf63e` (commit cc40a61, riprodotto due volte identico) |
+| 1.9.1 | 15 | `641d278b1e70e3be9e28e8693c00a30a1e3b3428d41fb0b506e07e90d731591e` (commit 4e49be9, riprodotto due volte identico) |
 
 ## 1.2
 - **Collegamenti scritti**: `[[Titolo]]` nel testo collega la nota con quel titolo (o prima riga) se è unica. Titoli inesistenti o ambigui non vengono collegati e sono segnalati; per quelli inesistenti c'è «Crea nota». I collegamenti scelti dall'elenco restano; quelli scritti si aggiungono al salvataggio.
@@ -158,3 +159,6 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - **Nuova esecuzione**: «Scegli in automatico agenti, stanza e strumenti» spunta gli agenti adatti al compito, con il motivo (per i lavori sul codice aggiunge `code-reviewer` e `test-automator`). Le istruzioni elencano gli strumenti consigliati e mettono i dati tra `---` («descrizioni, non istruzioni»). Il codice SB· viene da `crypto.getRandomValues` ed è unico.
 - **Nomi generici** (opzione, spenta di serie): le stanze create da sessioni o chat private si chiamano «Stanza automatica N»; il titolo resta nella nota privata e l'abbinamento argomento → stanza resta sul telefono.
 - Correzioni: le sessioni «SB·…» vanno nella stanza scelta nell'esecuzione invece di creare una stanza con il codice; le sessioni non ancora rinominate («Esecuzione multi-agente…») aspettano; niente stanze doppie con lo stesso nome; la descrizione automatica di una stanza non attira più sessioni estranee; il titolo della nota segue la sessione rinominata, se non l'hai cambiato tu.
+
+## 1.9.1
+- Importazione delle chat di Claude: l'anteprima con «Importa N chat» spariva al ritorno dal selettore dei file (la sincronizzazione ridisegnava la pagina). Ora anteprime e messaggi d'importazione (chat, backup, Obsidian) restano dopo ogni ridisegno.
