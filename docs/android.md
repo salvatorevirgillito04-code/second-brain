@@ -80,6 +80,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.9.3 | 17 | `b28f8f9e1b0751ba114121c16fd0884beaa9cb9f7f2f0fd761b97cfc0dcb8a3d` (commit 44576d9, riprodotto due volte identico) |
 | 1.9.4 | 18 | `fb8acd92f36394b70e7ae1aab497ed8534f24f494bdc3e0c1fe9b187ff74bec4` (commit c1e2655, riprodotto due volte identico) |
 | 1.9.5 | 19 | `f81aa6197b3bf2b42485934ca06e5f69a6ce8537ebeb9fe9280bd48e64df87c4` (commit 22de8e2, riprodotto due volte identico) |
+| 1.9.6 | 20 | `c69e6c496c5a8e20aa65a9b6a66115789894a3435743693464bf633e435618e8` (commit d9651f4, riprodotto due volte identico) |
 
 ## 1.2
 - **Collegamenti scritti**: `[[Titolo]]` nel testo collega la nota con quel titolo (o prima riga) se è unica. Titoli inesistenti o ambigui non vengono collegati e sono segnalati; per quelli inesistenti c'è «Crea nota». I collegamenti scelti dall'elenco restano; quelli scritti si aggiungono al salvataggio.
@@ -186,3 +187,6 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 ## 1.9.5
 - **La sfera gira sempre da sola**: appena apri la mappa ruota piano su un asse che ondeggia (un giro ogni ~28 s), così non sembra un movimento meccanico. Quando la tocchi si ferma e segue il dito; appena lo lasci riprende subito a girare (in mezzo secondo torna alla sua velocità, senza scatti), anche dopo aver chiuso la scheda di un elemento.
 - Su richiesta dell'utente (14/11/2026) l'app ignora l'impostazione di Android «Rimuovi animazioni»: animazioni, impulsi e rotazione restano sempre attivi. Non c'è un pulsante di pausa.
+
+## 1.9.6
+- La sfera riprende a girare **appena lasci il dito**, senza attese (prima aspettava 1,5 s); torna alla sua velocità in mezzo secondo e si somma allo slancio del gesto.
