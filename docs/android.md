@@ -94,3 +94,13 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
   - ogni nuova sessione di Claude Code va nella stanza con il nome più simile, oppure in una nuova stanza; ha un progetto attivo ed è registrata come *risorsa* (diventa *archivio* se completata da oltre 14 giorni);
   - le chat importate diventano risorse della stanza più simile; almeno 2 chat sullo stesso argomento senza stanza ne creano una.
   - Ogni nota viene organizzata una sola volta: se la sposti, l'app non la rimette dov'era. Tutto ciò che è creato in automatico ha `automatico: true`.
+
+## 1.6: globo neurale e widget del globo
+- **Globo neurale** (`assets/www/globo.js`, unico per mappa e widget):
+  - le relazioni reali sono assoni curvi sulla sfera, colorati come i due nodi che collegano, con **impulsi** che li percorrono;
+  - stanze e progetti sono neuroni con dendriti ramificati e un nucleo che pulsa; le note sono neuroni più piccoli;
+  - una trama tenue di fondo è solo decorativa: non tocca i nodi e non rappresenta relazioni;
+  - con «riduci animazioni» attivo in Android, il globo resta fermo e senza impulsi.
+- **Widget «Globo di Second Brain»** (2×2, ridimensionabile; tocco = Mappa):
+  - Android non permette animazioni nei widget, quindi l'app disegna un'immagine statica del globo (PNG 512×512 in `files/globo.png`);
+  - l'immagine si aggiorna quando cambiano le relazioni (al massimo ogni 15 minuti) e a ogni sincronizzazione in background, ruotando un po' di più ogni volta.

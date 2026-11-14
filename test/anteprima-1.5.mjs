@@ -16,7 +16,7 @@ s.stato_lavoro = [{ id: "istantanea", rilevato_il: t, sessioni: [
   { id: "attese", testo: "# Sessioni in attesa – rilevazione 2026-11-14T06:47Z\n\n## 1. TCL Minimal TV — Verifica permessi tag GitHub\nhttps://claude.ai/code/session_A\n- **Cosa chiede:** il tag deve puntare all'head della PR #1 (`3414827`) o al bundle F1c-OIDC?\n- **Risposta consigliata:** «Head della PR #1 (`3414827`); il bundle lo portiamo dopo.» Motivo: nessun push né build.\n- **Rischi:** il tag non include F1c-OIDC.\n\n## 2. Negozio miglioramenti\nhttps://claude.ai/code/session_B\n- **Cosa chiede:** autorizzare il push del commit `ba5dae6`.\n- **Risposta consigliata:** «Autorizzo il push del solo commit ba5dae6, senza force push.»\n- **Rischi:** se il container è stato azzerato il commit non esiste più.\n" }];
 await M.noteDaSessioni(s); await M.organizzaAutomatico(s);
 const dati = JSON.stringify(s);
-const browser = await chromium.launch(); const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, reducedMotion: "reduce" });
+const browser = await chromium.launch(); const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 });
 await ctx.route("https://app.test/**", (r) => { const n = new URL(r.request().url()).pathname.slice(1) || "index.html"; r.fulfill({ body: readFileSync(join(WWW, n)), contentType: n.endsWith(".js") ? "text/javascript" : "text/html" }); });
 await ctx.addInitScript((d) => { window.Android = { caricaDati: () => d, caricaDatiPrecedenti: () => "", salvaDati: () => "ok", salvaCopia: () => "ok", haToken: () => true, retePresente: () => false, github: () => {}, infoApp: () => JSON.stringify({ versione: "1.5.0", codice: 8 }), apriLink: () => {}, haRoutine: () => true, idRoutine: () => "", notificheConsentite: () => true, aggiornaWidget: () => {}, fine: () => {} }; }, dati);
 const p = await ctx.newPage(); const vai = async (h) => { await p.evaluate((x) => { location.hash = x; }, h); await p.waitForTimeout(400); };
@@ -27,4 +27,6 @@ for (let dy = -120; dy <= 120 && (await p.isHidden("#scheda")); dy += 12) for (l
 await p.waitForTimeout(200); await p.screenshot({ path: join(OUT, "3-sfera-scheda.png") });
 await p.click('[data-modo="rete"]'); await p.waitForTimeout(500); await p.screenshot({ path: join(OUT, "4-rete.png") });
 await vai("stanze"); await p.screenshot({ path: join(OUT, "5-stanze.png") });
+const png = await p.evaluate(() => window.SBGlobo.immagineWidget(window.SBMotore, JSON.parse(window.Android.caricaDati()), 512, Date.parse("2026-11-14T09:00:00Z")));
+(await import("node:fs")).writeFileSync(join(OUT, "6-widget-globo.png"), Buffer.from(png, "base64"));
 await browser.close(); console.log("ok");

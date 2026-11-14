@@ -178,6 +178,7 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
 <div class="toast" id="toast" role="status" hidden></div>
 
 <script src="motore.js"></script>
+<script src="globo.js"></script>
 <script>
 (() => {
   "use strict";
@@ -248,6 +249,16 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
     if (bloccato()) { S.erroreArchivio = "salvataggio sospeso finché non ripristini un backup"; return; }
     const t = JSON.stringify(S.stato); const r = A.salvaDati(t); S.erroreArchivio = r === "ok" ? null : r; if (r === "ok") S.testoSalvato = t;
     try { if (A.aggiornaWidget) A.aggiornaWidget(JSON.stringify(M.riepilogoWidget(S.stato))); } catch (_) {}
+    aggiornaGlobo();
+  }
+  // widget del globo: nuova immagine se cambiano le relazioni o ogni 15 minuti (il globo ruota con l'ora)
+  let globoFirma = "", globoQuando = 0;
+  function aggiornaGlobo() {
+    if (!A || !A.aggiornaGlobo || !window.SBGlobo) return;
+    const firma = M.relazioni(S.stato).length + "/" + L("note").length + "/" + L("stanze").length;
+    if (firma === globoFirma && Date.now() - globoQuando < 15 * 60000) return;
+    globoFirma = firma; globoQuando = Date.now();
+    setTimeout(() => { try { A.aggiornaGlobo(window.SBGlobo.immagineWidget(M, S.stato, 512)); } catch (_) {} }, 50);
   }
   async function scrivi(col, id, campi) {
     const prima = id ? T(col, id) : null;
@@ -513,88 +524,38 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
   $("#indietro").onclick = () => history.back();
   const vai = (v) => { if (location.hash === "#" + v) { render(); window.scrollTo(0, 0); } else location.hash = v; };
 
-  // ---------- mappa: solo relazioni esistenti (1.5: sfera 3D o rete luminosa) ----------
+  // ---------- mappa: solo relazioni esistenti (1.6: globo neurale o rete) ----------
   function disegnaMappa() {
-    const box = $("#mappa"), tela = $("#tela"), ctx = tela.getContext("2d"), dpr = window.devicePixelRatio || 1;
+    const G = window.SBGlobo, box = $("#mappa"), tela = $("#tela"), ctx = tela.getContext("2d"), dpr = window.devicePixelRatio || 1;
     const W = box.clientWidth, H = box.clientHeight; tela.width = W * dpr; tela.height = H * dpr; ctx.scale(dpr, dpr);
     const fermo = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const archi = M.relazioni(S.stato);
-    const conGrado = new Map(); for (const r of archi) { conGrado.set(r.da, (conGrado.get(r.da) || 0) + 1); conGrado.set(r.a, (conGrado.get(r.a) || 0) + 1); }
-    const tutti = [...L("note").map((n) => ({ k: "note/" + n.id, nome: titoloNota(n), col: CAT[catNota(n)][1], tipo: CAT[catNota(n)][0], forma: "c", apri: ["nota", n.id] })),
-      ...L("progetti").map((p) => ({ k: "progetti/" + p.id, nome: p.nome, col: "--progetto", tipo: "Progetto", forma: "e", apri: ["progetto", p.id] })),
-      ...L("stanze").map((s) => ({ k: "stanze/" + s.id, nome: s.nome, col: "--stanza", tipo: "Stanza", forma: "e", apri: ["stanza", s.id] }))];
-    const nodi = tutti.filter((x) => S.isolati || conGrado.has(x.k)).map((x, i) => ({ ...x, g: conGrado.get(x.k) || 0, x: Math.cos(i * 2.4) * (40 + i * 6), y: Math.sin(i * 2.4) * (40 + i * 6), vx: 0, vy: 0 }));
-    for (const n of nodi) n.r = n.forma === "e" ? 9 + Math.min(12, n.g * 1.5) : 3.5 + Math.min(5, n.g);
-    const idx = new Map(nodi.map((n) => [n.k, n])); const E = archi.map((r) => [idx.get(r.da), idx.get(r.a)]).filter(([a, b]) => a && b);
-    $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Trascina per ruotare o spostarti, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
-    const css = getComputedStyle(document.documentElement), C = (v) => css.getPropertyValue(v).trim();
-    const vicini = (p) => E.filter(([a, b]) => a === p || b === p).map(([a, b]) => (a === p ? b : a));
+    const rete = G.costruisci(M, S.stato, S.isolati), { nodi, E, idx, vicini } = rete;
+    $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Le connessioni luminose con gli impulsi sono relazioni reali; la trama tenue di fondo è solo decorativa. Trascina per ruotare o spostarti, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
     const modo = S.modoMappa === "rete" ? "rete" : "sfera";
-    // --- posizioni: rete (forze 2D) ---
+    nodi.forEach((n, i) => { n.x = Math.cos(i * 2.4) * (40 + i * 6); n.y = Math.sin(i * 2.4) * (40 + i * 6); n.vx = 0; n.vy = 0; });
     for (let it = 0; modo === "rete" && it < 300; it++) {
       for (const a of nodi) for (const b of nodi) if (a !== b) { const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01, d = Math.sqrt(d2), f = 16000 / d2; a.vx += dx / d * f; a.vy += dy / d * f; }
       for (const [a, b] of E) { const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - 140) * 0.02; a.vx += dx / d * f; a.vy += dy / d * f; b.vx -= dx / d * f; b.vy -= dy / d * f; }
       for (const a of nodi) { a.vx -= a.x * 0.004; a.vy -= a.y * 0.004; a.x += a.vx * 0.5; a.y += a.vy * 0.5; a.vx *= 0.6; a.vy *= 0.6; }
     }
-    // --- posizioni: sfera (centri su spirale di Fibonacci, note vicino al loro centro) ---
-    const fib = (i, n) => { const y = 1 - (i + 0.5) / n * 2, r = Math.sqrt(1 - y * y), t = i * 2.39996; return [Math.cos(t) * r, y, Math.sin(t) * r]; };
-    const norm = (v) => { const l = Math.hypot(...v) || 1; return v.map((c) => c / l); };
-    if (modo === "sfera") {
-      const hub = nodi.filter((n) => n.forma === "e"), resto = nodi.filter((n) => n.forma !== "e");
-      hub.forEach((n, i) => (n.p = fib(i, Math.max(hub.length, 1))));
-      let seme = 7; const rnd = () => ((seme = (seme * 16807) % 2147483647) / 2147483647) - 0.5;
-      resto.forEach((n, i) => { const h = vicini(n).find((v) => v.p && v.forma === "e") || vicini(n).find((v) => v.p); n.p = h ? norm([h.p[0] + rnd() * 0.55, h.p[1] + rnd() * 0.55, h.p[2] + rnd() * 0.55]) : fib(i, resto.length); });
-    }
     const xs = nodi.map((p) => p.x), ys = nodi.map((p) => p.y);
     const bx = nodi.length ? [Math.min(...xs), Math.max(...xs)] : [0, 0], by = nodi.length ? [Math.min(...ys), Math.max(...ys)] : [0, 0];
     const z0 = modo === "rete" ? Math.min((W - 120) / (bx[1] - bx[0] || 1), (H - 80) / (by[1] - by[0] || 1), 2.2) : 1;
     const vista = { x: W / 2 - (bx[0] + bx[1]) / 2 * z0, y: H / 2 - (by[0] + by[1]) / 2 * z0, z: z0, ry: 0.6, rx: -0.25 };
-    const proietta = (n) => {
-      if (modo === "rete") return { x: vista.x + n.x * vista.z, y: vista.y + n.y * vista.z, s: Math.sqrt(vista.z), a: 1, z: 0 };
-      const [x0, y0, z0_] = n.p, cy = Math.cos(vista.ry), sy = Math.sin(vista.ry), cx = Math.cos(vista.rx), sx = Math.sin(vista.rx);
-      const x1 = x0 * cy + z0_ * sy, z1 = -x0 * sy + z0_ * cy, y2 = y0 * cx - z1 * sx, z2 = y0 * sx + z1 * cx;
-      const R = Math.min(W, H) * 0.4 * vista.z, k = 1 / (1 - z2 * 0.18);
-      return { x: W / 2 + x1 * R * k, y: H / 2 + y2 * R * k, s: (0.7 + 0.45 * (z2 + 1) / 2) * Math.sqrt(vista.z), a: 0.28 + 0.72 * (z2 + 1) / 2, z: z2 };
-    };
-    const esagono = (x, y, r) => { ctx.beginPath(); for (let i = 0; i < 6; i++) { const t = Math.PI / 6 + i * Math.PI / 3; ctx[i ? "lineTo" : "moveTo"](x + r * Math.cos(t), y + r * Math.sin(t)); } ctx.closePath(); };
-    let P = new Map();
+    let P = new Map(), t0 = performance.now();
+    function disegnaRete(sel, vic) {
+      P = new Map(nodi.map((n) => [n, { x: vista.x + n.x * vista.z, y: vista.y + n.y * vista.z, s: Math.sqrt(vista.z), a: 1, z: 0 }]));
+      ctx.globalCompositeOperation = "lighter";
+      for (const [a, b] of E) { const pa = P.get(a), pb = P.get(b), acceso = sel && (a === sel || b === sel); ctx.strokeStyle = acceso ? "rgba(90,209,255,.95)" : `rgba(150,160,255,${sel ? 0.15 : 0.35})`; ctx.lineWidth = acceso ? 1.8 : 0.9; ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke(); }
+      for (const n of nodi) { const q = P.get(n), r = n.r * q.s; ctx.globalAlpha = sel && n !== sel && !vic.has(n) ? 0.3 : 1; const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 3); g.addColorStop(0, n.col); g.addColorStop(0.35, n.col + "66"); g.addColorStop(1, n.col + "00"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, r * 3, 0, 7); ctx.fill(); ctx.fillStyle = "#fff"; ctx.beginPath(); ctx.arc(q.x, q.y, r * (n.forma === "e" ? 0.75 : 0.55), 0, 7); ctx.fill(); ctx.globalAlpha = 1; }
+      ctx.globalCompositeOperation = "source-over";
+      for (const n of nodi) { if (!(n === sel || n.forma === "e" || vista.z > 0.75)) continue; const q = P.get(n), t = n.nome.length > 24 ? n.nome.slice(0, 23) + "…" : n.nome; ctx.font = "11px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.fillStyle = "#e9ecff"; ctx.fillText(t, q.x, q.y + n.r * q.s * 1.5 + 13); }
+    }
     function disegna() {
       ctx.clearRect(0, 0, W, H);
-      P = new Map(nodi.map((n) => [n, proietta(n)]));
       const sel = S.nodo && idx.get(S.nodo), vic = new Set(sel ? vicini(sel) : []);
-      if (modo === "sfera") { // atmosfera
-        const R = Math.min(W, H) * 0.4 * vista.z, g = ctx.createRadialGradient(W / 2 - R * 0.3, H / 2 - R * 0.35, R * 0.1, W / 2, H / 2, R * 1.08);
-        g.addColorStop(0, "rgba(120,110,255,.30)"); g.addColorStop(0.55, "rgba(60,70,200,.18)"); g.addColorStop(0.92, "rgba(110,90,255,.22)"); g.addColorStop(1, "rgba(90,209,255,0)");
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(W / 2, H / 2, R * 1.08, 0, 7); ctx.fill();
-        ctx.strokeStyle = "rgba(160,170,255,.35)"; ctx.lineWidth = 1.2; ctx.shadowColor = "rgba(124,108,255,.9)"; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(W / 2, H / 2, R * 1.0, 0, 7); ctx.stroke(); ctx.shadowBlur = 0;
-      }
-      ctx.globalCompositeOperation = "lighter";
-      for (const [a, b] of E) {
-        const pa = P.get(a), pb = P.get(b), acceso = sel && (a === sel || b === sel);
-        ctx.strokeStyle = acceso ? "rgba(90,209,255,.95)" : `rgba(150,160,255,${(0.10 + 0.25 * Math.min(pa.a, pb.a)) * (sel ? 0.5 : 1)})`;
-        ctx.lineWidth = acceso ? 1.8 : 0.9; ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
-      }
-      for (const n of [...nodi].sort((u, v) => P.get(u).z - P.get(v).z)) {
-        const q = P.get(n), r = n.r * q.s, col = C(n.col), spento = sel && n !== sel && !vic.has(n);
-        ctx.globalAlpha = q.a * (spento ? 0.3 : 1);
-        const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 3.2); g.addColorStop(0, col); g.addColorStop(0.35, col + "66"); g.addColorStop(1, col + "00");
-        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, r * 3.2, 0, 7); ctx.fill();
-        ctx.fillStyle = "#fff"; ctx.beginPath();
-        if (n.forma === "e") { esagono(q.x, q.y, r * 0.75); ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.4; esagono(q.x, q.y, r * 1.25); ctx.stroke(); }
-        else { ctx.arc(q.x, q.y, r * 0.55, 0, 7); ctx.fill(); }
-        if (n === sel) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q.x, q.y, r * 2, 0, 7); ctx.stroke(); }
-        ctx.globalAlpha = 1;
-      }
-      ctx.globalCompositeOperation = "source-over";
-      const nomiStanze = new Set(nodi.filter((n) => n.tipo === "Stanza").map((n) => n.nome));
-      for (const n of nodi) {
-        if (n !== sel && n.tipo === "Progetto" && nomiStanze.has(n.nome)) continue; // stesso nome della sua stanza: un'etichetta basta
-        const q = P.get(n); if (!(n === sel || (n.forma === "e" && q.z > -0.15) || (modo === "rete" && vista.z > 0.75))) continue;
-        const t = n.nome.length > 24 ? n.nome.slice(0, 23) + "…" : n.nome;
-        ctx.font = (n.forma === "e" ? "600 12px " : "11px ") + "system-ui,sans-serif"; ctx.textAlign = "center"; ctx.globalAlpha = Math.max(q.a, n === sel ? 1 : 0);
-        ctx.fillStyle = "rgba(4,5,15,.65)"; const w = ctx.measureText(t).width + 10; ctx.fillRect(q.x - w / 2, q.y + n.r * q.s * 1.5 + 2, w, 16);
-        ctx.fillStyle = "#e9ecff"; ctx.fillText(t, q.x, q.y + n.r * q.s * 1.5 + 14); ctx.globalAlpha = 1;
-      }
+      if (modo === "rete") disegnaRete(sel, vic);
+      else P = G.disegna(ctx, W, H, rete, { vista, t: fermo ? 0 : performance.now() - t0, sel, vic, impulsi: !fermo });
     }
     function scheda(p) {
       S.nodo = p ? p.k : null; $("#scheda").hidden = !p; if (!p) return disegna();
@@ -626,7 +587,7 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
     $("#isolati").onchange = (e) => { S.isolati = e.target.checked; S.nodo = null; render(); };
     document.querySelectorAll("[data-modo]").forEach((b) => (b.onclick = () => { S.modoMappa = b.dataset.modo; S.nodo = null; render(); }));
     S.nodo = null; disegna();
-    const ciclo = () => { if (!tela.isConnected) return; if (gira && !S.nodo) { vista.ry += 0.0035; disegna(); } requestAnimationFrame(ciclo); };
+    const ciclo = () => { if (!tela.isConnected) return; if (gira && !S.nodo) vista.ry += 0.0025; disegna(); requestAnimationFrame(ciclo); };
     if (modo === "sfera" && !fermo) requestAnimationFrame(ciclo);
   }
 

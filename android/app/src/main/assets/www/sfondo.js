@@ -21,6 +21,7 @@
     }
     await salva();
     try { A.aggiornaWidget(JSON.stringify(M.riepilogoWidget(s))); } catch (_) {}
+    try { if (A.aggiornaGlobo && window.SBGlobo) A.aggiornaGlobo(window.SBGlobo.immagineWidget(M, s, 512)); } catch (_) {} // il globo del widget ruota a ogni sincronizzazione
     A.fine(s.sync.ultimo_sfondo.esito);
   } catch (e) { A.fine("errore: " + (e.message || e)); }
 })();
