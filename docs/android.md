@@ -73,6 +73,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.6.1 | 10 | `a53ba79602400515f42ff9c70354e34f5a4a5a60494cee86f3e4d87ed957b645` (commit 5d8607d, riprodotto due volte identico) |
 | 1.7.0 | 11 | `ccaba16502ccb016edc031761a42c432e5a6102e0866713fee2caedc6be4b55f` (commit ee87213, riprodotto due volte identico) |
 | 1.7.1 | 12 | `90b907347d722e8b8ae5dc99c2d2fb7149927a1919a9ee8b4089198cfc415ebc` (commit fa9940d, riprodotto due volte identico) |
+| 1.8.0 | 13 | `da39eb92843f11075bcf0babdcb7472a4ad646b78754069561828228f05907f9` (commit fec4083, riprodotto due volte identico; la 1.7.2 non è stata firmata) |
 
 ## 1.2
 - **Collegamenti scritti**: `[[Titolo]]` nel testo collega la nota con quel titolo (o prima riga) se è unica. Titoli inesistenti o ambigui non vengono collegati e sono segnalati; per quelli inesistenti c'è «Crea nota». I collegamenti scelti dall'elenco restano; quelli scritti si aggiungono al salvataggio.
