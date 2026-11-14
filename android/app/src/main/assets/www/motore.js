@@ -347,12 +347,20 @@
     const r = M.trova(stato, v.col, v.id);
     if (v.tipo === "stanza_creata" || v.tipo === "progetto_creato") {
       if (!r) { v.annullata = ora(); return { ok: true }; }
-      const usata = v.col === "stanze" ? M.elenco(stato, "note").some((x) => x.stanza_id === v.id) || M.elenco(stato, "progetti").some((p) => p.stanza_id === v.id && !p.automatico) : M.elenco(stato, "note").some((x) => x.progetto_id === v.id);
+      const progAuto = v.col === "stanze" ? M.elenco(stato, "progetti").filter((p) => p.stanza_id === v.id && p.automatico).map((p) => p.id) : [v.id];
+      const usata = (v.col === "stanze" && (M.elenco(stato, "note").some((x) => x.stanza_id === v.id) || M.elenco(stato, "progetti").some((p) => p.stanza_id === v.id && !p.automatico) || M.elenco(stato, "collegamenti").some((c) => c.stanza_id === v.id)))
+        || M.elenco(stato, "note").some((x) => progAuto.includes(x.progetto_id));
+      if (v.impronta && v.col === "stanze") { const { id: _i, ...d } = r; if (M.canon({ ...d, agenti_ids: [], agenti_auto: undefined }) !== v.impronta) return { ok: false, motivo: "l'hai modificata tu: eliminala a mano se non ti serve" }; }
       if (usata) return { ok: false, motivo: "contiene ancora note: annulla prima gli spostamenti" };
       if (v.col === "stanze") for (const p of M.elenco(stato, "progetti").filter((p) => p.stanza_id === v.id && p.automatico)) M.eliminaRecord(stato, "progetti", p.id);
       M.eliminaRecord(stato, v.col, v.id); v.annullata = ora(); return { ok: true };
     }
     if (!r) return { ok: false, motivo: "elemento eliminato" };
+    if (v.aggiunti) { // tag e collegamenti: toglie solo ciò che aveva aggiunto, il resto resta
+      const { id, ...d } = r;
+      for (const [k, via] of Object.entries(v.aggiunti)) { d[k] = (d[k] || []).filter((x) => !via.includes(x)); if (k === "tag_auto" && !d[k].length) delete d[k]; }
+      await M.salvaRecord(stato, v.col, id, d); v.annullata = ora(); return { ok: true };
+    }
     for (const [k, val] of Object.entries(v.dopo || {})) if (M.canon(r[k] === undefined ? null : r[k]) !== M.canon(val)) return { ok: false, motivo: "già modificata da te" };
     const { id, ...d } = r, nuovi = { ...d, ...v.prima };
     for (const [k, val] of Object.entries(v.prima)) if (val === null && r[k] === undefined) delete nuovi[k];
@@ -419,6 +427,10 @@
 
   async function pilota(stato) {
     const esito = { tag: 0, collegamenti: 0, agenti: 0, note_manuali: 0 }, F = fatti(stato);
+    for (const k of Object.keys(F)) { const [tipo, a, b] = k.split("|"), col = tipo === "agenti" ? "stanze" : "note";
+      if (!stato.collezioni[col][a] || stato.collezioni[col][a].sync.eliminato || (tipo === "link" && !stato.collezioni.note[b])) delete F[k]; }
+    const prev = stato.impostazioni.esecuzioni_previste || {};
+    for (const [c, p] of Object.entries(prev)) if (p.session_id && Date.now() - Date.parse(p.creata_il || 0) > 30 * 864e5) delete prev[c];
     const note = M.elenco(stato, "note").filter((n) => !n.fittizio);
     // a) note scritte a mano ancora senza stanza → stanza più simile (soglia alta), una sola volta
     if (opzione(stato, "note")) for (const n0 of note) {
@@ -435,29 +447,42 @@
       const noti = M.tuttiTag(stato).filter((x) => x.quante >= 2 && !esclusi.has(x.tag) && /^[\p{L}\p{N}_-]{3,40}$/u.test(x.tag)).map((x) => x.tag);
       for (const n0 of note) {
         const n = M.trova(stato, "note", n0.id); if (!n) continue;
-        const ha = new Set([...M.tagNota(n), ...(n.tag_auto || [])]), w = M.parole(M.titoloNota(n) + " " + n.testo);
+        const ha = new Set([...M.tagNota(n), ...(n.tag_auto || [])]), w = M.parole(M.titoloNota(n) + " " + String(n.testo || "").slice(0, 20000));
         const nuovi = noti.filter((t) => !ha.has(t) && !F["tag|" + n.id + "|" + t] && w.has(t)).slice(0, 5);
         if (!nuovi.length) continue;
         for (const t of nuovi) F["tag|" + n.id + "|" + t] = 1;
-        await cambia(stato, "note", n, { tag_auto: [...(n.tag_auto || []), ...nuovi] }, { tipo: "tag_aggiunti", perche: "parole già usate come tag in altre note", titolo: M.titoloNota(n).slice(0, 80), dove: nuovi.map((t) => "#" + t).join(" ") });
+        await cambia(stato, "note", n, { tag_auto: [...(n.tag_auto || []), ...nuovi] }, { tipo: "tag_aggiunti", perche: "parole già usate come tag in altre note", titolo: M.titoloNota(n).slice(0, 80), dove: nuovi.map((t) => "#" + t).join(" "), aggiunti: { tag_auto: nuovi } });
         esito.tag += nuovi.length;
       }
     }
-    // c) collegamenti: citazioni del titolo di un'altra nota (titolo unico, ≥ 5 caratteri); il testo non viene toccato
-    if (opzione(stato, "collegamenti") && note.length <= 1500) for (const d of note) {
-      const t = M.titoloNota(d).trim(); if (t.length < 5 || M.parole(t).size === 0 || !M.risolviTitolo(stato, t).id) continue;
-      for (const s0 of M.menzioniNonCollegate(stato, d.id)) {
-        if (F["link|" + s0.id + "|" + d.id] || s0.fittizio) continue;
-        const s = M.trova(stato, "note", s0.id); if (!s) continue;
-        if (s.accessibile_agenti === true && d.accessibile_agenti !== true) continue; // mai una nota condivisa verso una privata
-        F["link|" + s.id + "|" + d.id] = 1;
-        await cambia(stato, "note", s, { collegamenti: [...new Set([...(s.collegamenti || []), d.id])] }, { tipo: "collegamento", perche: `cita «${t.slice(0, 60)}»`, titolo: M.titoloNota(s).slice(0, 80), dove: t.slice(0, 80) });
-        esito.collegamenti++;
+    // c) collegamenti: citazioni del titolo di un'altra nota (titolo unico, ≥ 5 caratteri); il testo non viene toccato.
+    //    Si esaminano solo le coppie con almeno una nota nuova o cambiata dall'ultimo giro (tutte se il numero di note cambia).
+    if (opzione(stato, "collegamenti") && note.length <= 3000) {
+      const imp = stato.impostazioni, ultimo = imp.pilota_ultimo || "", tutto = !ultimo || imp.pilota_conteggio !== note.length;
+      const recente = (n) => String(n.aggiornato_il || n.corretto_il || n.registrato_il || n.creato_il || n.data || "");
+      const cambiata = (n) => tutto || recente(n) > ultimo;
+      const quanti = new Map(); for (const n of note) { const k = M.titoloNota(n).toLowerCase().trim(); quanti.set(k, (quanti.get(k) || 0) + 1); }
+      const dest = note.map((d) => ({ d, t: M.titoloNota(d).trim() })).filter(({ t }) => t.length >= 5 && M.parole(t).size > 0 && quanti.get(t.toLowerCase()) === 1)
+        .map((x) => ({ ...x, r: regTitolo(x.t), nuova: cambiata(x.d) }));
+      for (const s0 of note) {
+        const sCamb = cambiata(s0); let testo = null;
+        for (const { d, t, r, nuova } of dest) {
+          if (d.id === s0.id || (!sCamb && !nuova) || (s0.collegamenti || []).includes(d.id) || F["link|" + s0.id + "|" + d.id]) continue;
+          if (testo === null) testo = String(s0.testo || "").slice(0, 20000).replace(/\[\[[^\]]*\]\]/g, "");
+          if (!r.test(testo)) continue;
+          const s = M.trova(stato, "note", s0.id); if (!s || (s.collegamenti || []).includes(d.id)) continue;
+          if (s.accessibile_agenti === true && d.accessibile_agenti !== true) continue; // mai una nota condivisa verso una privata
+          F["link|" + s.id + "|" + d.id] = 1;
+          await cambia(stato, "note", s, { collegamenti: [...(s.collegamenti || []), d.id] }, { tipo: "collegamento", perche: `cita «${t.slice(0, 60)}»`, titolo: M.titoloNota(s).slice(0, 80), dove: t.slice(0, 80), aggiunti: { collegamenti: [d.id] } });
+          s0.collegamenti = [...(s.collegamenti || []), d.id];
+          esito.collegamenti++;
+        }
       }
+      imp.pilota_ultimo = ora(); imp.pilota_conteggio = note.length;
     }
     // d) agenti nelle stanze senza agenti (una sola volta per stanza; mai agenti fittizi)
     if (opzione(stato, "agenti")) for (const s0 of M.elenco(stato, "stanze")) {
-      if ((s0.agenti_ids || []).length || s0.fittizio || (s0.stato || "attiva") === "archiviata" || F["agenti|" + s0.id]) continue;
+      if ((s0.agenti_ids || []).length || s0.fittizio || (s0.stato || (s0.archiviata ? "archiviata" : "attiva")) === "archiviata" || F["agenti|" + s0.id]) continue;
       F["agenti|" + s0.id] = 1;
       const sr = M.trova(stato, "stanze", s0.id); if (!sr || (sr.agenti_ids || []).length) continue;
       const scelti = M.scegliAgenti(stato, [s0.nome, s0.descrizione && !s0.automatico ? s0.descrizione : "", ...(s0.obiettivi || [])].join(" "), { max: 3, minimo: 3 }).filter((x) => x.punteggio >= 3);
@@ -468,9 +493,15 @@
     return esito;
   }
 
+  let inCorso = false;
   M.organizzaAutomatico = async function (stato) {
     const esito = { stanze: 0, progetti: 0, note: 0 };
     if (stato.impostazioni && stato.impostazioni.auto_organizza === false) return esito;
+    if (inCorso) return esito; // un giro alla volta: due giri insieme creerebbero stanze doppie
+    inCorso = true;
+    try { return await organizza(stato, esito); } finally { inCorso = false; }
+  };
+  async function organizza(stato, esito) {
     const note = M.elenco(stato, "note").filter((n) => !n.auto_organizzata && !n.corretto_il && !n.stanza_id && !n.progetto_id && !n.fittizio);
     // 1) sessioni di Claude Code → stanza + progetto
     const previste = (stato.impostazioni && stato.impostazioni.esecuzioni_previste) || {};
@@ -480,16 +511,17 @@
       if (/^Esecuzione multi-agente/i.test(tit)) continue; // la sessione non si è ancora rinominata «SB·…»: si organizza dopo
       const m = tit.match(/^SB\s*[·.\-]\s*([a-z0-9]{5})\b\s*/i), pv = m && previste[m[1].toLowerCase()];
       const nome = M.nucleoTitolo(m ? tit.slice(m[0].length) : tit) || "Senza titolo";
-      let st = (pv && pv.stanza_id && M.trova(stato, "stanze", pv.stanza_id)) || stanzaPiuSimile(stato, nome, 0.5)
-        || M.elenco(stato, "stanze").find((s) => s.automatico && (s.stato || "attiva") !== "archiviata" && String(s.nome).toLowerCase() === nome.toLowerCase());
-      if (!st) { st = await nuovaStanza(stato, nome, `Creata automaticamente dalla sessione di Claude Code «${tit}».`); esito.stanze++; registra(stato, { tipo: "stanza_creata", col: "stanze", id: st.id, perche: `nuova sessione «${tit.slice(0, 80)}» senza stanza adatta`, titolo: st.nome }); }
+      const scelta = pv && pv.stanza_id && M.trova(stato, "stanze", pv.stanza_id);
+      let st = (scelta && (scelta.stato || (scelta.archiviata ? "archiviata" : "attiva")) !== "archiviata" ? scelta : null) || stanzaPiuSimile(stato, nome, 0.5)
+        || M.elenco(stato, "stanze").find((s) => s.automatico && (s.stato || (s.archiviata ? "archiviata" : "attiva")) !== "archiviata" && String(s.nome).toLowerCase() === nome.toLowerCase());
+      if (!st) { st = await nuovaStanza(stato, nome, `Creata automaticamente dalla sessione di Claude Code «${tit}».`); esito.stanze++; registra(stato, { tipo: "stanza_creata", col: "stanze", id: st.id, impronta: (({ id: _i, ...d }) => M.canon({ ...d, agenti_ids: [], agenti_auto: undefined }))(st), perche: `nuova sessione «${tit.slice(0, 80)}» senza stanza adatta`, titolo: st.nome }); }
       let pr = M.elenco(stato, "progetti").find((p) => p.stanza_id === st.id && (p.stato || "attivo") === "attivo");
       if (!pr) {
         const pid = "pr-auto-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
         await M.salvaRecord(stato, "progetti", pid, { nome: st.nome, obiettivo: "", stato: "attivo", stanza_id: st.id, automatico: true, creato_il: ora() });
         pr = { id: pid }; esito.progetti++; registra(stato, { tipo: "progetto_creato", col: "progetti", id: pid, perche: `progetto della stanza «${st.nome}»`, titolo: st.nome });
       }
-      const chiusa = n.origine.stato === "completata" && Date.now() - Date.parse(n.origine.aggiornata_il || 0) > 14 * 864e5;
+      const tChiusa = Date.parse(n.origine.aggiornata_il || ""), chiusa = n.origine.stato === "completata" && isFinite(tChiusa) && Date.now() - tChiusa > 14 * 864e5;
       await sposta(stato, n, { stanza_id: st.id, progetto_id: pr.id, categoria: chiusa ? "archivio" : "risorsa" }, pv ? "stanza scelta nell'esecuzione multi-agente" : `titolo simile alla stanza «${st.nome}»`, st.nome);
       esito.note++;
     }
@@ -508,14 +540,14 @@
       const gruppo = senza.filter((b) => !usate.has(b.id) && (b === a || affinita(M.nucleoTitolo(a.titolo), M.nucleoTitolo(b.titolo)) >= 0.6));
       if (gruppo.length < 2) continue;
       const st = await nuovaStanza(stato, M.nucleoTitolo(a.titolo) || "Chat", `Creata automaticamente da ${gruppo.length} chat di Claude sullo stesso argomento.`); esito.stanze++;
-      registra(stato, { tipo: "stanza_creata", col: "stanze", id: st.id, perche: `${gruppo.length} chat sullo stesso argomento`, titolo: st.nome });
+      registra(stato, { tipo: "stanza_creata", col: "stanze", id: st.id, impronta: (({ id: _i, ...d }) => M.canon({ ...d, agenti_ids: [], agenti_auto: undefined }))(st), perche: `${gruppo.length} chat sullo stesso argomento`, titolo: st.nome });
       for (const g of gruppo) { usate.add(g.id); const n = M.trova(stato, "note", g.id); if (!n || n.stanza_id) continue; await sposta(stato, n, { stanza_id: st.id, categoria: "risorsa" }, "chat sullo stesso argomento", st.nome); esito.note++; }
     }
     // 3) pilota automatico (1.9): note scritte a mano, tag, collegamenti, agenti nelle stanze
     const pe = await pilota(stato); esito.note += pe.note_manuali; delete pe.note_manuali; Object.assign(esito, pe);
     if (esito.stanze || esito.note || esito.tag || esito.collegamenti || esito.agenti) stato.sync.ultima_organizzazione = { quando: ora(), ...esito };
     return esito;
-  };
+  }
 
   // Promemoria per l'esportazione delle chat di claude.ai (non automatizzabile: nessuna API ufficiale).
   M.promemoriaChat = function (stato, adesso = Date.now()) {
