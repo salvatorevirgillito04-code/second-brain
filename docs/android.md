@@ -77,6 +77,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.9.0 | 14 | `c817ef9838e3d5c009dc0ebc0423d3e2c89440d5a0890fb0315b9101b1adf63e` (commit cc40a61, riprodotto due volte identico) |
 | 1.9.1 | 15 | `641d278b1e70e3be9e28e8693c00a30a1e3b3428d41fb0b506e07e90d731591e` (commit 4e49be9, riprodotto due volte identico) |
 | 1.9.2 | 16 | `9cfa2caa6efecc9334938fce4e33b65e41bdf3c5d07ffe199d72a084642e6268` (commit 41868e8, riprodotto due volte identico) |
+| 1.9.3 | 17 | `b28f8f9e1b0751ba114121c16fd0884beaa9cb9f7f2f0fd761b97cfc0dcb8a3d` (commit 44576d9, riprodotto due volte identico) |
 
 ## 1.2
 - **Collegamenti scritti**: `[[Titolo]]` nel testo collega la nota con quel titolo (o prima riga) se è unica. Titoli inesistenti o ambigui non vengono collegati e sono segnalati; per quelli inesistenti c'è «Crea nota». I collegamenti scelti dall'elenco restano; quelli scritti si aggiungono al salvataggio.
@@ -172,7 +173,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - Nuovo formato dell'esportazione di claude.ai: l'email porta un elenco di file (manifest JSON) con link a più ZIP. Se scegli l'elenco, l'app lo riconosce e mostra «Scarica conversations-000.zip» (apre il link su claude.ai, che scade dopo 24 ore); poi si sceglie lo ZIP scaricato.
 - Lo ZIP delle conversazioni è accettato anche senza un unico `conversations.json`: legge tutti i file .json/.jsonl con conversazioni (anche uno per chat) e le varianti di campi id/title/messages/role.
 
-## 1.9.3 (non ancora firmata)
+## 1.9.3
 - **Elimina la stanza e le sue note**: nella pagina della stanza, con conferma e copia di sicurezza; elimina le note della stanza e dei suoi progetti e i progetti; le esecuzioni collegate restano senza stanza. Le note eliminate non tornano con il pilota.
 - **Mappa «Atlante notturno»** (progettata con gli agenti ui-designer, design-system-architect e accessibility-expert e le skill dataviz, ui-ux-pro-max e impeccable): ogni stanza ha una tinta propria (24 tinte OKLCH validate per contrasto e daltonismo, assegnate senza collisioni e legate all'id) e una nebulosa; stanze = anelli, progetti = rombi, note con una forma per categoria (area punto, risorsa rombino, da organizzare anello aperto, archivio punto spento); archi per tipo (stanza continuo nella tinta, progetto puntinato, nota↔nota più alto); emisfero posteriore nella nebbia; campo stellato fermo; note toccate in settimana con nucleo bianco che scintilla piano; etichette con contorno, senza sovrapposizioni; archi disegnati a gruppi (pochi stroke).
 - Accessibilità: legenda con le forme vere, riepilogo per TalkBack sulla tela (`role="img"`), scheda annunciata (`aria-live`), bersaglio di tocco di almeno 48 px, «riduci animazioni» rispettato anche se cambia con la mappa aperta.
