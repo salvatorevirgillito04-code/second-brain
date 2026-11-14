@@ -40,3 +40,27 @@ Regole:
 - Non associare sessioni ad agenti o stanze: le associazioni le crea l'utente nell'app (`collegamenti`).
 - Lo stato salvato è una rilevazione puntuale, non uno stato in tempo reale.
 - Nessun token, chiave o password nel codice o nel repository. La chiave di firma è nel Google Drive dell'utente (cartella «Second Brain - firma app»), la password nel suo gestore di password.
+
+## Agenti pianificati (nella sessione «Second Brain-Stato»)
+
+Autorizzazione (data dall'utente il 14/11/2026): push consentito solo sul ramo `dati`, solo per `dati/stato/attese.md` e `dati/stato/resoconto-settimanale.md`. Mai force push. Se il rebase va in conflitto: `--abort` e niente pubblicazione. Il procedimento git è quello del passo 4 di «aggiorna stato».
+
+**«sblocca attese»** (ogni mattina): `list_sessions` (mine: true). Per ogni sessione con status_bucket BLOCKED, leggi l'ultima domanda con `list_events` (kinds user/assistant/result, limit 100).
+Scrivi `dati/stato/attese.md`, con una sezione per sessione:
+- titolo e `https://claude.ai/code/<id>`;
+- cosa chiede, in 1 riga;
+- la risposta consigliata, pronta da incollare, con il motivo;
+- i rischi.
+
+Non scrivere nelle altre sessioni e non rispondere al posto dell'utente. Niente segreti né dati personali. Commit: «Attese: <data>».
+
+**«resoconto settimanale»** (lunedì): `list_sessions` più `git log` dei 7 giorni precedenti sul ramo `dati`.
+Scrivi `dati/stato/resoconto-settimanale.md` con:
+- avanzato;
+- fermo, e perché;
+- decisioni da prendere;
+- 3 priorità consigliate.
+
+Le stime di costo vanno indicate come stime, mai come addebiti. Commit: «Resoconto settimanale: <data>».
+
+Catalogo: il 14/11/2026 l'utente ha autorizzato l'aggiunta (solo file nuovi) in `dati/app/{agenti,skill,stanze,progetti}` delle schede di skill e agenti reali (`.claude/`) e della stanza «Trading oro e Forex». Il progetto trading è descritto in `docs/progetto-trading.md`.
