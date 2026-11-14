@@ -206,7 +206,7 @@ ok(wid && typeof wid.inbox === "number" && wid.attesa >= 1, "widget aggiornato c
 await page.waitForTimeout(4000);
 const globo = await page.evaluate(() => window.__mem.globo || []);
 const png = (b) => Buffer.from(b.slice(0, 12), "base64").subarray(1, 4).toString() === "PNG";
-ok(globo.length === 32 && globo.every(png) && new Set(globo).size === 32, "widget animato del globo: 32 fotogrammi PNG diversi, pubblicati insieme");
+ok(globo.length === 16 && globo.every(png) && new Set(globo).size === 16, "widget animato del globo: 16 fotogrammi PNG diversi, pubblicati insieme");
 await vai("impostazioni"); await page.click("#b-notifiche"); await page.waitForTimeout(150);
 ok((await T("main")).includes("Notifiche interventi") && (await T("main")).includes("attive"), "notifiche attivate su richiesta");
 await page.evaluate(() => { window.__apri("home-rapido"); }); await page.waitForTimeout(200);

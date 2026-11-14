@@ -120,3 +120,8 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 ## 1.7.1: widget più fluido
 - 32 fotogrammi da 256×256, uno ogni 110 ms (ciclo di 3,5 s), con **dissolvenza incrociata** tra un fotogramma e il successivo (`res/anim/globo_in.xml` e `globo_out.xml`). Oscillazione più piccola, quindi meno salto tra un fotogramma e l'altro.
 - Memoria usata dal launcher per il widget: circa 8 MB (32 × 256 KB).
+
+## 1.7.2: widget senza tremolio
+- Nel widget il globo resta **fermo**: con fotogrammi sfogliati dal launcher ogni spostamento diventava un tremolio. Si anima solo la luce: le connessioni si accendono a onde e i nuclei pulsano. Così la dissolvenza tra fotogrammi è continua.
+- 16 fotogrammi da 256 px, uno ogni 200 ms, con dissolvenza di 200 ms: metà del carico della 1.7.1 (circa 4 MB nel launcher). Si accetta solo un ciclo completo, così nel `ViewFlipper` non restano fotogrammi vuoti.
+- Il globo nella Mappa dell'app resta animato e in rotazione (lì il disegno è in tempo reale).
