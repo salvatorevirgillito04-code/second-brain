@@ -78,6 +78,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.9.1 | 15 | `641d278b1e70e3be9e28e8693c00a30a1e3b3428d41fb0b506e07e90d731591e` (commit 4e49be9, riprodotto due volte identico) |
 | 1.9.2 | 16 | `9cfa2caa6efecc9334938fce4e33b65e41bdf3c5d07ffe199d72a084642e6268` (commit 41868e8, riprodotto due volte identico) |
 | 1.9.3 | 17 | `b28f8f9e1b0751ba114121c16fd0884beaa9cb9f7f2f0fd761b97cfc0dcb8a3d` (commit 44576d9, riprodotto due volte identico) |
+| 1.9.4 | 18 | `fb8acd92f36394b70e7ae1aab497ed8534f24f494bdc3e0c1fe9b187ff74bec4` (commit c1e2655, riprodotto due volte identico) |
 
 ## 1.2
 - **Collegamenti scritti**: `[[Titolo]]` nel testo collega la nota con quel titolo (o prima riga) se è unica. Titoli inesistenti o ambigui non vengono collegati e sono segnalati; per quelli inesistenti c'è «Crea nota». I collegamenti scelti dall'elenco restano; quelli scritti si aggiungono al salvataggio.
@@ -178,5 +179,5 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - **Mappa «Atlante notturno»** (progettata con gli agenti ui-designer, design-system-architect e accessibility-expert e le skill dataviz, ui-ux-pro-max e impeccable): ogni stanza ha una tinta propria (24 tinte OKLCH validate per contrasto e daltonismo, assegnate senza collisioni e legate all'id) e una nebulosa; stanze = anelli, progetti = rombi, note con una forma per categoria (area punto, risorsa rombino, da organizzare anello aperto, archivio punto spento); archi per tipo (stanza continuo nella tinta, progetto puntinato, nota↔nota più alto); emisfero posteriore nella nebbia; campo stellato fermo; note toccate in settimana con nucleo bianco che scintilla piano; etichette con contorno, senza sovrapposizioni; archi disegnati a gruppi (pochi stroke).
 - Accessibilità: legenda con le forme vere, riepilogo per TalkBack sulla tela (`role="img"`), scheda annunciata (`aria-live`), bersaglio di tocco di almeno 48 px, «riduci animazioni» rispettato anche se cambia con la mappa aperta.
 
-## 1.9.4 (non ancora firmata)
+## 1.9.4
 - **«Aggiorna ora» non fallisce più**: avviata dall'app con il token, l'attività pianificata apriva una sessione temporanea senza il connettore claude-code-remote (`list_sessions`) e mandava la notifica «aggiorna stato non è riuscito». Ora il pulsante scarica subito l'ultima rilevazione e mostra l'ora della prossima (ogni 3 ore, minuto 18 UTC, nella sessione «Second Brain-Stato», che ha il connettore). Il vecchio token si rimuove dal telefono con un pulsante; va revocato anche su claude.ai/code/routines.
