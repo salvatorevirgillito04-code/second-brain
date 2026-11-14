@@ -207,7 +207,7 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
   const titoloNota = (n) => (n.titolo && n.titolo.trim()) || String(n.testo || "").split("\n")[0].slice(0, 80) || "(nota vuota)";
   // 1.5: risposte pronte scritte dall'agente «sblocca attese» (dati/stato/attese.md)
   function analizzaAttese(md) {
-    return String(md || "").split(/\n(?=## )/).filter((b) => b.startsWith("## ")).map((b) => {
+    return String(md || "").split(/\n(?=## )/).filter((b) => b.startsWith("## ") && !/^## Gestite/.test(b)).map((b) => {
       const riga = (et) => { const m = b.match(new RegExp("\\*\\*" + et + "[^*]*\\*\\*\\s*(.+)")); return m ? m[1].trim() : ""; };
       const link = (b.match(/https:\/\/claude\.ai\/code\/session_[A-Za-z0-9]+/) || [""])[0];
       const risp = riga("Risposta consigliata"); const cit = risp.match(/«([^»]+)»/);
@@ -216,12 +216,14 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
   }
   function risposte() {
     const a = (S.stato.stato_lavoro || []).find((x) => x.id === "attese"); if (!a) return "";
-    const v = analizzaAttese(a.testo); if (!v.length) return "";
+    const v = analizzaAttese(a.testo), gest = (a.testo.match(/\n## Gestite[^\n]*\n+([\s\S]*?)(?=\n## |$)/) || [])[1];
+    if (!v.length && !gest) return "";
     const ora = (a.testo.match(/rilevazione\s+([0-9T:\-]+Z?)/) || [])[1];
     return `<section><h2>Risposte pronte · ${v.length}${ora ? " · " + esc(eta(ora)) : ""}</h2><div class="pronte">${v.map((x, i) => `<details class="blocco pronta"${i === 0 ? " open" : ""}><summary><b>${esc(x.titolo)}</b><span class="small muted">${esc(x.chiede)}</span></summary>
       ${x.risposta ? `<p class="risposta">${esc(x.risposta.replace(/\*\*|`/g, ""))}</p>` : ""}${x.rischi ? `<p class="small muted">Rischi: ${esc(x.rischi.replace(/\*\*|`/g, ""))}</p>` : ""}
       <div class="azioni">${x.copia ? `<button class="btn" data-copia="${esc(x.copia)}">Copia risposta</button>` : ""}${x.link ? `<button class="btn v" data-sessione="${esc(x.link)}">Apri sessione</button>` : ""}</div></details>`).join("")}</div>
-      <p class="small muted">Preparate dall'agente «sblocca attese». Decidi tu: incolla la risposta nella sessione solo se la condividi.</p></section>`;
+      ${gest ? `<p class="small"><b>Gestite dal coordinatore:</b> ${esc(gest.trim().replace(/\*\*|`/g, "").slice(0, 600))}</p>` : ""}
+      <p class="small muted">Preparate dal coordinatore degli agenti. Decidi tu: incolla la risposta nella sessione solo se la condividi.</p></section>`;
   }
   const catNota = (n) => (CAT[n.categoria] ? n.categoria : "inbox");
   const statoStanza = (s) => s.stato || (s.archiviata ? "archiviata" : "attiva");
