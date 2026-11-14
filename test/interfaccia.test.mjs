@@ -41,7 +41,7 @@ await ctx.addInitScript(() => {
     avviaRoutine: (id) => { mem.avvii = (mem.avvii || 0) + 1; setTimeout(() => window.__risposta(id, 200, JSON.stringify({ type: "routine_fire", claude_code_session_id: "session_Z" })), 10); },
     fine: (e) => { mem.fine = e; },
     notificheConsentite: () => !!mem.notifiche, richiediNotifiche: () => { mem.notifiche = true; setTimeout(() => window.__notifiche(true), 10); },
-    notifica: (id, t, x) => { (mem.notificate ||= []).push(id); return true; }, aggiornaWidget: (j) => { mem.widget = JSON.parse(j); }, aggiornaGlobo: (b) => { mem.globo = b; return "ok"; },
+    notifica: (id, t, x) => { (mem.notificate ||= []).push(id); return true; }, aggiornaWidget: (j) => { mem.widget = JSON.parse(j); }, fotogrammaGlobo: (i, b) => { (mem.fotogrammi ||= [])[i] = b; return "ok"; }, pubblicaGlobo: (n) => { mem.globo = mem.fotogrammi.slice(0, n); return "ok"; },
   };
 });
 const page = await ctx.newPage(); page.on("pageerror", (e) => errori.push(e.message));
@@ -203,9 +203,10 @@ await page.fill("#cerca", ""); await page.waitForTimeout(100);
 ok((await T("main")).includes("Attendono un tuo intervento") && (await T("main")).includes("approva il testo"), "Home: sessioni che attendono un tuo intervento");
 const wid = await page.evaluate(() => window.__mem.widget);
 ok(wid && typeof wid.inbox === "number" && wid.attesa >= 1, "widget aggiornato con i conteggi reali");
-await page.waitForTimeout(150);
-const globo = await page.evaluate(() => window.__mem.globo || "");
-ok(globo.length > 1000 && Buffer.from(globo.slice(0, 12), "base64").subarray(1, 4).toString() === "PNG", "widget del globo: immagine PNG disegnata e inviata");
+await page.waitForTimeout(2500);
+const globo = await page.evaluate(() => window.__mem.globo || []);
+const png = (b) => Buffer.from(b.slice(0, 12), "base64").subarray(1, 4).toString() === "PNG";
+ok(globo.length === 20 && globo.every(png) && new Set(globo).size === 20, "widget animato del globo: 20 fotogrammi PNG diversi, pubblicati insieme");
 await vai("impostazioni"); await page.click("#b-notifiche"); await page.waitForTimeout(150);
 ok((await T("main")).includes("Notifiche interventi") && (await T("main")).includes("attive"), "notifiche attivate su richiesta");
 await page.evaluate(() => { window.__apri("home-rapido"); }); await page.waitForTimeout(200);

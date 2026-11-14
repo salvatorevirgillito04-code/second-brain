@@ -107,13 +107,16 @@ public class Ponte {
         WidgetSecondBrain.aggiornaTutti(ctx);
     }
 
-    /** Immagine del globo per il widget (PNG in base64, disegnata da globo.js). */
-    @JavascriptInterface public String aggiornaGlobo(String b64) {
+    /** Widget animato del globo: un fotogramma alla volta (PNG base64, disegnato da globo.js), poi pubblicaGlobo. */
+    @JavascriptInterface public String fotogrammaGlobo(int i, String b64) {
         try {
             if (b64 == null || b64.length() > WidgetGlobo.MAX_BYTE * 4 / 3 + 8) return "troppo grande";
-            WidgetGlobo.salva(ctx, android.util.Base64.decode(b64, android.util.Base64.DEFAULT));
+            WidgetGlobo.fotogramma(ctx, i, android.util.Base64.decode(b64, android.util.Base64.DEFAULT));
             return "ok";
         } catch (Exception e) { return "errore (" + e.getClass().getSimpleName() + ")"; }
+    }
+    @JavascriptInterface public String pubblicaGlobo(int n) {
+        try { WidgetGlobo.pubblica(ctx, n); return "ok"; } catch (Exception e) { return "errore (" + e.getClass().getSimpleName() + ")"; }
     }
 
     /** Chiamato da sfondo.html al termine della sincronizzazione in background. */

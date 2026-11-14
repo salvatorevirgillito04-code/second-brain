@@ -1,7 +1,7 @@
 // Schermate di anteprima della 1.5 con dati DIMOSTRATIVI (mai nell'archivio reale). Uso: node test/anteprima-1.5.mjs <cartella>
 import { createRequire } from "node:module"; import { readFileSync } from "node:fs"; import { join, dirname } from "node:path"; import { fileURLToPath } from "node:url";
 const M = createRequire(import.meta.url)("../android/app/src/main/assets/www/motore.js");
-const { chromium } = createRequire(import.meta.url)("playwright");
+const { chromium } = createRequire(import.meta.url)("playwright"); const require_fs = () => createRequire(import.meta.url)("node:fs");
 const WWW = join(dirname(fileURLToPath(import.meta.url)), "../android/app/src/main/assets/www"), OUT = process.argv[2];
 const s = M.statoVuoto(); const t = "2026-11-14T08:00:00Z";
 for (const [id, nome] of [["st-tv", "TCL Minimal TV"], ["st-sb", "Second brain"], ["st-va", "Voice assistant"], ["st-fk", "Forklift Tycoon"], ["st-tr", "Trading oro e Forex"]]) await M.salvaRecord(s, "stanze", id, { nome, stato: "attiva", obiettivi: [], agenti_ids: [] });
@@ -29,4 +29,6 @@ await p.click('[data-modo="rete"]'); await p.waitForTimeout(500); await p.screen
 await vai("stanze"); await p.screenshot({ path: join(OUT, "5-stanze.png") });
 const png = await p.evaluate(() => window.SBGlobo.immagineWidget(window.SBMotore, JSON.parse(window.Android.caricaDati()), 512, Date.parse("2026-11-14T09:00:00Z")));
 (await import("node:fs")).writeFileSync(join(OUT, "6-widget-globo.png"), Buffer.from(png, "base64"));
+const foto = await p.evaluate(() => { const G = window.SBGlobo, s = JSON.parse(window.Android.caricaDati()), q = Date.parse("2026-11-14T09:00:00Z"); return Array.from({ length: G.FOTOGRAMMI }, (_, i) => G.fotogrammaWidget(window.SBMotore, s, 300, q, i / G.FOTOGRAMMI)); });
+foto.forEach((b, i) => (require_fs().writeFileSync(join(OUT, `widget-f${String(i).padStart(2, "0")}.png`), Buffer.from(b, "base64"))));
 await browser.close(); console.log("ok");

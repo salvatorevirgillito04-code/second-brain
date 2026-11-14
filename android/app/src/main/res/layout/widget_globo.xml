@@ -1,9 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- Widget animato: il launcher sfoglia i fotogrammi in ciclo (20 fotogrammi x 150 ms = 3 s). -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/g_radice" android:layout_width="match_parent" android:layout_height="match_parent"
     android:background="@drawable/widget_sfondo">
-    <ImageView android:id="@+id/g_img" android:layout_width="match_parent" android:layout_height="match_parent"
-        android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+    <ViewFlipper android:id="@+id/g_flip" android:layout_width="match_parent" android:layout_height="match_parent"
+        android:autoStart="true" android:flipInterval="150">
+        <ImageView android:id="@+id/g_f0" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f1" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f2" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f3" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f4" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f5" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f6" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f7" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f8" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f9" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f10" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f11" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f12" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f13" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f14" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f15" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f16" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f17" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f18" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f19" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f20" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f21" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f22" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+        <ImageView android:id="@+id/g_f23" android:layout_width="match_parent" android:layout_height="match_parent" android:scaleType="fitCenter" android:contentDescription="Globo delle connessioni di Second Brain" />
+    </ViewFlipper>
     <TextView android:id="@+id/g_vuoto" android:layout_width="match_parent" android:layout_height="match_parent"
         android:gravity="center" android:padding="12dp" android:textColor="#98A0C8" android:textSize="12sp"
         android:text="Apri Second Brain per disegnare il globo" />

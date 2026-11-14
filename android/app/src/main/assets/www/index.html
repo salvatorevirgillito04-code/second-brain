@@ -254,12 +254,13 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
   // widget del globo: nuova immagine se cambiano le relazioni o ogni 15 minuti (il globo ruota con l'ora)
   let globoFirma = "", globoQuando = 0;
   function aggiornaGlobo() {
-    if (!A || !A.aggiornaGlobo || !window.SBGlobo) return;
+    if (!A || !A.fotogrammaGlobo || !window.SBGlobo) return;
     const firma = M.relazioni(S.stato).length + "/" + L("note").length + "/" + L("stanze").length;
     if (firma === globoFirma && Date.now() - globoQuando < 15 * 60000) return;
     globoFirma = firma; globoQuando = Date.now();
-    setTimeout(() => { try { A.aggiornaGlobo(window.SBGlobo.immagineWidget(M, S.stato, 512)); } catch (_) {} }, 50);
+    setTimeout(() => window.SBGlobo.inviaWidget(A, M, S.stato, 16), 50);
   }
+
   async function scrivi(col, id, campi) {
     const prima = id ? T(col, id) : null;
     const dati = prima ? { ...prima, ...campi, aggiornato_il: ora() } : { ...campi, creato_il: ora() };
