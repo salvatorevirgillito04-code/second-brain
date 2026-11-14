@@ -31,3 +31,14 @@ Causa del problema precedente: il token a grana fine non aveva repository né pe
 Esito dichiarato dall'utente: **superato** su OPPO (Android 16). Aggiornamento 1.1.0 → 1.1.1 con dati conservati,
 versione «1.1.1 (4)» in Avanzate, sincronizzazione completata senza errori.
 APK `54f72ddd…cb75`, certificato `955BD34F…57B4E4D5`.
+
+## Collaudo 1.3.0 (14/11/2026, controllo delle 00:41 UTC)
+
+Verificato dal repository e dall'attività pianificata:
+- L'attività «Second Brain – stato (sessione dedicata)» è partita alle 00:18 UTC con esito riuscito e ha pubblicato `Stato agenti: rilevazione 2026-11-14T00:19:14Z` (commit a5f95a6): 11 sessioni, nessun troncamento, solo `dati/stato/`. La prossima esecuzione è alle 02:18 UTC.
+- Ultimo avvio registrato: quello pianificato delle 00:18. Dopo le 22:18 UTC non risultano avvii da «Aggiorna ora».
+- L'app ha inviato 13 modifiche al ramo `dati` dalle 21:00 UTC (stanze e note di sessione). Le 5 note `sessione-…` presenti nel repository sono state rese accessibili agli agenti dall'utente.
+
+Da controllare sul telefono:
+- che la sincronizzazione in background avvenga con l'app chiusa (in Impostazioni › Automazioni, l'ora dell'«ultima sincronizzazione in background»);
+- il pulsante «Aggiorna ora» con il token dell'attività.
