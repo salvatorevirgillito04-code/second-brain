@@ -1,0 +1,6 @@
+{
+  "nome": "impeccable",
+  "descrizione": "Design, redesign, critica, audit, rifinitura e animazione di interfacce (siti, app, schermate Android). 23 comandi: shape, critique, audit, polish, bolder, quieter, distill, harden, animate, colorize, typeset, layout, clarify, adapt, optimize…",
+  "procedura": "Invocala con /impeccable <comando> <obiettivo>, es. «/impeccable critique la Home di Second Brain».\nCopia senza motore binario: i comandi live, generate, hooks, doctor e foundations non sono disponibili.\n\nFile: .claude/skills/impeccable/SKILL.md (repository second-brain, Apache 2.0)",
+  "creato_il": "2026-11-14T07:30:00.000Z"
+}
