@@ -35,7 +35,7 @@ await ctx.addInitScript(() => {
     github: (id, m, p, c) => { window.__nodeGithub(id, m, p, c).then(([i, s, b]) => window.__risposta(i, s, b)); },
     esporta: (nome, testo, msg) => { mem.esportato = testo; setTimeout(() => window.__esportato(true, msg), 10); },
     importa: () => setTimeout(() => window.__importato(true, window.__fileDaImportare), 10), importaFile: () => setTimeout(() => window.__fileScelto(true, window.__fileB64), 10),
-    infoApp: () => JSON.stringify({ versione: "1.3.0", codice: 6, pacchetto: "it.secondbrain.app" }), apriLink: () => {},
+    infoApp: () => JSON.stringify({ versione: "1.3.0", codice: 6, pacchetto: "it.secondbrain.app" }), apriLink: (u) => { window.__linkAperto = u; },
     haRoutine: () => !!mem.routine, idRoutine: () => (mem.routine || ""), rimuoviRoutine: () => { mem.routine = null; },
     impostaRoutine: (id, tok) => (/^trig_[A-Za-z0-9]{10,}$/.test(id) && tok.startsWith("sk-ant-oat01-") ? ((mem.routine = id), "ok") : "non valido"),
     avviaRoutine: (id) => { mem.avvii = (mem.avvii || 0) + 1; setTimeout(() => window.__risposta(id, 200, JSON.stringify({ type: "routine_fire", claude_code_session_id: "session_Z" })), 10); },
@@ -169,6 +169,13 @@ ok((await T("main")).includes("coppie di note simili"), "note simili segnalate n
 await page.click(`[data-apri="nota"][data-id="${idOrto}"]`); await page.waitForTimeout(150);
 ok(/Note simili · 1[\s\S]*%/.test(await T("main")), "nota: sezione «Note simili» con percentuale, nessuna unione");
 const zipB64 = readFileSync(join(QUI, "campioni/esportazione-claude.zip")).toString("base64");
+// manifest della nuova esportazione (email): niente importazione, pulsante per scaricare lo ZIP delle conversazioni
+const manifesto = Buffer.from(JSON.stringify({ version: "1.0", data_files: [{ category: "memories", filename: "memories-000.zip", export_url: "https://claude.ai/export/o/download/m1" }, { category: "conversations", filename: "conversations-000.zip", export_url: "https://claude.ai/export/o/download/c1" }] })).toString("base64");
+await page.evaluate((b) => { window.__fileB64 = b; }, manifesto);
+await vai("impostazioni"); await page.click("#b-chat"); await page.waitForTimeout(400);
+ok((await T("#chat-anteprima")).includes("elenco dei file") && !(await page.$("#b-chat-ok")), "manifest riconosciuto: nessuna importazione");
+await page.click('[data-link-chat="0"]'); await page.waitForTimeout(100);
+ok(await page.evaluate(() => window.__linkAperto === "https://claude.ai/export/o/download/c1"), "pulsante «Scarica conversations-000.zip» apre il link giusto");
 await page.evaluate((b) => { window.__fileB64 = b; }, zipB64);
 await vai("impostazioni"); await page.click("#b-chat"); await page.waitForTimeout(400);
 ok((await T("#chat-anteprima")).includes("2 chat trovate") && (await T("#chat-anteprima")).includes("2 scartate") && (await T("#chat-anteprima")).includes("1 allegati"), "anteprima importazione chat dallo ZIP");

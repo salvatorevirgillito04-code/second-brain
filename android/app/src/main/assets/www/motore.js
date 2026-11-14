@@ -620,9 +620,12 @@
   M.analizzaChatClaude = function (dati) {
     if (!Array.isArray(dati)) throw new Error("Il file non contiene un elenco di conversazioni (conversations.json).");
     const chat = [], scartate = []; let allegatiIgnorati = 0;
-    for (const c of dati) {
+    for (const c0 of dati) {
+      // formato classico (uuid, name, chat_messages, sender) e varianti (id, title, messages, role user/assistant)
+      const c = c0 && { ...c0, uuid: typeof c0.uuid === "string" ? c0.uuid : typeof c0.id === "string" ? c0.id : undefined, name: c0.name ?? c0.title,
+        chat_messages: Array.isArray(c0.chat_messages) ? c0.chat_messages : Array.isArray(c0.messages) ? c0.messages : undefined };
       if (!c || typeof c.uuid !== "string" || !Array.isArray(c.chat_messages)) { scartate.push("elemento senza uuid o messaggi"); continue; }
-      const msg = c.chat_messages.filter((m) => m && (m.sender === "human" || m.sender === "assistant"));
+      const msg = c.chat_messages.map((m) => m && !m.sender && m.role ? { ...m, sender: m.role === "user" ? "human" : m.role } : m).filter((m) => m && (m.sender === "human" || m.sender === "assistant"));
       for (const m of msg) allegatiIgnorati += (Array.isArray(m.attachments) ? m.attachments.length : 0) + (Array.isArray(m.files) ? m.files.length : 0);
       const righe = msg.map((m) => ({ chi: m.sender === "human" ? "Tu" : "Claude", quando: m.created_at, testo: testoMessaggio(m).trim() })).filter((r) => r.testo);
       if (!righe.length) { scartate.push(`«${c.name || c.uuid}»: nessun messaggio di testo`); continue; }
@@ -631,6 +634,37 @@
         testo: righe.map((r) => `${r.chi}${r.quando ? " (" + String(r.quando).slice(0, 16).replace("T", " ") + ")" : ""}:\n${r.testo}`).join("\n\n") });
     }
     return { chat, scartate, allegatiIgnorati };
+  };
+  // Esportazione di claude.ai dal 2026: l'email porta un «manifest» JSON con i link agli ZIP (categorie conversations, projects, …).
+  // Restituisce i link delle conversazioni (solo https://claude.ai/export/…), o null se il JSON non è un manifest.
+  M.manifestEsportazione = function (v) {
+    if (!v || typeof v !== "object" || Array.isArray(v) || !Array.isArray(v.data_files)) return null;
+    return v.data_files.filter((f) => f && f.category === "conversations" && /^https:\/\/claude\.ai\/export\/[A-Za-z0-9/_-]+$/.test(String(f.export_url || "")))
+      .map((f) => ({ nome: String(f.filename || "conversations.zip").replace(/[^\w.\-]/g, "").slice(0, 80), url: f.export_url, parte: f.part ?? null }));
+  };
+  // Conversazioni da un valore JSON: elenco, oggetto con elenco (conversations/chats/data) o una sola conversazione.
+  M.conversazioniDaJson = function (v) {
+    if (Array.isArray(v)) return v;
+    if (v && typeof v === "object") {
+      for (const k of ["conversations", "chats", "data"]) if (Array.isArray(v[k])) return v[k];
+      if (Array.isArray(v.chat_messages) || Array.isArray(v.messages)) return [v];
+    }
+    return [];
+  };
+  M.conversazioniDaTesto = function (testo) {
+    try { return M.conversazioniDaJson(JSON.parse(testo)); }
+    catch (_) { // JSON Lines: una conversazione per riga
+      const out = []; for (const r of String(testo).split("\n")) { const t = r.trim(); if (!t) continue; try { out.push(...M.conversazioniDaJson(JSON.parse(t))); } catch (_) { return []; } }
+      return out;
+    }
+  };
+  // ZIP dell'esportazione: conversations.json se c'è, altrimenti tutti i file .json/.jsonl con conversazioni (anche uno per chat).
+  M.chatDaZip = async function (bytes) {
+    const file = await M.leggiTuttiDaZip(bytes, (n) => /\.jsonl?$/i.test(n));
+    const principale = file.filter((f) => /(^|\/)conversations\.json$/i.test(f.nome));
+    const conv = []; for (const f of (principale.length ? principale : file)) conv.push(...M.conversazioniDaTesto(f.testo));
+    if (!conv.length) throw new Error(`Nello ZIP non ho trovato conversazioni (file: ${file.map((f) => f.nome).slice(0, 8).join(", ") || "nessun .json"}).`);
+    return conv;
   };
   // Crea una nota ORIGINALE e PRIVATA per ogni chat nuova. Le chat già importate non vengono mai sovrascritte.
   M.importaChatClaude = async function (stato, analisi, quando) {

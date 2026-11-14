@@ -489,7 +489,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
           <div class="azioni"><button class="btn v" id="b-obs-esp">Esporta per Obsidian</button><button class="btn v" id="b-obs-imp">Importa da Obsidian</button></div>
           <p class="small muted">Obsidian: lo ZIP contiene una cartella di file Markdown (.md) con proprietà, #tag e [[collegamenti]]; aprila in Obsidian come cassaforte. L'importazione aggiunge le note che non hai già, sempre private; non sovrascrive nulla.</p><p class="stato" id="obs-stato"></p><div id="obs-anteprima"></div>
           <p class="small muted">L'esportazione include tutto, anche le note private, con impronta di controllo. Il ripristino accetta anche i backup della versione 1.0.</p>
-          <p class="small muted">Chat di Claude: da claude.ai (web o computer) Impostazioni › Privacy › Esporta dati; scegli qui lo ZIP ricevuto via email o il file conversations.json. Ogni chat diventa una nota originale e privata.</p>
+          <p class="small muted">Chat di Claude: da claude.ai (web o computer) Impostazioni › Privacy › Esporta dati; se l'email porta un elenco di file (manifest), sceglilo qui: ti mostro il link dello ZIP «conversations» da scaricare, poi scegli quello ZIP. Ogni chat diventa una nota originale e privata.</p>
           <p class="stato" id="exp-stato"></p><div id="imp-anteprima"></div><p class="stato" id="imp-stato"></p><div id="chat-anteprima"></div><p class="stato" id="chat-stato"></p></div></section>
         <section><h2>Dati di prova</h2><div class="blocco"><p class="small">${nf ? `${nf} elementi marcati come dati di prova. Vengono eliminati solo questi e i riferimenti che li usano.` : "Nessun dato di prova."}</p>
           <div class="azioni"><button class="btn r" id="b-fitt"${nf ? "" : " disabled"}>Elimina solo i dati di prova</button></div><p class="stato" id="fitt-stato"></p></div></section>
@@ -914,6 +914,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (b.id === "b-imp-ok") { ripristina(b); return; }
     if (b.id === "b-chat") { if (A) { S.attesaFile = "chat"; stato("#chat-stato", "Scegli lo ZIP o conversations.json…"); A.importaFile(); } return; }
     if (b.id === "b-chat-ok") { importaChat(b); return; }
+    if (b.dataset.linkChat !== undefined) { const x = (S.linkChat || [])[+b.dataset.linkChat]; if (x && A) A.apriLink(x.url); return; }
     if (b.id === "b-fitt") { conferma(b, async () => { const n = await M.eliminaFittizi(S.stato); await salva(); programmaSync(); render(); toast(`Eliminati ${n} elementi di prova; i dati reali sono rimasti.`); }); return; }
   });
   document.addEventListener("change", async (e) => {
@@ -1012,8 +1013,20 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     try {
       stato("#chat-stato", "Lettura del file…");
       const bin = atob(dati); const bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-      const testo = bytes[0] === 0x50 && bytes[1] === 0x4b ? await M.leggiDaZip(bytes, "conversations.json") : new TextDecoder().decode(bytes);
-      const a = M.analizzaChatClaude(JSON.parse(testo));
+      let conv;
+      if (bytes[0] === 0x50 && bytes[1] === 0x4b) conv = await M.chatDaZip(bytes);
+      else {
+        const testo = new TextDecoder().decode(bytes); let v = null; try { v = JSON.parse(testo); } catch (_) {}
+        const man = v && M.manifestEsportazione(v);
+        if (man) { // email della nuova esportazione: elenco di link, le chat sono in conversations-000.zip
+          S.linkChat = man;
+          anteprima("#chat-anteprima", `<div class="banner att"><b>Questo è l'elenco dei file dell'esportazione, non le chat</b><span>Le chat sono nello ZIP «conversations». Toccalo per scaricarlo (si apre claude.ai con il tuo accesso; il link scade dopo 24 ore), poi torna qui e scegli lo ZIP scaricato.</span>${man.length ? `<div class="azioni">${man.map((x, i) => `<button class="btn" data-link-chat="${i}">Scarica ${esc(x.nome)}</button>`).join("")}</div>` : `<span>Nell'elenco non c'è la categoria «conversations».</span>`}</div>`);
+          stato("#chat-stato", "Scarica lo ZIP delle conversazioni e sceglilo qui.", "att"); return;
+        }
+        conv = v !== null ? M.conversazioniDaJson(v) : M.conversazioniDaTesto(testo);
+        if (!conv.length) throw new Error("Il file non contiene conversazioni.");
+      }
+      const a = M.analizzaChatClaude(conv);
       const gia = a.chat.filter((c) => T("note", c.id)).length; S.chat = a;
       anteprima("#chat-anteprima", `<div class="banner"><b>${a.chat.length} chat trovate</b><span>${a.chat.length - gia} nuove, ${gia} già importate (non verranno modificate)${a.scartate.length ? `, ${a.scartate.length} scartate perché vuote o non riconosciute` : ""}${a.allegatiIgnorati ? `, ${a.allegatiIgnorati} allegati non importati` : ""}.</span><span class="small">Diventeranno note originali e private in «Da organizzare», con fonte e data. Prima viene salvata una copia dei dati attuali.</span>${a.chat.length - gia ? `<div class="azioni"><button class="btn" id="b-chat-ok">Importa ${a.chat.length - gia} chat</button></div>` : ""}</div>`);
       stato("#chat-stato", "Controlla e conferma.", "ok");

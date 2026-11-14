@@ -470,3 +470,32 @@ test("esecuzioni con più agenti: istruzioni, collegamento automatico alla sessi
   await M.sincronizza(s, gh.api(), OPZ); assert.equal(M.elenco(s, "collegamenti").length, 1, "una volta sola");
   assert.deepEqual(M.agentiDi({ agente_id: "z" }), ["z"], "compatibile con i collegamenti a un solo agente");
 });
+
+// ---------- 1.9.2: nuovo formato dell'esportazione di claude.ai ----------
+test("manifest dell'esportazione: riconosciuto, solo i link delle conversazioni su claude.ai/export", () => {
+  const man = { instructions: "…", total_files: 3, version: "1.0", data_files: [
+    { category: "projects", filename: "projects-000.zip", export_url: "https://claude.ai/export/o1/download/aa" },
+    { category: "conversations", filename: "conversations-000.zip", part: 0, export_url: "https://claude.ai/export/o1/download/bb" },
+    { category: "conversations", filename: "conversations-001.zip", part: 1, export_url: "https://evil.example/x" }] };
+  assert.deepEqual(M.manifestEsportazione(man), [{ nome: "conversations-000.zip", url: "https://claude.ai/export/o1/download/bb", parte: 0 }]);
+  assert.equal(M.manifestEsportazione([{ uuid: "x" }]), null);
+  assert.equal(M.manifestEsportazione({ a: 1 }), null);
+});
+test("ZIP nuovo: una conversazione per file, campi id/title/messages/role; altri file ignorati", async () => {
+  const conv = (id, t) => JSON.stringify({ id, title: t, created_at: "2026-11-01T10:00:00Z", messages: [{ role: "user", text: "Ciao " + t }, { role: "assistant", content: [{ type: "text", text: "Risposta" }] }] });
+  const zip = M.zip([{ percorso: "conversations/a.json", testo: conv("u-a", "Prima") }, { percorso: "conversations/b.json", testo: conv("u-b", "Seconda") }, { percorso: "users.json", testo: JSON.stringify([{ uuid: "me" }]) }]);
+  const a = M.analizzaChatClaude(await M.chatDaZip(zip));
+  assert.deepEqual(a.chat.map((c) => c.titolo).sort(), ["Prima", "Seconda"]);
+  assert.equal(a.chat.find((c) => c.titolo === "Prima").messaggi, 2);
+  assert.equal(a.chat.find((c) => c.titolo === "Prima").id, "chat-u-a");
+});
+test("ZIP classico con conversations.json: invariato; ZIP senza conversazioni: errore con i nomi dei file", async () => {
+  const classico = M.zip([{ percorso: "conversations.json", testo: JSON.stringify([{ uuid: "c1", name: "Vecchio", chat_messages: [{ sender: "human", text: "x" }] }]) }, { percorso: "users.json", testo: "[]" }]);
+  assert.equal(M.analizzaChatClaude(await M.chatDaZip(classico)).chat[0].id, "chat-c1");
+  await assert.rejects(M.chatDaZip(M.zip([{ percorso: "memories.json", testo: "{}" }])), /memories\.json/);
+});
+test("JSON Lines e oggetto con elenco «conversations»", () => {
+  const riga = (id) => JSON.stringify({ uuid: id, name: id, chat_messages: [{ sender: "human", text: "t" }] });
+  assert.equal(M.conversazioniDaTesto(riga("a") + "\n" + riga("b")).length, 2);
+  assert.equal(M.conversazioniDaJson({ conversations: [1, 2] }).length, 2);
+});

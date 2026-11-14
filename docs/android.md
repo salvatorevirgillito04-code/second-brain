@@ -162,3 +162,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 
 ## 1.9.1
 - Importazione delle chat di Claude: l'anteprima con «Importa N chat» spariva al ritorno dal selettore dei file (la sincronizzazione ridisegnava la pagina). Ora anteprime e messaggi d'importazione (chat, backup, Obsidian) restano dopo ogni ridisegno.
+
+## 1.9.2 (non ancora firmata)
+- Nuovo formato dell'esportazione di claude.ai: l'email porta un elenco di file (manifest JSON) con link a più ZIP. Se scegli l'elenco, l'app lo riconosce e mostra «Scarica conversations-000.zip» (apre il link su claude.ai, che scade dopo 24 ore); poi si sceglie lo ZIP scaricato.
+- Lo ZIP delle conversazioni è accettato anche senza un unico `conversations.json`: legge tutti i file .json/.jsonl con conversazioni (anche uno per chat) e le varianti di campi id/title/messages/role.
