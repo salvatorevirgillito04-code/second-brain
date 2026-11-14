@@ -11,6 +11,7 @@
     if (!A.haToken() || !A.retePresente()) { A.fine("saltato: nessun token o rete"); return; }
     const s = c.stato;
     const salva = async () => { A.salvaDati(JSON.stringify(s)); };
+    try { await M.organizzaAutomatico(s); } catch (_) {} // pilota automatico anche ad app chiusa
     try { await M.sincronizza(s, api, { owner: "salvatorevirgillito04-code", repo: "second-brain", salva }); s.sync.ultimo_sfondo = { quando: new Date().toISOString(), esito: "ok" }; }
     catch (e) { s.sync.ultimo_sfondo = { quando: new Date().toISOString(), esito: "errore", messaggio: e.message || String(e) }; }
     // notifiche per le sessioni che attendono un tuo intervento (una volta per richiesta), poi widget

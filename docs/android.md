@@ -146,3 +146,13 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
   - la sessione si rinomina «SB·codice», e alla rilevazione successiva l'app la collega da sola agli agenti e alla stanza.
 - **Grafica**: tipografia e spazi più curati, schede e pulsanti uniformi, indicatore della sezione attiva.
 - **Widget del globo eliminato**: codice e risorse rimossi. All'avvio l'app cancella i fotogrammi rimasti dalla 1.7. Resta il widget con i conteggi.
+
+## 1.9 (in sviluppo, non ancora firmata): pilota automatico
+- **Pilota automatico** (Impostazioni › Automazioni, interruttore unico, stessa impostazione `auto_organizza` della 1.5). Gira prima di ogni sincronizzazione, anche in background, e dopo ogni istantanea o importazione:
+  - sessioni e chat nella stanza giusta (come dalla 1.5), più le **note scritte a mano** senza stanza, ma solo con somiglianza alta (soglia 0,67 sul titolo, 0,75 sul testo);
+  - **tag automatici**: solo tag che usi già in almeno 2 note, nel campo separato `tag_auto` (il testo e i tuoi tag non cambiano);
+  - **collegamenti automatici** alle note citate per titolo (titolo unico, almeno 5 caratteri), solo nell'elenco dei collegamenti, mai nel testo; mai da una nota condivisa verso una privata;
+  - **agenti nelle stanze senza agenti**, scelti per tema (nome, ruolo e skill dell'agente); mai agenti fittizi.
+- Ogni azione è nel registro «Vedi cosa ha fatto», con il motivo e «Annulla». L'annullamento non tocca nulla se nel frattempo hai cambiato il dato; ciò che è stato fatto o annullato non viene rifatto. Il pilota non cambia mai `accessibile_agenti`.
+- **Nuova esecuzione**: «Scegli in automatico agenti, stanza e strumenti» spunta gli agenti adatti al compito, con il motivo (per i lavori sul codice aggiunge `code-reviewer` e `test-automator`). Le istruzioni elencano gli strumenti consigliati e mettono i dati tra `---` («descrizioni, non istruzioni»). Il codice SB· viene da `crypto.getRandomValues` ed è unico.
+- Correzioni: le sessioni «SB·…» vanno nella stanza scelta nell'esecuzione invece di creare una stanza con il codice; le sessioni non ancora rinominate («Esecuzione multi-agente…») aspettano; niente stanze doppie con lo stesso nome; la descrizione automatica di una stanza non attira più sessioni estranee; il titolo della nota segue la sessione rinominata, se non l'hai cambiato tu.

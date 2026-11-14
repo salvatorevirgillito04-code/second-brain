@@ -53,6 +53,11 @@ button.chip{cursor:pointer;font:inherit;font-size:.78rem;padding:5px 11px}
 .err{color:var(--err);border-color:currentColor;background:transparent}
 .cfg{color:var(--accento);border-color:currentColor;background:var(--accento-tenue)}
 .vecchio{border-style:dashed;color:var(--tenue)}
+.auto{color:var(--accento2);border-color:currentColor;background:rgba(90,209,255,.1)}
+.chip.auto,#b-auto,#b-registro-auto{white-space:normal;max-width:100%;text-align:left}
+.chip.auto::before{content:"↻";font-size:.9em;opacity:.85}
+fieldset.gruppo{border:0;padding:0;margin:0;min-width:0} fieldset.gruppo legend{padding:0;font-size:.85rem;color:var(--tenue)}
+.scelte label.check{min-height:44px}
 .seg{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px}
 .seg button{flex:0 0 auto;font:inherit;font-size:.86rem;padding:8px 12px;border-radius:999px;border:1px solid var(--linea);background:var(--pannello);color:var(--tenue);cursor:pointer}
 .seg button[aria-pressed="true"]{background:var(--accento-tenue);border-color:var(--accento);color:var(--testo)}
@@ -225,7 +230,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
   <a href="#stanze"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M9 10v10"/></svg>Stanze</a>
 </div></nav>
 <div class="foglio" id="foglio" hidden></div>
-<div class="toast" id="toast" role="status" hidden></div>
+<div class="toast" id="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
 
 <script src="motore.js"></script>
 <script src="globo.js"></script>
@@ -393,7 +398,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
             ${n.accessibile_agenti === true ? `<span class="chip cfg">accessibile agli agenti</span>` : `<span class="chip">privata, solo sul telefono</span>`}${n.corretto_il ? `<span class="chip att">corretta il ${esc(giorno(n.corretto_il))}</span>` : ""}${n.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("note", n.id)}</div>
           ${M.tagNota(n).length ? `<div class="chips">${M.tagNota(n).map((t) => `<button class="chip" data-tag="${esc(t)}">#${esc(t)}</button>`).join("")}</div>` : ""}
           <div class="md">${M.markdown(n.testo, (t) => M.risolviTitolo(S.stato, t, n.id).id)}</div>
-          <div class="chips">${pr ? `<button class="chip cfg" data-apri="progetto" data-id="${esc(pr.id)}">progetto: ${esc(pr.nome)}</button>` : ""}${st ? `<button class="chip cfg" data-apri="stanza" data-id="${esc(st.id)}">stanza: ${esc(st.nome)}</button>` : ""}</div>
+          <div class="chips">${pr ? `<button class="chip cfg" data-apri="progetto" data-id="${esc(pr.id)}">progetto: ${esc(pr.nome)}</button>` : ""}${st ? `<button class="chip cfg" data-apri="stanza" data-id="${esc(st.id)}">stanza: ${esc(st.nome)}</button>` : ""}${n.auto_organizzata ? `<span class="chip auto">messa qui in automatico</span>` : ""}${(n.tag_auto || []).length ? `<span class="chip auto">tag automatici: ${esc(n.tag_auto.map((t) => "#" + t).join(" "))}</span>` : ""}</div>
           ${doppi.length ? `<p class="banner att"><b>Possibile duplicato</b><span>Stesso testo in: ${doppi.map((d) => esc(titoloNota(d))).join(", ")}</span></p>` : ""}
           <div class="azioni"><button class="btn" data-modifica="nota" data-id="${esc(n.id)}">Modifica</button><button class="btn r" data-elimina="note" data-id="${esc(n.id)}">Elimina</button></div></article>
         <section><h2>Sposta in</h2><div class="chips">${Object.entries(CAT).map(([k, [l]]) => `<button class="chip ${catNota(n) === k ? "cfg" : ""}" data-categoria="${k}">${l}</button>`).join("")}</div></section>
@@ -458,7 +463,11 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
           <p class="small muted">Vanno nel repository privato stanze, progetti, agenti, skill, collegamenti e le note che rendi accessibili agli agenti. Eliminare un dato lo toglie dalla versione attuale del repository, non dalla cronologia Git.</p></div></section>
         <section><h2>Automazioni</h2><div class="blocco"><dl class="kv">
             <dt>Sincronizzazione in background</dt><dd>ogni 30 minuti circa con rete, anche ad app chiusa · ultima: ${esc(sy.ultimo_sfondo ? quando(sy.ultimo_sfondo.quando) + (sy.ultimo_sfondo.esito === "ok" ? " (riuscita)" : " (errore: " + (sy.ultimo_sfondo.messaggio || "") + ")") : "non ancora eseguita")}</dd>
-            <dt>Organizzazione automatica</dt><dd>${S.stato.impostazioni && S.stato.impostazioni.auto_organizza === false ? `disattivata <button class="chip cfg" id="b-auto">Attiva</button>` : `attiva: ogni nuova sessione o chat va nella sua stanza (creata se manca), con progetto e risorse · ${esc(sy.ultima_organizzazione ? "ultima: " + quando(sy.ultima_organizzazione.quando) + ` (${sy.ultima_organizzazione.note} note, ${sy.ultima_organizzazione.stanze} stanze nuove)` : "nessuna ancora")} <button class="chip" id="b-auto">Disattiva</button>`}</dd>
+            <dt>Pilota automatico</dt><dd>${(() => { const imp = S.stato.impostazioni || {}, on = imp.auto_organizza !== false, u = sy.ultima_organizzazione, nr = (imp.registro_auto || []).filter((v) => !v.annullata).length;
+              return `<button class="chip ${on ? "cfg" : ""}" id="b-auto" role="switch" aria-checked="${on}" aria-describedby="b-auto-desc">Pilota automatico: ${on ? "attivo" : "spento"}</button>
+              <span id="b-auto-desc">${on ? "mette sessioni, chat e note nella stanza giusta (creata se manca), aggiunge i tag che usi già e i collegamenti alle note citate, assegna agenti adatti alle stanze senza agenti. Non rende mai condivisa una nota e non cambia il testo." : "spento: nessuna azione automatica."}</span>
+              ${u ? ` · ultimo giro: ${esc(quando(u.quando))} (${u.note} note, ${u.stanze} stanze nuove, ${u.tag || 0} tag, ${u.collegamenti || 0} collegamenti, ${u.agenti || 0} agenti)` : ""}
+              <button class="chip cfg" id="b-registro-auto">Vedi cosa ha fatto (${nr})</button>`; })()}</dd>
             <dt>Agenti pianificati</dt><dd>«sblocca attese» e coordinatore 2 volte al giorno, resoconto il lunedì: rispondono da soli solo alle domande senza rischi, il resto arriva qui in «Risposte pronte»</dd>
             <dt>Stato degli agenti</dt><dd>attività pianificata in Claude Code ogni 3 ore · ultima istantanea: ${esc(istantanea() ? quando(istantanea().rilevato_il) : "nessuna")}</dd>
             <dt>«Aggiorna ora»</dt><dd>${A && A.haRoutine() ? "attivo" : "da configurare"}</dd>
@@ -661,7 +670,20 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     $("#f-foglio").onsubmit = async (e) => { e.preventDefault(); try { const msg = await invio(); F.hidden = true; render(); if (msg) toast(msg); } catch (err) { stato("#f-stato", "Non salvato: " + (err.message || err), "err"); } };
     const primo = F.querySelector("input:not([type=checkbox]),textarea"); if (primo) primo.focus();
   }
-  F.onclick = (e) => { if (e.target === F) F.hidden = true; };
+  F.onclick = async (e) => {
+    if (e.target === F) { F.hidden = true; return; }
+    const ann = e.target.closest("[data-annulla-auto]");
+    if (ann) { const r = await M.annullaAuto(S.stato, +ann.dataset.annullaAuto); await salva(); programmaSync(); EDITOR.registroAuto(); stato("#f-stato", r.ok ? "Annullata." : "Non annullata: " + r.motivo + ".", r.ok ? "ok" : "att"); return; }
+    if (e.target.closest("#es-autosel")) {
+      const c = $("#es-compito").value.trim(); if (!c) { stato("#es-auto-motivo", "Scrivi prima il compito.", "att"); return; }
+      const p = M.proponiEsecuzione(S.stato, c), ids = new Set(p.agenti.map((x) => x.id));
+      document.querySelectorAll("#es-ag input").forEach((i) => { i.checked = ids.has(i.value); });
+      if (p.stanza) $("#es-st").value = p.stanza.id;
+      $("#es-auto-motivo").textContent = p.agenti.length
+        ? `Scelti in automatico (puoi togliere o aggiungere): ${p.agenti.map((x) => x.nome + " — " + x.motivo).join("; ")}.${p.stanza ? " Stanza: " + p.stanza.nome + "." : ""}${p.skill.length ? " Skill: " + p.skill.join(", ") + "." : ""}${p.strumenti.length ? " Strumenti: " + p.strumenti.join(", ") + "." : ""}`
+        : "Nessun agente adatto trovato: sceglili tu.";
+    }
+  };
   const opz = (arr, sel, vuota) => `<option value="">${esc(vuota)}</option>` + arr.map((x) => `<option value="${esc(x.id)}"${x.id === sel ? " selected" : ""}>${esc(x.nome || titoloNota(x))}</option>`).join("");
   const caselle = (nome, arr, scelti) => `<div class="scelte" id="${nome}">${arr.map((x) => `<label class="check"><input type="checkbox" value="${esc(x.id)}"${scelti.includes(x.id) ? " checked" : ""}> ${esc(x.nome || titoloNota(x))}</label>`).join("") || `<span class="small muted">Nessun elemento.</span>`}</div>`;
   const valori = (nome) => [...document.querySelectorAll(`#${nome} input:checked`)].map((i) => i.value);
@@ -676,9 +698,19 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
         await salva(); programmaSync(); S.nota = id; setTimeout(() => vai("nota"), 0); return "Nota creata dal modello";
       });
     },
+    registroAuto() {
+      const reg = (S.stato.impostazioni && S.stato.impostazioni.registro_auto) || [];
+      const NOMI = { nota_spostata: "nota messa in una stanza", stanza_creata: "stanza creata", progetto_creato: "progetto creato", tag_aggiunti: "tag aggiunti", collegamento: "collegamento aggiunto", agenti_assegnati: "agenti assegnati alla stanza" };
+      F.innerHTML = `<form id="f-foglio"><h2 id="reg-titolo">Cosa ha fatto il pilota automatico</h2><p class="small muted">Le ultime ${reg.length} azioni, la più recente in alto. «Annulla» rimette com'era; se nel frattempo hai cambiato tu quel dato, non tocca nulla. Ciò che annulli non viene rifatto.</p>
+        <div class="lista">${reg.map((v) => `<div class="riga" style="cursor:default"><span class="t"><b><span class="chip auto">auto</span> ${esc(NOMI[v.tipo] || v.tipo)}: «${esc(v.titolo || "")}»${v.dove ? " → " + esc(v.dove) : ""}</b><span>perché: ${esc(v.perche || "")} · ${esc(quando(v.quando))}</span></span>${v.annullata ? `<span class="chip">annullata</span>` : `<button type="button" class="chip" data-annulla-auto="${v.n}" aria-label="Annulla: ${esc(NOMI[v.tipo] || v.tipo)} «${esc(v.titolo || "")}»">Annulla</button>`}</div>`).join("") || `<p class="vuoto">Nessuna azione automatica finora.</p>`}</div>
+        <p class="stato" id="f-stato" role="status"></p><div class="azioni" style="justify-content:flex-end"><button type="button" class="btn" id="f-annulla">Chiudi</button></div></form>`;
+      F.hidden = false; $("#f-annulla").onclick = () => (F.hidden = true); $("#f-annulla").focus();
+    },
     esecuzione() {
       foglio(`<h2>Nuova esecuzione con più agenti</h2><label>Compito <textarea id="es-compito" required maxlength="2000" placeholder="Cosa devono fare gli agenti?"></textarea></label>
-        <label>Agenti (almeno uno)</label>${caselle("es-ag", L("agenti"), [])}
+        <div class="azioni"><button type="button" class="btn v" id="es-autosel">Scegli in automatico agenti, stanza e strumenti</button></div>
+        <p class="small muted" id="es-auto-motivo" role="status" aria-live="polite"></p>
+        <fieldset class="gruppo" aria-required="true" aria-describedby="es-auto-motivo"><legend>Agenti (almeno uno)</legend>${caselle("es-ag", L("agenti").filter((a) => !a.fittizio), [])}</fieldset>
         <label>Stanza <select id="es-st">${opz(L("stanze").filter((s) => statoStanza(s) !== "archiviata"), "", "nessuna")}</select></label>
         <label>Modo <select id="es-modo"><option value="coordinati">In parallelo, poi unisci i risultati</option><option value="sequenza">Uno dopo l'altro</option></select></label>`, async () => {
         const r = M.preparaEsecuzione(S.stato, { agenti_ids: valori("es-ag"), stanza_id: $("#es-st").value, compito: $("#es-compito").value, modo: $("#es-modo").value });
@@ -686,7 +718,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       });
     },
     istruzioni() {
-      const r = S.istruzioni; if (!r) return;
+      const r = S.istruzioni; if (!r) return; // (le scelte automatiche sono già nel prompt: l'utente lo vede prima di copiarlo)
       F.innerHTML = `<form id="f-foglio"><h2>Istruzioni pronte · SB·${esc(r.codice)}</h2><pre class="istr">${esc(r.prompt)}</pre>
         <p class="small muted">1. Copia. 2. Apri Claude Code e avvia una nuova sessione sul repository giusto. 3. Incolla. La sessione si rinomina «SB·${esc(r.codice)}…» e alla prossima rilevazione la collego agli agenti scelti.</p>
         <div class="azioni" style="justify-content:flex-end"><button type="button" class="btn v" id="istr-chiudi">Chiudi</button><button type="button" class="btn v" id="istr-apri">Apri Claude Code</button><button type="button" class="btn" id="istr-copia">Copia</button></div></form>`;
@@ -862,7 +894,8 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (b.id === "b-nuova-esec") { EDITOR.esecuzione(); return; }
     if (d.copia) { try { await navigator.clipboard.writeText(d.copia); toast("Risposta copiata: incollala nella sessione"); } catch (_) { toast("Copia non riuscita: tieni premuto sul testo per copiarlo"); } return; }
     if (d.sessione) { if (A) A.apriLink(d.sessione); return; }
-    if (b.id === "b-auto") { S.stato.impostazioni ||= {}; S.stato.impostazioni.auto_organizza = S.stato.impostazioni.auto_organizza === false; if (S.stato.impostazioni.auto_organizza) { const e = await M.organizzaAutomatico(S.stato); toast(`Organizzate ${e.note} note, ${e.stanze} stanze nuove`); } await salva(); render(); return; }
+    if (b.id === "b-auto") { S.stato.impostazioni ||= {}; S.stato.impostazioni.auto_organizza = S.stato.impostazioni.auto_organizza === false; if (S.stato.impostazioni.auto_organizza) { const e = await M.organizzaAutomatico(S.stato); toast(`Pilota attivo: ${e.note} note sistemate, ${e.stanze} stanze nuove, ${e.tag || 0} tag, ${e.collegamenti || 0} collegamenti, ${e.agenti || 0} agenti assegnati`); } else toast("Pilota automatico spento"); await salva(); render(); const x = $("#b-auto"); if (x) x.focus(); return; }
+    if (b.id === "b-registro-auto") { EDITOR.registroAuto(); return; }
     if (b.id === "b-sync") { sincronizza(true); return; }
     if (b.id === "b-rimanda") { S.stato.impostazioni ||= {}; S.stato.impostazioni.chat_rimandato_fino = new Date(Date.now() + 7 * 86400000).toISOString(); await salva(); render(); toast("Te lo ricordo tra 7 giorni"); return; }
     if (b.id === "b-aggiorna-ora") { aggiornaOra(); return; }
@@ -892,6 +925,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (!inRete()) { S.stato.sync.errore = { tipo: "rete", messaggio: "Rete assente: le modifiche restano sul telefono e verranno inviate più tardi.", quando: ora() }; await salva(); render(); if (manuale) stato("#sync-stato", "Rete assente: riprova quando sei connesso.", "att"); return; }
     S.inSync = true; chipSync();
     try {
+      try { await M.organizzaAutomatico(S.stato); } catch (_) {} // pilota automatico: un errore qui non blocca la sincronizzazione
       const e = await M.sincronizza(S.stato, api, { owner: OWNER, repo: REPO, salva });
       const parti = [`${e.inviati} inviati`, `${e.ricevuti} ricevuti`];
       if (e.eliminati_remoto) parti.push(`${e.eliminati_remoto} tolti dal repository`);
