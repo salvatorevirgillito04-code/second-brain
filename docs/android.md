@@ -74,6 +74,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.7.0 | 11 | `ccaba16502ccb016edc031761a42c432e5a6102e0866713fee2caedc6be4b55f` (commit ee87213, riprodotto due volte identico) |
 | 1.7.1 | 12 | `90b907347d722e8b8ae5dc99c2d2fb7149927a1919a9ee8b4089198cfc415ebc` (commit fa9940d, riprodotto due volte identico) |
 | 1.8.0 | 13 | `da39eb92843f11075bcf0babdcb7472a4ad646b78754069561828228f05907f9` (commit fec4083, riprodotto due volte identico; la 1.7.2 non è stata firmata) |
+| 1.9.0 | 14 | `c817ef9838e3d5c009dc0ebc0423d3e2c89440d5a0890fb0315b9101b1adf63e` (commit cc40a61, riprodotto due volte identico) |
 
 ## 1.2
 - **Collegamenti scritti**: `[[Titolo]]` nel testo collega la nota con quel titolo (o prima riga) se è unica. Titoli inesistenti o ambigui non vengono collegati e sono segnalati; per quelli inesistenti c'è «Crea nota». I collegamenti scelti dall'elenco restano; quelli scritti si aggiungono al salvataggio.
@@ -147,7 +148,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - **Grafica**: tipografia e spazi più curati, schede e pulsanti uniformi, indicatore della sezione attiva.
 - **Widget del globo eliminato**: codice e risorse rimossi. All'avvio l'app cancella i fotogrammi rimasti dalla 1.7. Resta il widget con i conteggi.
 
-## 1.9 (in sviluppo, non ancora firmata): pilota automatico
+## 1.9: pilota automatico
 - **Pilota automatico** (Impostazioni › Automazioni, interruttore unico, stessa impostazione `auto_organizza` della 1.5). Gira prima di ogni sincronizzazione, anche in background, e dopo ogni istantanea o importazione:
   - sessioni e chat nella stanza giusta (come dalla 1.5), più le **note scritte a mano** senza stanza, ma solo con somiglianza alta (soglia 0,67 sul titolo, 0,75 sul testo);
   - **tag automatici**: solo tag che usi già in almeno 2 note, nel campo separato `tag_auto` (il testo e i tuoi tag non cambiano);
