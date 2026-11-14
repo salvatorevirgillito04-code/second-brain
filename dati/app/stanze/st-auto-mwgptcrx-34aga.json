@@ -1,0 +1,13 @@
+{
+  "nome": "Skill taste-skill GitHub",
+  "descrizione": "Creata automaticamente per una nota senza stanza simile.",
+  "obiettivi": [],
+  "agenti_ids": [
+    "ag-custode-pr"
+  ],
+  "stato": "attiva",
+  "attivita": [],
+  "automatico": true,
+  "creato_il": "2026-11-14T18:04:23.661Z",
+  "agenti_auto": true
+}
