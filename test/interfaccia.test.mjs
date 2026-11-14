@@ -106,6 +106,12 @@ ok((await T("#mappa-info")).includes(`${relazioni} relazioni reali`), `mappa: ${
 const nodiSenza = (await T("#mappa-info")).match(/^(\d+) elementi/)[1];
 await page.check("#isolati"); await page.waitForTimeout(200);
 ok(Number((await T("#mappa-info")).match(/^(\d+) elementi/)[1]) > Number(nodiSenza), "mappa: elementi isolati nascosti di default, visibili a richiesta");
+const pizzica = await page.evaluate(async () => { // due dita che si allontanano: la mappa si ingrandisce (immagine diversa)
+  const t = document.querySelector("#tela"), r = t.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, prima = t.toDataURL();
+  const ev = (tipo, id, x) => t.dispatchEvent(new PointerEvent(tipo, { pointerId: id, clientX: x, clientY: cy, bubbles: true, isPrimary: id === 1 }));
+  t.setPointerCapture = () => {}; ev("pointerdown", 1, cx - 20); ev("pointerdown", 2, cx + 20); ev("pointermove", 1, cx - 80); ev("pointermove", 2, cx + 80); ev("pointerup", 1, cx - 80); ev("pointerup", 2, cx + 80);
+  return t.toDataURL() !== prima && document.querySelector("#scheda").hidden; });
+ok(pizzica, "mappa: ingrandimento con due dita, senza aprire schede");
 if (FOTO) await page.screenshot({ path: join(FOTO, "mappa.png") });
 
 // STANZE E ATTIVITÀ

@@ -99,9 +99,12 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 ## 1.6: globo neurale e widget del globo
 - **Globo neurale** (`assets/www/globo.js`, unico per mappa e widget):
   - le relazioni reali sono assoni curvi sulla sfera, colorati come i due nodi che collegano, con **impulsi** che li percorrono;
-  - stanze e progetti sono neuroni con dendriti ramificati e un nucleo che pulsa; le note sono neuroni più piccoli;
-  - una trama tenue di fondo è solo decorativa: non tocca i nodi e non rappresenta relazioni;
+  - stanze e progetti sono neuroni con un nucleo che pulsa; le note sono neuroni più piccoli (dalla 1.6.1 senza dendriti né trama decorativa);
   - con «riduci animazioni» attivo in Android, il globo resta fermo e senza impulsi.
 - **Widget «Globo di Second Brain»** (2×2, ridimensionabile; tocco = Mappa):
   - Android non permette animazioni nei widget, quindi l'app disegna un'immagine statica del globo (PNG 512×512 in `files/globo.png`);
   - l'immagine si aggiorna quando cambiano le relazioni (al massimo ogni 15 minuti) e a ogni sincronizzazione in background, ruotando un po' di più ogni volta.
+
+## 1.6.1
+- Il globo non disegna più dendriti né la trama decorativa: ogni linea collega due elementi reali.
+- Mappa: ingrandimento con due dita (in entrambe le viste). Sulla sfera il trascinamento verticale segue il dito: trascinando verso l'alto la superficie sale, verso il basso scende.

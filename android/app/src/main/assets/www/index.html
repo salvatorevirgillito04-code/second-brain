@@ -530,7 +530,7 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
     const W = box.clientWidth, H = box.clientHeight; tela.width = W * dpr; tela.height = H * dpr; ctx.scale(dpr, dpr);
     const fermo = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     const rete = G.costruisci(M, S.stato, S.isolati), { nodi, E, idx, vicini } = rete;
-    $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Le connessioni luminose con gli impulsi sono relazioni reali; la trama tenue di fondo è solo decorativa. Trascina per ruotare o spostarti, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
+    $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Ogni connessione è una relazione reale. Trascina per ruotare o spostarti, avvicina o allontana con due dita, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
     const modo = S.modoMappa === "rete" ? "rete" : "sfera";
     nodi.forEach((n, i) => { n.x = Math.cos(i * 2.4) * (40 + i * 6); n.y = Math.sin(i * 2.4) * (40 + i * 6); n.vx = 0; n.vy = 0; });
     for (let it = 0; modo === "rete" && it < 300; it++) {
@@ -568,13 +568,25 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
       disegna();
     }
     let tocco = null, gira = modo === "sfera" && !fermo;
-    tela.onpointerdown = (e) => { tela.setPointerCapture(e.pointerId); gira = false; tocco = { x: e.clientX, y: e.clientY, vx: vista.x, vy: vista.y, rx: vista.rx, ry: vista.ry, mosso: false }; };
+    const dita = new Map(); let pizzico = null; // ingrandimento con due dita
+    const zoom = (z) => { vista.z = Math.max(0.3, Math.min(3, z)); disegna(); };
+    tela.onpointerdown = (e) => {
+      tela.setPointerCapture(e.pointerId); gira = false; dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (dita.size === 2) { const [a, b] = [...dita.values()]; pizzico = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: vista.z }; tocco = null; return; }
+      tocco = { x: e.clientX, y: e.clientY, vx: vista.x, vy: vista.y, rx: vista.rx, ry: vista.ry, mosso: false };
+    };
     tela.onpointermove = (e) => {
+      if (dita.has(e.pointerId)) dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (pizzico && dita.size >= 2) { const [a, b] = [...dita.values()]; zoom(pizzico.z * Math.hypot(a.x - b.x, a.y - b.y) / pizzico.d); return; }
       if (!tocco) return; const dx = e.clientX - tocco.x, dy = e.clientY - tocco.y; if (Math.hypot(dx, dy) > 6) tocco.mosso = true; if (!tocco.mosso) return;
-      if (modo === "sfera") { vista.ry = tocco.ry + dx * 0.008; vista.rx = Math.max(-1.3, Math.min(1.3, tocco.rx + dy * 0.008)); } else { vista.x = tocco.vx + dx; vista.y = tocco.vy + dy; }
+      // il globo segue il dito: su → la superficie sale, giù → scende
+      if (modo === "sfera") { vista.ry = tocco.ry + dx * 0.008; vista.rx = Math.max(-1.3, Math.min(1.3, tocco.rx - dy * 0.008)); } else { vista.x = tocco.vx + dx; vista.y = tocco.vy + dy; }
       disegna();
     };
+    const fineDito = (e) => { dita.delete(e.pointerId); if (dita.size < 2 && pizzico) { pizzico = null; tocco = null; } };
+    tela.onpointercancel = fineDito;
     tela.onpointerup = (e) => {
+      const eraPizzico = !!pizzico; fineDito(e); if (eraPizzico) return;
       if (tocco && !tocco.mosso) {
         const b = tela.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
         let best = null, bd = 1e9; for (const n of nodi) { const q = P.get(n), d = Math.hypot(q.x - x, q.y - y) - q.z * 6; if (d < n.r * q.s + 14 && d < bd) { bd = d; best = n; } }
@@ -582,8 +594,8 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
       }
       tocco = null;
     };
-    $("#zp").onclick = () => { vista.z = Math.min(3, vista.z * 1.25); disegna(); };
-    $("#zm").onclick = () => { vista.z = Math.max(0.3, vista.z / 1.25); disegna(); };
+    $("#zp").onclick = () => zoom(vista.z * 1.25);
+    $("#zm").onclick = () => zoom(vista.z / 1.25);
     $("#isolati").onchange = (e) => { S.isolati = e.target.checked; S.nodo = null; render(); };
     document.querySelectorAll("[data-modo]").forEach((b) => (b.onclick = () => { S.modoMappa = b.dataset.modo; S.nodo = null; render(); }));
     S.nodo = null; disegna();

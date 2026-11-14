@@ -1,5 +1,5 @@
 // Globo neurale (1.6): usato dalla mappa (index.html) e dall'immagine del widget (index.html e sfondo.html).
-// Le linee luminose con gli impulsi sono SOLO relazioni reali (M.relazioni); la trama tenue di fondo è decorativa e non tocca i nodi.
+// Ogni linea è una relazione reale (M.relazioni): nessun segmento decorativo che non collega nulla.
 (function (radice) {
   "use strict";
   const COL = { inbox: "#ff7eb6", progetto: "#b38cff", area: "#4fe3c1", risorsa: "#ffc46b", archivio: "#7d86b0", stanza: "#5ad1ff" };
@@ -27,12 +27,8 @@
     const hub = nodi.filter((n) => n.forma === "e"), resto = nodi.filter((n) => n.forma !== "e"), rnd = casuale(7);
     hub.forEach((n, i) => (n.p = fib(i, Math.max(hub.length, 1))));
     resto.forEach((n, i) => { const h = vicini(n).find((v) => v.p && v.forma === "e") || vicini(n).find((v) => v.p); n.p = h ? norm([h.p[0] + (rnd() - 0.5) * 0.55, h.p[1] + (rnd() - 0.5) * 0.55, h.p[2] + (rnd() - 0.5) * 0.55]) : fib(i, resto.length); });
-    nodi.forEach((n, i) => { const r = casuale(i * 7919 + 13); n.dend = Array.from({ length: n.forma === "e" ? 7 : 3 }, () => [r() * 6.283, 0.6 + r() * 0.9, (r() - 0.5) * 0.9]); });
     E.forEach((e, i) => (e.fase = casuale(i * 104729 + 3)()));
-    // trama decorativa: brevi filamenti sulla superficie, lontani dai nodi
-    const rf = casuale(424242), trama = [];
-    for (let i = 0; i < 70; i++) { const a = norm([rf() - 0.5, rf() - 0.5, rf() - 0.5]); trama.push([a, norm([a[0] + (rf() - 0.5) * 0.5, a[1] + (rf() - 0.5) * 0.5, a[2] + (rf() - 0.5) * 0.5])]); }
-    return { nodi, E, idx, vicini, trama };
+    return { nodi, E, idx, vicini };
   };
 
   // Proiezione prospettica di un punto della sfera (rotazione ry attorno a Y, rx attorno a X).
@@ -56,7 +52,7 @@
 
   // Disegna il globo. opz: { vista:{rx,ry,z}, t (ms), sel, vic:Set, etichette:bool }. Restituisce le proiezioni dei nodi.
   G.disegna = function (ctx, W, H, rete, opz) {
-    const { nodi, E, trama } = rete, v = opz.vista, t = opz.t || 0, sel = opz.sel || null, vic = opz.vic || new Set();
+    const { nodi, E } = rete, v = opz.vista, t = opz.t || 0, sel = opz.sel || null, vic = opz.vic || new Set();
     const R = Math.min(W, H) * 0.4 * v.z, cx = W / 2, cy = H / 2;
     // atmosfera e nebulose
     let g = ctx.createRadialGradient(cx - R * 0.3, cy - R * 0.35, R * 0.1, cx, cy, R * 1.12);
@@ -66,9 +62,6 @@
     g.addColorStop(0, "rgba(90,209,255,.12)"); g.addColorStop(1, "rgba(90,209,255,0)"); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.fill();
     ctx.save(); ctx.strokeStyle = "rgba(170,175,255,.35)"; ctx.lineWidth = 1.1; ctx.shadowColor = "rgba(124,108,255,.9)"; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(cx, cy, R, 0, 7); ctx.stroke(); ctx.restore();
     ctx.globalCompositeOperation = "lighter";
-    // trama decorativa (molto tenue)
-    ctx.lineWidth = 0.6;
-    for (const [a, b] of trama) { const pts = arco(a, b, 6).map((p) => G.punto(p, v, W, H)); ctx.strokeStyle = `rgba(150,140,255,${0.05 * pts[3].a})`; ctx.beginPath(); pts.forEach((q, i) => ctx[i ? "lineTo" : "moveTo"](q.x, q.y)); ctx.stroke(); }
     // assoni = relazioni reali, con impulsi che viaggiano
     const P = new Map(nodi.map((n) => [n, G.punto(n.p, v, W, H)]));
     for (const e of E) {
@@ -85,18 +78,12 @@
         ctx.fillStyle = gi; ctx.beginPath(); ctx.arc(x, y, rr * 3, 0, 7); ctx.fill();
       }
     }
-    // neuroni: alone, dendriti, nucleo
+    // neuroni: alone e nucleo
     for (const n of [...nodi].sort((x, y) => P.get(x).z - P.get(y).z)) {
       const q = P.get(n), r = n.r * q.s, spento = sel && n !== sel && !vic.has(n), A = q.a * (spento ? 0.3 : 1);
       ctx.globalAlpha = A;
       const gl = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 3); gl.addColorStop(0, n.col); gl.addColorStop(0.25, alfa(n.col, 0.32)); gl.addColorStop(1, alfa(n.col, 0));
       ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(q.x, q.y, r * 3, 0, 7); ctx.fill();
-      ctx.strokeStyle = alfa(n.col, 0.55); ctx.lineWidth = n.forma === "e" ? 1.1 : 0.7;
-      for (const [ang, len, curva] of n.dend) { // dendriti ramificati
-        const L = r * (n.forma === "e" ? 2.4 : 1.8) * len, x1 = q.x + Math.cos(ang) * L, y1 = q.y + Math.sin(ang) * L;
-        ctx.beginPath(); ctx.moveTo(q.x, q.y); ctx.quadraticCurveTo(q.x + Math.cos(ang + curva) * L * 0.6, q.y + Math.sin(ang + curva) * L * 0.6, x1, y1); ctx.stroke();
-        if (n.forma === "e") { ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x1 + Math.cos(ang + 0.6) * L * 0.35, y1 + Math.sin(ang + 0.6) * L * 0.35); ctx.moveTo(x1, y1); ctx.lineTo(x1 + Math.cos(ang - 0.6) * L * 0.35, y1 + Math.sin(ang - 0.6) * L * 0.35); ctx.stroke(); }
-      }
       const battito = n.forma === "e" ? 1 + 0.08 * Math.sin(t * 0.003 + n.g) : 1;
       const nu = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 0.8 * battito); nu.addColorStop(0, "#fff"); nu.addColorStop(0.6, alfa(n.col, 0.95)); nu.addColorStop(1, alfa(n.col, 0));
       ctx.fillStyle = nu; ctx.beginPath(); ctx.arc(q.x, q.y, r * 0.8 * battito, 0, 7); ctx.fill();
