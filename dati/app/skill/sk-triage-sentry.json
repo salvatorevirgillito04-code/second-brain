@@ -1,0 +1,6 @@
+{
+  "nome": "triage-sentry",
+  "descrizione": "Dagli errori di Sentry alla correzione: raggruppa, trova la causa, scrive un test che riproduce l'errore e propone la correzione su un ramo. Usala quando l'utente chiede di controllare gli errori o quando la avvia la «Sentinella errori».",
+  "procedura": "1. Con il connettore Sentry leggi gli errori nuovi o in aumento delle ultime 24 ore (`search_issues`), al massimo 5 per volta.\n2. Per ciascuno: stacktrace, versione, quanti utenti colpisce, causa probabile.\n3. Errori nel repository di questa sessione: test che fallisce, poi correzione, test che passa, commit sul ramo di lavoro. Nessuna PR senza richiesta dell'utente.\n4. Errori in altri repository: scrivi un riepilogo con la causa e il file da toccare.\n5. Mai chiudere o ignorare errori su Sentry senza conferma dell'utente.\n\nFile: .claude/skills/triage-sentry/SKILL.md (repository second-brain)",
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}

@@ -1,0 +1,6 @@
+{
+  "nome": "passaggio-consegne",
+  "descrizione": "A fine lavoro scrive un riassunto della sessione (fatto, deciso, in sospeso, prossimo passo) per la memoria di Second Brain. Usala alla fine di ogni sessione di lavoro, o quando l'utente chiede un riassunto o un passaggio di consegne.",
+  "procedura": "1. Riassumi in 10 righe al massimo:\n   - **Fatto**: commit, rami, file consegnati;\n   - **Deciso**: scelte fatte dall'utente;\n   - **In sospeso**: cosa attende l'utente, con la domanda precisa;\n   - **Prossimo passo**.\n2. Niente token, password, chiavi o dati personali. Niente contenuto copiato dalle chat.\n3. Metti il riassunto nell'ultima risposta della sessione. Lo legge `list_sessions` (riepilogo e richiesta di intervento) e la 1.3 dell'app lo trasforma nella nota `sessione-…`.\n4. Se ti serve una decisione, scrivila come domanda chiusa con le opzioni numerate. L'agente «Sblocca-attese» la prepara per l'utente.\n\nFile: .claude/skills/passaggio-consegne/SKILL.md (repository second-brain)",
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}

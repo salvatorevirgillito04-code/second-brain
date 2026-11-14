@@ -1,0 +1,14 @@
+{
+  "nome": "sentinella-errori",
+  "ruolo": "Errori di produzione e correzioni",
+  "istruzioni": "Applica la skill `triage-sentry`. Se Sentry non ha errori nuovi rispondi «nessun errore nuovo» e fermati.\n\nDefinizione: .claude/agents/sentinella-errori.md",
+  "strumenti": [
+    "Sentry",
+    "GitHub"
+  ],
+  "accesso_memoria": "nessuno",
+  "skill_ids": [
+    "sk-triage-sentry"
+  ],
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}

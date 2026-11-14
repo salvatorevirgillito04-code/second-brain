@@ -1,0 +1,6 @@
+{
+  "nome": "gestione-rischio",
+  "descrizione": "Calcola dimensione della posizione, stop e limiti di perdita per oro e Forex, e blocca le operazioni fuori regola. Usala prima di ogni operazione, anche simulata.",
+  "procedura": "Regole predefinite (le cambia solo l'utente):\n- rischio massimo per operazione 1% del conto; perdita massima giornaliera 3%; settimanale 6%. Oltre questi limiti si ferma tutto fino al giorno o alla settimana dopo;\n- stop obbligatorio, basato sulla volatilità (es. 1,5 × ATR 14);\n- dimensione = (conto × rischio%) / (distanza dello stop × valore del punto). Arrotonda per difetto;\n- leva effettiva massima 1:5; niente operazioni nei 15 minuti attorno a dati macro di alto impatto (CPI, NFP, decisioni Fed/BCE);\n- al massimo 2 posizioni correlate (es. EUR/USD e GBP/USD contano come esposizione al dollaro).\nSe una regola non è rispettata, rispondi «operazione bloccata: <regola>».\n\nFile: .claude/skills/gestione-rischio/SKILL.md (repository second-brain)",
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}

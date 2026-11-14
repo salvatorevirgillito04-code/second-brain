@@ -1,0 +1,6 @@
+{
+  "nome": "dati-mercato",
+  "descrizione": "Scarica prezzi di oro (XAU/USD) e coppie Forex, indicatori tecnici e dati macro dal connettore Alpha Vantage, con cache per non sprecare le richieste gratuite. Usala per qualunque analisi, backtest o brief sul trading di oro e Forex.",
+  "procedura": "Fonte: connettore **Alpha Vantage** (dati reali; il piano gratuito ha un limite giornaliero di richieste, quindi usa la cache).\n- Oro: `GOLD_SILVER_SPOT` (XAU), `GOLD_SILVER_HISTORY`.\n- Forex: `CURRENCY_EXCHANGE_RATE` (bid/ask), `FX_DAILY`, `FX_WEEKLY`, `FX_INTRADAY`.\n- Macro che muovono l'oro e il dollaro: `CPI`, `INFLATION`, `FEDERAL_FUNDS_RATE`, `TREASURY_YIELD`, `NONFARM_PAYROLL`, `REAL_GDP`.\n- Indicatori: `RSI`, `MACD`, `ATR`, `BBANDS`, `EMA`, `ADX`. Notizie: `NEWS_SENTIMENT` (es. topics `economy_monetary`, tickers `FOREX:USD`).\nRegole:\n1. Prima di ogni chiamata controlla la cache `trading/cache/<funzione>-<simbolo>-<intervallo>.json`. I dati giornalieri valgono fino alla chiusura successiva, quelli macro una settimana.\n2. Annota sempre fonte, ora UTC e fuso. Non inventare mai un prezzo: se la chiamata fallisce, scrivi «dato non disponibile».\n3. I prezzi spot sono indicativi: non sono quotazioni eseguibili di un broker.\n\nFile: .claude/skills/dati-mercato/SKILL.md (repository second-brain)",
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}

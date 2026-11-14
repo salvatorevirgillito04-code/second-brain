@@ -1,0 +1,6 @@
+{
+  "nome": "brief-mercati",
+  "descrizione": "Brief giornaliero su oro ed EUR/USD (e coppie scelte dall'utente) con prezzi, livelli tecnici, calendario macro e notizie. Usala ogni mattina o quando l'utente chiede la situazione dei mercati.",
+  "procedura": "Struttura (massimo 25 righe):\n1. Prezzi e variazione: XAU/USD, EUR/USD, GBP/USD, USD/JPY, più rendimenti USA a 10 anni (da `dati-mercato`).\n2. Tecnica: trend con EMA 50/200, RSI 14, ATR 14 e livelli chiave della settimana.\n3. Macro della giornata e relativo impatto atteso.\n4. Sentiment delle notizie (`NEWS_SENTIMENT`), 3 titoli con la fonte.\n5. Strategie del diario: segnali attivi secondo le regole scritte, senza aggiungerne di nuovi.\nChiudi con: «Analisi automatica, non è una consulenza finanziaria».\n\nFile: .claude/skills/brief-mercati/SKILL.md (repository second-brain)",
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}

@@ -1,0 +1,6 @@
+{
+  "nome": "rilascio-apk",
+  "descrizione": "Compila, firma e verifica un nuovo APK di Second Brain (stessa chiave, stesso identificativo, versionCode +1). Usala quando l'utente chiede una nuova versione dell'app.",
+  "procedura": "1. Esegui i test: `node --test test/motore.test.mjs` e `node test/interfaccia.test.mjs`. Devono passare tutti; fai prima il commit del codice.\n2. Password: l'utente la inserisce nella pagina di consegna (mai in chat). Ricostruisci la chiave dalla copia su Drive e controlla l'impronta del certificato con keytool (`docs/android.md` › Firma).\n3. Compila due volte: `SB_KEYSTORE=… SB_PASS_FILE=… strumenti/compila-apk.sh <codice> <versione> <cartella>`. Poi `cmp` deve trovare i due file identici.\n4. Controlla con `aapt2 dump badging` versionCode e permessi. Nessuna password e nessun token (`github_pat_…`, `sk-ant-oat01-…`) nell'APK estratto.\n5. Elimina la password dalla pagina di consegna e distruggi con `shred` i file temporanei.\n6. Aggiungi la riga della versione in `docs/android.md` › Rilasci, fai commit e push sul ramo di lavoro, poi consegna APK e SHA256SUMS.\n7. Separa ciò che hai provato in simulazione da ciò che l'utente deve verificare sul telefono.\n\nFile: .claude/skills/rilascio-apk/SKILL.md (repository second-brain)",
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}

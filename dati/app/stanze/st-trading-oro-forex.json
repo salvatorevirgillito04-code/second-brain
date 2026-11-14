@@ -1,0 +1,18 @@
+{
+  "nome": "Trading oro e Forex",
+  "descrizione": "Progetto futuro: analisi, backtest e conto demo su XAU/USD e coppie principali. Nessun ordine reale automatico.",
+  "obiettivi": [
+    "Brief giornaliero con dati reali",
+    "Backtest di 1-2 strategie con prova fuori campione",
+    "3 mesi di conto demo con diario prima di ogni decisione"
+  ],
+  "agenti_ids": [
+    "ag-analista-mercati",
+    "ag-collaudatore-strategie",
+    "ag-guardiano-rischio",
+    "ag-ricercatore"
+  ],
+  "stato": "attiva",
+  "attivita": [],
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}

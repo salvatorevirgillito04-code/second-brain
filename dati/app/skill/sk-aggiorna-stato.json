@@ -1,0 +1,6 @@
+{
+  "nome": "aggiorna-stato",
+  "descrizione": "Rileva lo stato delle sessioni di Claude Code e lo pubblica in dati/stato/ sul ramo dati di second-brain. Usala quando l'utente scrive «aggiorna stato» o quando la avvia un'attività pianificata.",
+  "procedura": "Segui alla lettera la sezione «aggiorna stato» di CLAUDE.md (passi 1–6).\nRegole fisse: scrivi solo in `dati/stato/`, solo sul ramo `dati`, mai con force push. Se il rebase va in conflitto, non pubblicare.\nRispondi con una riga: sessioni lette, ora della rilevazione, eventuale errore.\n\nFile: .claude/skills/aggiorna-stato/SKILL.md (repository second-brain)",
+  "creato_il": "2026-11-14T01:30:00.000Z"
+}
