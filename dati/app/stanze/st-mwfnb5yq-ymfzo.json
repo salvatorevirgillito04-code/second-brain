@@ -3,11 +3,15 @@
   "descrizione": "",
   "obiettivi": [],
   "agenti_ids": [
-    "ag-fittizio-archivista",
-    "ag-fittizio-sviluppatore"
+    "ag-accessibility-expert",
+    "ag-design-system-architect",
+    "ag-guardiano-rischio",
+    "ag-ricercatore",
+    "ag-sentinella-errori",
+    "ag-ui-designer"
   ],
   "stato": "attiva",
   "attivita": [],
   "creato_il": "2026-11-14T00:06:29.618Z",
-  "aggiornato_il": "2026-11-14T00:06:55.861Z"
+  "aggiornato_il": "2026-11-14T06:57:44.012Z"
 }
