@@ -445,7 +445,8 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       return `<article class="blocco"><h3 class="titolo-grande">${esc(s.nome)}</h3>${s.descrizione ? `<p class="muted">${esc(s.descrizione)}</p>` : ""}
           ${(s.obiettivi || []).length ? `<ul style="margin:0;padding-left:18px">${s.obiettivi.map((o) => `<li>${esc(o)}</li>`).join("")}</ul>` : ""}
           <div class="chips">${statoStanza(s) === "archiviata" ? `<span class="chip">archiviata</span>` : `<span class="chip ok">attiva</span>`}${syncChip("stanze", s.id)}</div>
-          <div class="azioni"><button class="btn" data-modifica="stanza" data-id="${esc(s.id)}">Modifica</button><button class="btn v" data-archivia-stanza="${esc(s.id)}">${statoStanza(s) === "archiviata" ? "Riattiva" : "Archivia"}</button><button class="btn r" data-elimina="stanze" data-id="${esc(s.id)}">Elimina</button></div></article>
+          <div class="azioni"><button class="btn" data-modifica="stanza" data-id="${esc(s.id)}">Modifica</button><button class="btn v" data-archivia-stanza="${esc(s.id)}">${statoStanza(s) === "archiviata" ? "Riattiva" : "Archivia"}</button><button class="btn r" data-elimina="stanze" data-id="${esc(s.id)}">Elimina</button></div>
+          ${(() => { const c = M.contenutoStanza(S.stato, s.id); return c.note.length || c.progetti.length ? `<div class="azioni"><button class="btn r" data-elimina-tutto="${esc(s.id)}">Elimina la stanza e le sue ${c.note.length} note${c.progetti.length ? ` (e ${c.progetti.length} progetti)` : ""}</button></div><p class="small muted">Prima viene salvata una copia di sicurezza sul telefono. Le note eliminate non tornano con il pilota automatico.</p>` : ""; })()}</article>
         <section><h2>Attività · ${att.filter((a) => !a.fatta).length} aperte</h2><div class="blocco">
           ${att.map((a) => `<div class="attivita${a.fatta ? " fatta" : ""}"><input type="checkbox" data-att="${esc(a.id)}"${a.fatta ? " checked" : ""} aria-label="Fatta"><span>${esc(a.testo)}</span><button class="x" data-att-via="${esc(a.id)}" aria-label="Elimina attività">×</button></div>`).join("") || `<p class="small muted">Nessuna attività.</p>`}
           <form id="f-att" class="riga2"><input id="att-testo" placeholder="Nuova attività" maxlength="300" required><button class="btn" style="flex:0 0 auto">Aggiungi</button></form></div></section>
@@ -890,6 +891,13 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (d.sub) { S.sub = d.sub; if (d.vai) vai(d.vai); else render(); return; }
     if (d.vai) { vai(d.vai); return; }
     if (d.modifica) { EDITOR[d.modifica](d.id || ""); return; }
+    if (d.eliminaTutto) { conferma(b, async () => {
+      const copia = A ? A.salvaCopia("prima-eliminazione-stanza-" + ora().replace(/[^0-9]/g, "").slice(0, 14) + ".json", JSON.stringify(S.stato)) : "ok";
+      if (copia !== "ok" && copia !== "esiste") { toast("Copia di sicurezza non salvata (" + copia + "): niente eliminato."); return; }
+      const nome = (T("stanze", d.eliminaTutto) || {}).nome || ""; const e = await M.eliminaStanzaConContenuto(S.stato, d.eliminaTutto); if (!e) return;
+      await salva(); programmaSync(); toast(`Eliminata «${nome}» con ${e.note} note${e.progetti ? ` e ${e.progetti} progetti` : ""}.`);
+      if (NAV[vistaCorrente()]) history.back(); else render();
+    }); return; }
     if (d.elimina) { conferma(b, () => { const blocco = BLOCCHI[d.elimina] && BLOCCHI[d.elimina](d.id); if (blocco) { toast(blocco); return; } elimina(d.elimina, d.id); if (["note", "progetti", "stanze"].includes(d.elimina) && NAV[vistaCorrente()]) history.back(); else render(); }); return; }
     if (d.creaDaLink) {
       const nid = await scrivi("note", "", { titolo: d.creaDaLink, testo: d.creaDaLink, tipo: "originale", fonte: "creata da un collegamento", data: ora(), registrato_il: ora(), categoria: "inbox", tag: [], collegamenti: [], accessibile_agenti: false });

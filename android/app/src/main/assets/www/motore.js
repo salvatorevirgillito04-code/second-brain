@@ -332,6 +332,24 @@
     if (stato.impostazioni && stato.impostazioni.auto_nomi_generici === true) stato.impostazioni.stanze_generiche[chiave] = id;
     return M.elenco(stato, "stanze").find((s) => s.id === id);
   }
+  // ---------- 1.9.3: elimina una stanza con tutto il suo contenuto (su richiesta esplicita dell'utente) ----------
+  // Elimina le note della stanza (e quelle dei suoi progetti), i progetti e la stanza. Le esecuzioni collegate restano, senza stanza.
+  M.contenutoStanza = function (stato, id) {
+    const progetti = M.elenco(stato, "progetti").filter((p) => p.stanza_id === id), pid = new Set(progetti.map((p) => p.id));
+    const note = M.elenco(stato, "note").filter((n) => n.stanza_id === id || pid.has(n.progetto_id));
+    return { note, progetti, collegamenti: M.elenco(stato, "collegamenti").filter((c) => c.stanza_id === id) };
+  };
+  M.eliminaStanzaConContenuto = async function (stato, id) {
+    if (!M.trova(stato, "stanze", id)) return null;
+    const c = M.contenutoStanza(stato, id);
+    for (const n of c.note) M.eliminaRecord(stato, "note", n.id);
+    for (const p of c.progetti) M.eliminaRecord(stato, "progetti", p.id);
+    for (const k of c.collegamenti) { const { id: kid, ...d } = k; await M.salvaRecord(stato, "collegamenti", kid, { ...d, stanza_id: null }); }
+    M.eliminaRecord(stato, "stanze", id);
+    const gen = stato.impostazioni && stato.impostazioni.stanze_generiche; if (gen) for (const [k, v] of Object.entries(gen)) if (v === id) delete gen[k];
+    return { note: c.note.length, progetti: c.progetti.length, collegamenti: c.collegamenti.length };
+  };
+
   // ---------- 1.9: pilota automatico ----------
   // Ogni azione automatica finisce nel registro (impostazioni.registro_auto, solo sul telefono) ed è annullabile.
   // Ciò che è stato fatto o annullato una volta non viene mai rifatto (impostazioni.pilota_fatti).

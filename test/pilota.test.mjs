@@ -279,3 +279,21 @@ test("stanze e progetti automatici rimasti vuoti vengono eliminati; quelli creat
   assert.deepEqual(await M.annullaAuto(s, v.n), { ok: true }); assert.equal(M.trova(s, "stanze", "st-auto-vuota").nome, "Vuota");
   await M.organizzaAutomatico(s); assert.ok(M.trova(s, "stanze", "st-auto-vuota"), "dopo l'annullamento non viene eliminata di nuovo");
 });
+
+// ---------- 1.9.3: elimina stanza con le sue note ----------
+test("elimina la stanza con le sue note e i suoi progetti; il resto resta; il pilota non ricrea nulla", async () => {
+  const s = M.statoVuoto();
+  await stanza(s, "st-meteo", "Meteo di oggi", { automatico: true }); await stanza(s, "st-altra", "Altra");
+  await M.salvaRecord(s, "progetti", "pr-m", { nome: "Meteo", stato: "attivo", stanza_id: "st-meteo" });
+  await nota(s, "n1", "Meteo di oggi", "sole", { stanza_id: "st-meteo", auto_organizzata: true });
+  await nota(s, "n2", "Previsioni", "pioggia", { progetto_id: "pr-m" });
+  await nota(s, "n3", "Da tenere", "x", { stanza_id: "st-altra", collegamenti: ["n1"] });
+  await M.salvaRecord(s, "collegamenti", "co-1", { session_id: "session_X", stanza_id: "st-meteo", agenti_ids: [] });
+  const e = await M.eliminaStanzaConContenuto(s, "st-meteo");
+  assert.deepEqual(e, { note: 2, progetti: 1, collegamenti: 1 });
+  assert.equal(M.trova(s, "stanze", "st-meteo"), null); assert.equal(M.trova(s, "note", "n1"), null); assert.equal(M.trova(s, "note", "n2"), null); assert.equal(M.trova(s, "progetti", "pr-m"), null);
+  assert.ok(M.trova(s, "note", "n3") && M.trova(s, "stanze", "st-altra")); assert.equal(M.trova(s, "collegamenti", "co-1").stanza_id, null, "l'esecuzione resta, senza stanza");
+  await M.organizzaAutomatico(s);
+  assert.equal(M.trova(s, "note", "n1"), null); assert.ok(!M.elenco(s, "stanze").some((x) => /meteo/i.test(x.nome)), "nessuna stanza ricreata");
+  assert.ok(!M.relazioni(s).some((r) => r.a === "note/n1" || r.da === "note/n1"), "la mappa non mostra collegamenti a note eliminate");
+});
