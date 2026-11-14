@@ -113,6 +113,18 @@ const pizzica = await page.evaluate(async () => { // due dita che si allontanano
   await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))); // 1.9.2: un solo disegno per fotogramma
   return t.toDataURL() !== prima && document.querySelector("#scheda").hidden; });
 ok(pizzica, "mappa: ingrandimento con due dita, senza aprire schede");
+{ // 1.9.5: la sfera gira da sola, anche con «riduci animazioni» (lì senza impulsi: ogni cambio d'immagine è la rotazione); ❚❚ la ferma
+  await page.emulateMedia({ reducedMotion: "reduce" }); await vai("note"); await vai("mappa"); await page.waitForTimeout(150);
+  const foto = () => page.evaluate(() => document.querySelector("#tela").toDataURL());
+  const a1 = await foto(); await page.waitForTimeout(700); ok(a1 !== await foto(), "mappa: la sfera si muove da sola, senza toccarla");
+  await page.click("#zg"); await page.waitForTimeout(100); const b1 = await foto(); await page.waitForTimeout(700);
+  ok(b1 === await foto() && (await page.getAttribute("#zg", "aria-pressed")) === "false", "mappa: il pulsante ferma la rotazione automatica");
+  await vai("note"); await vai("mappa"); await page.waitForTimeout(150); const c1 = await foto(); await page.waitForTimeout(700);
+  ok(c1 === await foto(), "mappa: la pausa resta dopo aver cambiato pagina");
+  await page.click("#zg"); await page.waitForTimeout(100); const d1 = await foto(); await page.waitForTimeout(700);
+  ok(d1 !== await foto(), "mappa: il pulsante la fa ripartire");
+  await page.emulateMedia({ reducedMotion: null });
+}
 if (FOTO) await page.screenshot({ path: join(FOTO, "mappa.png") });
 
 // STANZE E ATTIVITÀ

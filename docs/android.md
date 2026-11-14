@@ -181,3 +181,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 
 ## 1.9.4
 - **«Aggiorna ora» non fallisce più**: avviata dall'app con il token, l'attività pianificata apriva una sessione temporanea senza il connettore claude-code-remote (`list_sessions`) e mandava la notifica «aggiorna stato non è riuscito». Ora il pulsante scarica subito l'ultima rilevazione e mostra l'ora della prossima (ogni 3 ore, minuto 18 UTC, nella sessione «Second Brain-Stato», che ha il connettore). Il vecchio token si rimuove dal telefono con un pulsante; va revocato anche su claude.ai/code/routines.
+
+## 1.9.5
+- **La sfera gira da sola**: appena apri la mappa ruota piano su un asse che ondeggia (un giro ogni ~28 s), così non sembra un movimento meccanico. Quando la tocchi si ferma e segue il dito. Dopo 1,5 s senza tocchi riparte accelerando piano, anche dopo aver chiuso la scheda di un elemento. Con «riduci animazioni» gira più lenta (~80 s per giro) e senza impulsi.
+- Pulsante ❚❚/▶ sotto lo zoom: ferma o fa ripartire la rotazione automatica. La scelta resta salvata sul telefono (requisito WCAG 2.2.2, mettere in pausa).
