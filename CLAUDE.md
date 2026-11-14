@@ -16,6 +16,7 @@ Viene eseguito anche in automatico dall'attività pianificata «Second Brain –
 Quando l'utente scrive «aggiorna stato», esegui SOLO questo, senza pianificazioni:
 
 1. `list_sessions` (connettore claude-code-remote) con `mine: true`, `limit: 50`; subito dopo `date -u +%Y-%m-%dT%H:%M:%SZ` → `<rilevato_il>`.
+   Se `list_sessions` non risulta disponibile, i connettori possono essere ancora in connessione: cercalo con ToolSearch («list_sessions»), che attende i server in collegamento, e riprova una volta. Solo dopo il secondo tentativo vai al passo 5 (errore).
 2. Salva la risposta così com'è (con `post_turn_summary` e `task_summary`) in `<scratchpad>/lista.json`; ricava l'id di questa sessione con `get_session` senza argomenti → `<id_rilevatore>`.
 3. `node strumenti/istantanea.mjs ok <scratchpad>/lista.json <rilevato_il> <id_rilevatore> <scratchpad>/stato`
    (tiene id, titolo, stato, categoria, origine, date, riepilogo breve e richiesta di intervento, max 500 caratteri; mai il contenuto delle conversazioni).
