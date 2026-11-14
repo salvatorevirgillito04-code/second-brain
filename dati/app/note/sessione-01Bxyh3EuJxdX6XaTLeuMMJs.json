@@ -1,0 +1,24 @@
+{
+  "titolo": "Sessione: Simulatore carrelli elevatori mobile",
+  "testo": "Sessione di Claude Code «Simulatore carrelli elevatori mobile».\nStato rilevato: attende un tuo intervento (rilevazione del 2026-11-13 22:18 UTC, non in tempo reale).\nRichiede un tuo intervento: In gioco: Impostazioni → Diagnostica prestazioni → Registra 60 s (Fluidità 60, toggle spenti), poi Condividi file e caricare il JSON qui\nCreata: 2026-10-23 23:53 · ultima attività: 2026-11-07 23:17 · origine android.\nIdentificativo: session_01Bxyh3EuJxdX6XaTLeuMMJs",
+  "tipo": "riassunto",
+  "fonte": "Claude Code, istantanea del 2026-11-13T22:18:45Z",
+  "data": "2026-10-23T23:53:49.101272Z",
+  "registrato_il": "2026-11-13T22:35:10.164Z",
+  "categoria": "area",
+  "tag": [
+    "sessione-claude-code"
+  ],
+  "collegamenti": [],
+  "accessibile_agenti": true,
+  "origine": {
+    "tipo": "sessione_claude_code",
+    "id": "session_01Bxyh3EuJxdX6XaTLeuMMJs",
+    "aggiornata_il": "2026-11-07T23:17:32.629659Z",
+    "stato": "attende un tuo intervento"
+  },
+  "progetto_id": null,
+  "stanza_id": "st-mwfn9xx4-i3mrg",
+  "corretto_il": "2026-11-14T00:06:01.386Z",
+  "aggiornato_il": "2026-11-14T00:06:09.420Z"
+}
