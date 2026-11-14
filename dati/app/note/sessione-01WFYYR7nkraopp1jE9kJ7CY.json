@@ -1,0 +1,27 @@
+{
+  "titolo": "Sessione: Second Brain – prova lettura archivio artifact",
+  "testo": "Sessione di Claude Code «Second Brain – prova lettura archivio artifact».\nStato rilevato: completata (rilevazione del 2026-11-13 22:18 UTC, non in tempo reale).\nUltimo riepilogo: ArtifactData è disponibile; list su stanze e read dell'artifact riusciti, nessuna modifica\nCreata: 2026-11-13 06:10 · ultima attività: 2026-11-13 06:11 · origine claude_code_mcp_seed.\nIdentificativo: session_01WFYYR7nkraopp1jE9kJ7CY",
+  "tipo": "riassunto",
+  "fonte": "Claude Code, istantanea del 2026-11-13T22:18:45Z",
+  "data": "2026-11-13T06:10:47.850401Z",
+  "registrato_il": "2026-11-13T22:35:10.163Z",
+  "categoria": "risorsa",
+  "tag": [
+    "sessione-claude-code"
+  ],
+  "collegamenti": [
+    "sessione-01WFYYR7s5Za6Fm9Vk2uosiD",
+    "sessione-01WFYYRA7s7HJZQsqn1RgnDd"
+  ],
+  "accessibile_agenti": true,
+  "origine": {
+    "tipo": "sessione_claude_code",
+    "id": "session_01WFYYR7nkraopp1jE9kJ7CY",
+    "aggiornata_il": "2026-11-13T06:11:05.070843Z",
+    "stato": "completata"
+  },
+  "progetto_id": null,
+  "stanza_id": "st-mwfnb5yq-ymfzo",
+  "corretto_il": "2026-11-14T00:07:25.489Z",
+  "aggiornato_il": "2026-11-14T00:07:35.579Z"
+}
