@@ -63,4 +63,6 @@ Scrivi `dati/stato/resoconto-settimanale.md` con:
 
 Le stime di costo vanno indicate come stime, mai come addebiti. Commit: «Resoconto settimanale: <data>».
 
+**«coordinatore»** (07:47 e 18:47, ora di Roma; sostituisce «sblocca attese», che è in pausa): su richiesta dell'utente del 14/11/2026 risponde da solo, con `send_message`, solo alle richieste reversibili e senza rischi. Esclusi: push o merge, pubblicazione, costi, eliminazioni, credenziali, dati personali, azioni sul telefono, scelte di gusto. Tutto il resto lo scrive in `dati/stato/attese.md` come «essenziale», con la risposta consigliata. Le istruzioni complete sono nell'attività pianificata `trig_01NxVA6ihmRJ4qiHWW9CeNcC`.
+
 Catalogo: il 14/11/2026 l'utente ha autorizzato l'aggiunta (solo file nuovi) in `dati/app/{agenti,skill,stanze,progetti}` delle schede di skill e agenti reali (`.claude/`) e della stanza «Trading oro e Forex». Il progetto trading è descritto in `docs/progetto-trading.md`.
