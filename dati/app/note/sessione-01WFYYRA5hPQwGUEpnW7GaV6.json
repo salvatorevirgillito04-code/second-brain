@@ -1,0 +1,24 @@
+{
+  "titolo": "Sessione: Claude voice assistant setup",
+  "testo": "Sessione di Claude Code «Claude voice assistant setup».\nStato rilevato: attende un tuo intervento (rilevazione del 2026-11-13 22:18 UTC, non in tempo reale).\nRichiede un tuo intervento: Rispondi con i numeri, es. \"1: v21, 2: googlequicksearchbox, 3: si attiva da solo...\" (domande su versione, testo tra parentesi, sensibilità, silenzioso, lingua TTS, cosa funziona)\nCreata: 2026-11-01 23:58 · ultima attività: 2026-11-03 09:30 · origine android.\nIdentificativo: session_01WFYYRA5hPQwGUEpnW7GaV6",
+  "tipo": "riassunto",
+  "fonte": "Claude Code, istantanea del 2026-11-13T22:18:45Z",
+  "data": "2026-11-01T23:58:05.593421Z",
+  "registrato_il": "2026-11-13T22:35:10.164Z",
+  "categoria": "risorsa",
+  "tag": [
+    "sessione-claude-code"
+  ],
+  "collegamenti": [],
+  "accessibile_agenti": true,
+  "origine": {
+    "tipo": "sessione_claude_code",
+    "id": "session_01WFYYRA5hPQwGUEpnW7GaV6",
+    "aggiornata_il": "2026-11-03T09:30:37.961802Z",
+    "stato": "attende un tuo intervento"
+  },
+  "progetto_id": null,
+  "stanza_id": "st-mwfnd9xj-sfpbt",
+  "corretto_il": "2026-11-14T00:08:29.745Z",
+  "aggiornato_il": "2026-11-14T00:08:32.066Z"
+}
