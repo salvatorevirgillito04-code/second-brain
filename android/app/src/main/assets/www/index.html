@@ -551,8 +551,8 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (!ist) h += `<p class="banner att"><b>Nessuna istantanea.</b><span>L'app non legge le sessioni in tempo reale. Scrivi «aggiorna stato» in Claude Code, poi scarica l'istantanea.</span></p>`;
     else h += `<p class="banner ${minutiDa(ist.rilevato_il) > FRESCO_MIN ? "att" : ""}"><b>Istantanea del ${esc(quando(ist.rilevato_il))} · non in tempo reale</b><span>Rilevata ${esc(eta(ist.rilevato_il))} da Claude Code${minutiDa(ist.rilevato_il) > FRESCO_MIN ? ": gli stati descrivono quel momento, non adesso" : ""}. ${esc(ist.totale)} sessioni${ist.troncato ? ", elenco troncato" : ""}.</span></p>`;
     h += `<div class="blocco"><b>Nuova esecuzione con più agenti</b><span class="small muted">Scegli gli agenti e il compito: preparo le istruzioni per Claude Code. Quando la sessione compare nella rilevazione, la collego da sola agli agenti scelti.</span><div class="azioni"><button class="btn" id="b-nuova-esec">Nuova esecuzione</button></div></div>`;
-    h += `<div class="azioni">${A && A.haRoutine() ? `<button class="btn" id="b-aggiorna-ora">Aggiorna ora</button>` : `<button class="btn v" data-modifica="routine">Attiva «Aggiorna ora»</button>`}<button class="btn v" id="b-snap">Scarica istantanea dal repository</button></div><p class="stato" id="lv-stato"></p>
-      <p class="small muted">L'aggiornamento automatico gira ogni 3 ore in Claude Code; l'app scarica il risultato da sola. «Aggiorna ora» lo avvia subito: arriva in pochi minuti.</p>`;
+    h += `<div class="azioni"><button class="btn" id="b-aggiorna-ora">Aggiorna ora</button>${A && A.haRoutine() ? `<button class="btn v" id="b-togli-routine">Rimuovi il vecchio token di «Aggiorna ora»</button>` : ""}</div><p class="stato" id="lv-stato"></p>
+      <p class="small muted">La rilevazione gira ogni 3 ore in Claude Code, nella sessione «Second Brain-Stato» (l'unica che ha il connettore delle sessioni); l'app scarica il risultato da sola. «Aggiorna ora» scarica subito l'ultima rilevazione e ti dice quando arriva la prossima: non avvia più sessioni temporanee, che non hanno il connettore e fallivano.</p>`;
     const sess = ist ? ist.sessioni || [] : [];
     const agOpt = `<option value="">nessun agente</option>` + L("agenti").map((a) => `<option value="${esc(a.id)}">${esc(a.nome)}</option>`).join("");
     const stOpt = `<option value="">nessuna stanza</option>` + L("stanze").map((s) => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join("");
@@ -946,6 +946,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (b.id === "b-sync") { sincronizza(true); return; }
     if (b.id === "b-rimanda") { S.stato.impostazioni ||= {}; S.stato.impostazioni.chat_rimandato_fino = new Date(Date.now() + 7 * 86400000).toISOString(); await salva(); render(); toast("Te lo ricordo tra 7 giorni"); return; }
     if (b.id === "b-aggiorna-ora") { aggiornaOra(); return; }
+    if (b.id === "b-togli-routine") { conferma(b, () => { if (A && A.rimuoviRoutine) A.rimuoviRoutine(); toast("Token rimosso dal telefono. Puoi revocarlo anche su claude.ai/code/routines."); render(); }); return; }
     if (b.id === "b-notifiche") { if (A && A.richiediNotifiche) A.richiediNotifiche(); return; }
     if (b.id === "b-snap") { scaricaIstantanea(); return; }
     if (b.id === "b-exp") { esporta(); return; }
@@ -1003,16 +1004,15 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
 
   // ---------- avvio dell'attività pianificata di Claude Code ----------
   const avvia = () => new Promise((res) => { const id = "f" + ++seq; attese.set(id, res); A.avviaRoutine(id); });
+  // 1.9.4: «Aggiorna ora» non avvia più l'attività dall'app. Avviata così, Claude apre una sessione temporanea senza il
+  // connettore delle sessioni (list_sessions) e la rilevazione fallisce con una notifica d'errore. La rilevazione vera gira
+  // ogni 3 ore (minuto 18, ore UTC multiple di 3) nella sessione dedicata: qui si scarica subito l'ultima e si mostra la prossima.
+  const prossimaRilevazione = (adesso = new Date()) => { const d = new Date(adesso); d.setUTCMinutes(18, 0, 0); while (d <= adesso || d.getUTCHours() % 3) d.setUTCHours(d.getUTCHours() + 1); return d; };
   async function aggiornaOra() {
-    if (!A || !A.haRoutine()) return;
-    if (!inRete()) { stato("#lv-stato", "Rete assente: riprova quando sei connesso.", "att"); return; }
-    stato("#lv-stato", "Avvio dell'aggiornamento in Claude Code…");
-    const r = await avvia();
-    const m = { 401: "Token dell'attività non valido o revocato: rigeneralo su claude.ai e inseriscilo di nuovo.", 400: "L'attività è sospesa o la richiesta non è valida: controllala su claude.ai/code/routines.", 403: "Il tuo account non ha accesso a questa funzione.", 404: "Attività non trovata: controlla l'identificativo.", 429: "Troppi avvii nell'ultima ora: riprova più tardi.", 0: "Rete assente o risposta non ricevuta." };
-    if (r.status === 200) {
-      stato("#lv-stato", "Aggiornamento avviato in Claude Code. L'app scaricherà il risultato tra qualche minuto.", "ok");
-      for (const min of [3, 6, 10]) setTimeout(() => { if (!document.hidden) scaricaIstantanea(); }, min * 60000);
-    } else stato("#lv-stato", (m[r.status] || "Avvio non riuscito (" + r.status + ").") + (r.corpo && r.corpo.error && r.corpo.error.message ? " Messaggio: «" + String(r.corpo.error.message).slice(0, 160) + "»." : ""), "err");
+    await scaricaIstantanea();
+    const p = prossimaRilevazione(), ist = istantanea();
+    const prima = $("#lv-stato") ? $("#lv-stato").textContent : "";
+    stato("#lv-stato", `${prima ? prima + " " : ""}${ist ? "Ultima rilevazione: " + quando(ist.rilevato_il) + ". " : ""}Prossima rilevazione automatica alle ${p.toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}.`, ist ? "ok" : "att");
   }
 
   // ---------- esporta / ripristina ----------

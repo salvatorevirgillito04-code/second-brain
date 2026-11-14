@@ -195,11 +195,10 @@ ok((await T("#chat-anteprima")).includes("0 nuove, 2 già importate") && !(await
 await vai("home");
 ok(!(await T("main")).includes("Importa le tue chat") , "promemoria chat assente subito dopo un'importazione");
 await page.evaluate(() => { location.hash = "stanze"; }); await page.waitForTimeout(100); await page.click('[data-sub="esecuzioni"]'); await page.waitForTimeout(100);
-await page.click('[data-modifica="routine"]'); await page.fill("#ro-token", "sk-ant-oat01-prova"); await page.click("#f-salva"); await page.waitForTimeout(150);
-await page.click("#b-aggiorna-ora"); await page.waitForTimeout(200);
-ok((await T("#lv-stato")).includes("Aggiornamento avviato") && await page.evaluate(() => window.__mem.avvii === 1), "«Aggiorna ora»: attività avviata");
+await page.click("#b-aggiorna-ora"); await page.waitForTimeout(400);
+ok((await T("#lv-stato")).includes("Prossima rilevazione automatica") && await page.evaluate(() => !window.__mem.avvii), "«Aggiorna ora» (1.9.4): scarica l'ultima rilevazione e non avvia sessioni temporanee");
 gh.scriviDiretto("dati", "dati/stato/istantanea.json", JSON.stringify({ rilevato_il: new Date().toISOString(), totale: 1, sessioni: [{ id: "session_QQ", titolo: "Sito negozio", status_bucket: "SESSION_STATUS_BUCKET_BLOCKED", updated_at: "2026-11-13T20:00:00Z", riepilogo: "bozza pronta", richiede: "approva il testo" }] }));
-await page.click("#b-snap"); await page.waitForTimeout(600);
+await page.click("#b-aggiorna-ora"); await page.waitForTimeout(600);
 const ns = (await salvato()).collezioni.note["sessione-QQ"];
 ok(ns && ns.dati.accessibile_agenti === false && /approva il testo/.test(ns.dati.testo) && ns.dati.tipo === "riassunto", "sessione di Claude Code diventata nota privata con richiesta di intervento");
 const disco = await salvato(); disco.collezioni.note["sessione-QQ"].dati.titolo = "Scritto dal background"; const nuovoTesto = JSON.stringify(disco);

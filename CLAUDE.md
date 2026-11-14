@@ -11,7 +11,7 @@ L'artifact della v1 (https://claude.ai/artifact/FixFdEmbd31YEYpuNbE4za) resta co
 
 ## «aggiorna stato»
 
-Viene eseguito anche in automatico dall'attività pianificata «Second Brain – stato (sessione dedicata)» (ogni 3 ore, riprende la sessione «Second Brain-Stato») e dal pulsante «Aggiorna ora» dell'app.
+Viene eseguito anche in automatico dall'attività pianificata «Second Brain – stato (sessione dedicata)» (ogni 3 ore, riprende la sessione «Second Brain-Stato», l'unica con il connettore claude-code-remote). Dalla 1.9.4 il pulsante «Aggiorna ora» dell'app NON avvia più l'attività (avviata dall'app apriva una sessione temporanea senza connettore, che falliva): scarica solo l'ultima istantanea.
 
 Quando l'utente scrive «aggiorna stato», esegui SOLO questo, senza pianificazioni:
 
