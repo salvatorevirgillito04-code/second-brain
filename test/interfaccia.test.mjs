@@ -122,6 +122,16 @@ ok(pizzica, "mappa: ingrandimento con due dita, senza aprire schede");
 }
 if (FOTO) await page.screenshot({ path: join(FOTO, "mappa.png") });
 
+// 1.10: COORDINATORE
+await vai("stanze"); await page.click('[data-sub="coordinatore"]'); await page.waitForTimeout(100);
+await page.fill("#co-testo", "usa sk-ant-oat01-xyz"); await page.click("#b-coord"); await page.waitForTimeout(100);
+ok((await T("#co-stato")).includes("token"), "coordinatore: un messaggio con un token viene rifiutato");
+await page.selectOption("#co-tipo", "compito"); await page.fill("#co-testo", "Prepara il riepilogo della settimana"); await page.click("#b-coord"); await page.waitForTimeout(200);
+ok((await T("main")).includes("In coda · 1") && (await T("main")).includes("Prepara il riepilogo della settimana"), "coordinatore: messaggio in coda, pronto per la sincronizzazione");
+ok(Object.keys((await salvato()).collezioni.messaggi || {}).length === 1, "coordinatore: messaggio salvato nella raccolta messaggi");
+if (FOTO) await page.screenshot({ path: join(FOTO, "coordinatore.png") });
+await page.click('[data-sub="stanze"]'); await page.waitForTimeout(100);
+
 // STANZE E ATTIVITÀ
 await vai("stanze"); await page.click('[data-apri="stanza"]'); await page.waitForTimeout(150);
 await page.fill("#att-testo", "Prima attività reale"); await page.press("#att-testo", "Enter"); await page.waitForTimeout(200);

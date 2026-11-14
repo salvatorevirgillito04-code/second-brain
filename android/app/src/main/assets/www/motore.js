@@ -17,7 +17,7 @@
   const M = {};
   M.SCHEMA = 2;
   // Schema 2 (app 1.1): le memorie sono diventate note. "memoria" resta solo per eliminare dal repository i file della 1.0.
-  M.COLLEZIONI_APP = ["agenti", "collegamenti", "note", "progetti", "skill", "stanze"];
+  M.COLLEZIONI_APP = ["agenti", "collegamenti", "messaggi", "note", "progetti", "skill", "stanze"]; // messaggi: 1.10, al coordinatore degli agenti
   M.COLLEZIONI_LEGACY = ["memoria"];
   M.COLLEZIONI_SYNC = [...M.COLLEZIONI_APP, ...M.COLLEZIONI_LEGACY];
   M.COLLEZIONI_BACKUP = [...M.COLLEZIONI_APP, "stato_lavoro"];
@@ -166,6 +166,7 @@
   M.datiPuliti = function (stato) {
     const d = {};
     for (const c of M.COLLEZIONI_APP) d[c] = M.elenco(stato, c);
+    if (!d.messaggi.length) delete d.messaggi; // 1.10: senza messaggi l'impronta resta quella delle versioni precedenti
     d.stato_lavoro = copia(stato.stato_lavoro || []).sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
     return d;
   };
@@ -1012,6 +1013,32 @@
     return n;
   };
 
+  // ---------- 1.10: canale con il coordinatore degli agenti ----------
+  // L'app scrive i messaggi in dati/app/messaggi/<id>.json; il coordinatore (attività pianificata in Claude Code) li gestisce
+  // con le sue regole e risponde in dati/stato/coordinatore.md. Lo stesso canale riceve i messaggi di Claude (chat) e di Claude Code via Google Drive.
+  M.TIPI_MESSAGGIO = { domanda: "Domanda", compito: "Compito da avviare", inoltro: "Inoltro a una sessione" };
+  M.scriviAlCoordinatore = async function (stato, { testo, tipo = "domanda", sessione = "" }) {
+    const t = String(testo || "").replace(/[\u0000-\u0008\u000b-\u001f\u007f]+/g, " ").trim().slice(0, 2000);
+    if (!t) throw new Error("Scrivi il messaggio.");
+    if (!M.TIPI_MESSAGGIO[tipo]) throw new Error("Tipo di messaggio non valido.");
+    if (/github_pat_|sk-ant-|ghp_|-----BEGIN/i.test(t)) throw new Error("Il messaggio sembra contenere un token o una chiave: toglilo, il canale non è per i segreti.");
+    let se = "";
+    if (tipo === "inoltro") { const m = String(sessione || "").match(/(?:session|cse)_[A-Za-z0-9]{10,40}/); if (!m) throw new Error("Per l'inoltro indica la sessione (link o id di Claude Code)."); se = m[0]; }
+    const b = new Uint8Array(4); globalThis.crypto.getRandomValues(b);
+    const id = "msg-" + Date.now().toString(36) + "-" + [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
+    await M.salvaRecord(stato, "messaggi", id, { testo: t, tipo, sessione: se || null, da: "app", creato_il: ora() });
+    return id;
+  };
+  // Voci di dati/stato/coordinatore.md: «### <ora> · da <chi> · <tipo> · id <id>» seguita da «Messaggio:» e «Risposta:».
+  M.analizzaCanale = function (testo) {
+    return String(testo || "").split(/\n(?=### )/).filter((b) => b.startsWith("### ")).map((b) => {
+      const [intest, ...resto] = b.split("\n"), corpo = resto.join("\n");
+      const parti = intest.slice(4).split("·").map((x) => x.trim());
+      const pezzi = corpo.split(/^(Messaggio|Risposta):/m), campo = (k) => { const i = pezzi.indexOf(k); return i > 0 ? String(pezzi[i + 1] || "").trim() : ""; };
+      return { quando: parti[0] || "", da: (parti.find((x) => /^da /.test(x)) || "").slice(3), tipo: parti.find((x) => M.TIPI_MESSAGGIO[x]) || "", id: ((parti.find((x) => /^id /.test(x)) || "").slice(3)).trim(), messaggio: campo("Messaggio"), risposta: campo("Risposta") };
+    });
+  };
+
   M.contaFittizi = (stato) => M.COLLEZIONI_APP.reduce((n, c) => n + M.elenco(stato, c).filter((r) => r.fittizio === true).length, 0);
 
   // ---------- sincronizzazione ----------
@@ -1155,6 +1182,9 @@
     const at = await api.richiesta("GET", `${R}/contents/${M.CARTELLA_STATO}/attese.md?ref=${M.RAMO}`); // risposte pronte dell'agente «sblocca attese»
     if (at.status === 200) nuovi.push({ id: "attese", testo: M.daBase64(at.corpo.content).slice(0, 60000), sha: at.corpo.sha });
     else if (at.status !== 404) controlla(at, "la lettura di attese.md");
+    const co = await api.richiesta("GET", `${R}/contents/${M.CARTELLA_STATO}/coordinatore.md?ref=${M.RAMO}`); // 1.10: risposte del coordinatore (canale)
+    if (co.status === 200) nuovi.push({ id: "coordinatore", testo: M.daBase64(co.corpo.content).slice(0, 60000), sha: co.corpo.sha });
+    else if (co.status !== 404) controlla(co, "la lettura di coordinatore.md");
     if (nuovi.length) { stato.stato_lavoro = nuovi; stato.sync.istantanea_scaricata_il = ora(); await M.noteDaSessioni(stato); await M.organizzaAutomatico(stato); await M.collegaEsecuzioniPreviste(stato); }
     return nuovi.length;
   };

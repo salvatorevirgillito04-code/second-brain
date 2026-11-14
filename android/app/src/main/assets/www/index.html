@@ -210,6 +210,85 @@ textarea{line-height:1.55;font-family:var(--m);font-size:.92rem}
 .md a.tag{text-decoration:none;background:rgba(90,209,255,.1);border-radius:999px;padding:0 .45em;font-size:.9em}
 pre.istr{white-space:pre-wrap;font-family:var(--m);font-size:.8rem;background:rgba(4,5,15,.75);border:1px solid var(--linea);border-radius:var(--r-s);padding:12px;max-height:46vh;overflow:auto}
 details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
+
+/* ---------- 1.10: stile tecnico e ordinato (richiesta dell'utente del 14/11/2026) ----------
+   Superfici piatte su griglia di 4 px, bordi di 1 px, raggi 4–8 px, niente bagliori, sfocature o sfumature;
+   dati (conteggi, date, stati, id) in monospazio con cifre tabellari; un solo accento. La mappa conserva il suo cielo. */
+:root{
+  --bg:#0b0d12; --pannello:#11141b; --rilievo:#171b24; --linea:#262c3a; --linea2:#323a4d;
+  --testo:#e6e9f0; --tenue:#8a93a8; --accento:#7aa2ff; --accento2:#7aa2ff; --accento-tenue:rgba(122,162,255,.12); --su-accento:#0b0d12;
+  --ok:#4cc38a; --att:#e5a23a; --err:#f06a6a;
+  --r-s:4px; --r-m:6px; --r-l:8px; --alone:none;
+}
+html,body{background:var(--bg)}
+body{background:var(--bg);font-size:15px;line-height:1.5}
+body::before{display:none}
+.top{background:var(--bg);backdrop-filter:none;-webkit-backdrop-filter:none;border-bottom:1px solid var(--linea)}
+.top .in{padding:8px 8px 8px 16px}
+.top h1{background:none;color:var(--testo);-webkit-text-fill-color:currentColor;font-size:1rem;font-weight:600;letter-spacing:0}
+main{gap:20px;padding-top:16px}
+h2{font-family:var(--m);font-size:.7rem;font-weight:500;letter-spacing:.08em;color:var(--tenue);display:flex;align-items:center;gap:8px;margin:0 0 8px}
+h2::before{display:none}
+h2::after{content:"";flex:1;height:1px;background:var(--linea)}
+.blocco,.lista,.cerca,.rapido,.banner,.mappa,.scelte,.toast,.scheda-nodo,.modi,.zoom button,.nav,.foglio,.foglio > form{backdrop-filter:none;-webkit-backdrop-filter:none;box-shadow:none}
+.blocco{background:var(--pannello);border:1px solid var(--linea);border-radius:var(--r-m);padding:14px;gap:10px}
+.lista{background:var(--linea);border:1px solid var(--linea);border-radius:var(--r-m);gap:1px}
+.riga{background:var(--pannello);padding:10px 14px;min-height:52px}
+.riga:active{background:var(--rilievo)}
+.riga .t b{font-weight:500}
+.riga .t span,.conta,.meta,.chip,.stato,.kv dt{font-family:var(--m);font-size:.72rem;font-variant-numeric:tabular-nums;letter-spacing:0}
+.rapido{background:var(--pannello);border:1px solid var(--linea);border-radius:var(--r-m);padding:12px 8px;justify-items:start;text-align:left;padding-left:12px}
+.rapido b{font-family:var(--m);font-size:1.35rem;font-weight:500;text-shadow:none}
+.punto{box-shadow:none;width:8px;height:8px;flex-basis:8px}
+.quadro{border-radius:2px}
+.cerca{background:var(--pannello);border-radius:var(--r-m)}
+.chip{background:transparent;border-radius:var(--r-s);padding:1px 6px;min-height:22px}
+button.chip{min-height:32px;border-radius:var(--r-s)}
+.titolo-grande{font-size:1.35rem;font-weight:600;letter-spacing:-.01em}
+.btn{background:var(--accento);border:1px solid var(--accento);color:var(--su-accento);box-shadow:none;border-radius:var(--r-s);font-weight:600;font-size:.9rem;min-height:40px;padding:8px 14px;letter-spacing:0}
+.btn.v{background:transparent;border:1px solid var(--linea2);color:var(--testo)}
+.btn.r{background:transparent;border:1px solid var(--err);color:var(--err)}
+.seg{gap:0;border-bottom:1px solid var(--linea);padding-bottom:0}
+.seg button{border:0;border-bottom:2px solid transparent;border-radius:0;background:transparent;font-size:.84rem;padding:10px 12px;margin-bottom:-1px;min-height:44px}
+.seg button[aria-pressed="true"]{background:transparent;border-bottom-color:var(--accento);box-shadow:none;color:var(--testo)}
+.banner{border-radius:var(--r-m);background:var(--pannello)}
+input,select,textarea{background:var(--bg);border-radius:var(--r-s);padding:10px}
+.scelte{background:var(--bg);border-radius:var(--r-s)}
+.nav{background:var(--bg);border-top:1px solid var(--linea)}
+.nav a{font-size:.68rem;font-weight:500}
+.nav a[aria-current="page"]{color:var(--testo);text-shadow:none}
+.nav a[aria-current="page"] svg{stroke:var(--accento);filter:none}
+.nav a[aria-current="page"]::before{background:var(--accento);left:25%;right:25%;border-radius:0}
+.fab{border-radius:var(--r-l);background:var(--accento);color:var(--su-accento);box-shadow:0 2px 8px rgba(0,0,0,.5)}
+.foglio{background:rgba(0,0,0,.6)}
+.foglio > form{background:var(--pannello);border-top:1px solid var(--linea2);border-radius:var(--r-l) var(--r-l) 0 0}
+.toast{background:var(--rilievo);border:1px solid var(--linea2);border-radius:var(--r-m)}
+.pronta[open]{border-color:var(--att);box-shadow:none}
+.risposta{border-left:2px solid var(--accento);background:var(--bg);border-radius:0 var(--r-s) var(--r-s) 0}
+.auto{color:var(--accento);background:transparent}
+.cfg{background:transparent}
+.avatar{border-radius:var(--r-s);font-family:var(--m);font-weight:500}
+.mappa{border-radius:var(--r-m);border-color:var(--linea)}
+.zoom button,.modi,.scheda-nodo{background:rgba(11,13,18,.92);border-color:var(--linea2)}
+.zoom button{border-radius:var(--r-s)}
+.modi,.modi button{border-radius:var(--r-s)}
+.modi button[aria-pressed="true"]{background:var(--accento-tenue)}
+.scheda-nodo{border-radius:var(--r-m)}
+.scheda-nodo .tipo{font-family:var(--m);color:var(--accento)}
+.scheda-nodo li button{border-radius:var(--r-s);background:var(--rilievo)}
+.md{font-size:1rem;color:var(--testo)}
+.md code{background:var(--rilievo);border-color:var(--linea);border-radius:var(--r-s)}
+.md pre,pre.istr{background:var(--bg);border-radius:var(--r-s)}
+.md a.wl{color:var(--accento);border-bottom-color:rgba(122,162,255,.45)}
+.md a.tag{border-radius:var(--r-s)}
+/* conversazione con il coordinatore */
+.canale{display:grid;gap:1px;background:var(--linea);border:1px solid var(--linea);border-radius:var(--r-m);overflow:hidden}
+.canale article{background:var(--pannello);padding:10px 14px;display:grid;gap:4px}
+.canale .intest{font-family:var(--m);font-size:.7rem;color:var(--tenue);display:flex;gap:8px;flex-wrap:wrap}
+.canale .intest b{color:var(--accento);font-weight:500}
+.canale p{font-size:.9rem;overflow-wrap:anywhere}
+.canale p.risp{border-left:2px solid var(--accento);padding-left:8px;color:var(--testo)}
+.canale p.attesa{border-left-color:var(--att)}
 @media (min-width:700px){main{max-width:720px}.top .in{max-width:720px}}
 </style>
 </head>
@@ -441,12 +520,13 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
         <p class="small muted" id="mappa-info"></p>`;
     },
     stanze() {
-      const voci = [["stanze", "Stanze"], ["agenti", "Agenti"], ["skill", "Skill"], ["esecuzioni", "Esecuzioni"]];
+      const voci = [["stanze", "Stanze"], ["agenti", "Agenti"], ["skill", "Skill"], ["esecuzioni", "Esecuzioni"], ["coordinatore", "Coordinatore"]];
       let corpo = "";
       if (S.sub === "stanze") corpo = `<div class="azioni"><button class="btn v" data-modifica="stanza">Nuova stanza</button></div>${lista(L("stanze").filter((s) => statoStanza(s) !== "archiviata").map(rigaStanza), "Nessuna stanza attiva.")}`;
       if (S.sub === "agenti") corpo = `<p class="small muted">Un agente qui è una configurazione: non indica che stia lavorando. Le esecuzioni reali arrivano dalle istantanee di Claude Code e compaiono solo se le colleghi.</p><div class="azioni"><button class="btn v" data-modifica="agente">Nuovo agente</button></div>${L("agenti").map(schedaAgente).join("") || `<p class="vuoto">Nessun agente.</p>`}`;
       if (S.sub === "skill") corpo = `<div class="azioni"><button class="btn v" data-modifica="skill">Nuova skill</button></div>${L("skill").map((k) => `<div class="blocco"><b>${esc(k.nome)}</b>${k.descrizione ? `<span class="small muted">${esc(k.descrizione)}</span>` : ""}${k.procedura ? `<div class="corpo small">${esc(k.procedura)}</div>` : ""}<div class="chips"><span class="chip">usata da ${L("agenti").filter((a) => (a.skill_ids || []).includes(k.id)).length} agenti</span>${syncChip("skill", k.id)}</div><div class="azioni"><button class="btn v" data-modifica="skill" data-id="${esc(k.id)}">Modifica</button><button class="btn r" data-elimina="skill" data-id="${esc(k.id)}">Elimina</button></div></div>`).join("") || `<p class="vuoto">Nessuna skill.</p>`}`;
       if (S.sub === "esecuzioni") corpo = esecuzioni();
+      if (S.sub === "coordinatore") corpo = coordinatore();
       return `<div class="seg" role="group">${voci.map(([k, l]) => `<button data-sub="${k}" aria-pressed="${S.sub === k}">${l}</button>`).join("")}</div>${corpo}`;
     },
     stanza() {
@@ -544,6 +624,24 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       <div><h2>Esecuzioni reali collegate</h2>${ese.length ? ese.map((c) => { const r = rilevazione(c.session_id); return `<div class="chips"><span class="mono">${esc(r ? r.s.titolo || c.session_id : c.session_id)}</span>${chipRil(r)}</div>`; }).join("") : `<p class="small muted">Nessuna: questo agente non risulta al lavoro.</p>`}</div>
       <div class="azioni"><button class="btn v" data-modifica="agente" data-id="${esc(a.id)}">Modifica</button><button class="btn r" data-elimina="agenti" data-id="${esc(a.id)}">Elimina</button></div></div>`;
   }
+  // 1.10: canale con il coordinatore degli agenti (lo stesso usato da Claude e Claude Code tramite Google Drive)
+  function coordinatore() {
+    const c = (S.stato.stato_lavoro || []).find((x) => x.id === "coordinatore"), voci = c ? M.analizzaCanale(c.testo) : [], fatti = new Set(voci.map((v) => v.id));
+    const coda = L("messaggi").filter((m) => !fatti.has(m.id)).sort((a, b) => (a.creato_il < b.creato_il ? 1 : -1));
+    const tipo = (t) => esc(M.TIPI_MESSAGGIO[t] || t || "messaggio");
+    return `<div class="blocco"><b>Scrivi al coordinatore</b>
+        <dl class="kv"><dt>chi</dt><dd>attività pianificata che guida gli agenti in Claude Code</dd><dt>quando</dt><dd>ogni 3 ore, 08:33–23:33 (ora di Roma); risponde qui</dd><dt>limiti</dt><dd>niente push fuori dai rami di lavoro, pubblicazioni, spese, eliminazioni, credenziali: quelle arrivano a te in «Risposte pronte»</dd></dl>
+        <form id="f-coord" class="riga2" style="display:grid;gap:8px" autocomplete="off">
+          <label>Tipo <select id="co-tipo">${Object.entries(M.TIPI_MESSAGGIO).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select></label>
+          <label id="co-sess-l" hidden>Sessione di Claude Code (link o id) <input id="co-sess" placeholder="https://claude.ai/code/session_…"></label>
+          <label>Messaggio <textarea id="co-testo" maxlength="2000" placeholder="Es. Avvia una revisione della sicurezza dell'app sul ramo di lavoro"></textarea></label>
+          <div class="azioni"><button type="button" class="btn" id="b-coord">Invia al coordinatore</button></div>
+          <p class="stato" id="co-stato" role="status"></p></form></div>
+      <section><h2>In coda · ${coda.length}</h2>${coda.length ? `<div class="canale">${coda.map((m) => `<article><div class="intest"><b>${tipo(m.tipo)}</b><span>${esc(quando(m.creato_il))}</span>${syncChip("messaggi", m.id) || `<span class="chip">inviato, in attesa del coordinatore</span>`}</div><p>${esc(m.testo)}</p>${m.sessione ? `<p class="small muted mono">${esc(m.sessione)}</p>` : ""}</article>`).join("")}</div>` : `<p class="vuoto">Nessun messaggio in attesa.</p>`}</section>
+      <section><h2>Conversazione · ${voci.length}${c ? "" : " · non ancora scaricata"}</h2>${voci.length ? `<div class="canale">${voci.map((v) => `<article><div class="intest"><b>${esc(v.da || "?")}</b><span>${tipo(v.tipo)}</span><span>${esc(v.quando)}</span></div>${v.messaggio ? `<p>${esc(v.messaggio)}</p>` : ""}${v.risposta ? `<p class="risp${/^in attesa dell'utente/i.test(v.risposta) ? " attesa" : ""}">${esc(v.risposta)}</p>` : ""}</article>`).join("")}</div>` : `<p class="vuoto">Ancora nessuna risposta. Le risposte arrivano con la sincronizzazione (o con «Aggiorna ora» in Esecuzioni).</p>`}</section>
+      <p class="small muted">Da una chat di Claude o da Claude Code: chiedi «Scrivi al coordinatore di Second Brain: …». Claude crea il messaggio nella cartella Google Drive «Second Brain - canale coordinatore», seguendo il file LEGGIMI che c'è dentro.</p>`;
+  }
+
   function esecuzioni() {
     const ist = istantanea(), t = tentativo(); let h = "";
     if (t && t.esito === "errore") h += `<p class="banner err"><b>Ultimo aggiornamento di Claude Code non riuscito (${esc(quando(t.quando))})</b><span>${esc(t.messaggio)}</span><span class="small">Resta visibile l'istantanea precedente.</span></p>`;
@@ -896,6 +994,8 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     skill: (id) => L("agenti").some((a) => (a.skill_ids || []).includes(id)) ? "La skill è usata da un agente: toglila prima dalla sua scheda." : null,
     progetti: (id) => L("note").some((n) => n.progetto_id === id) ? "Il progetto ha note collegate: archivialo o scollega prima le note." : null,
   };
+  document.addEventListener("submit", (e) => { if (e.target.id === "f-coord") { e.preventDefault(); $("#b-coord").click(); } });
+  document.addEventListener("change", (e) => { if (e.target.id === "co-tipo") $("#co-sess-l").hidden = e.target.value !== "inoltro"; });
   document.addEventListener("change", async (e) => {
     const c = e.target.closest("[data-spunta]"); if (!c || !S.nota) return;
     const n = T("note", S.nota); if (!n) return;
@@ -950,6 +1050,10 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (b.id === "b-sync") { sincronizza(true); return; }
     if (b.id === "b-rimanda") { S.stato.impostazioni ||= {}; S.stato.impostazioni.chat_rimandato_fino = new Date(Date.now() + 7 * 86400000).toISOString(); await salva(); render(); toast("Te lo ricordo tra 7 giorni"); return; }
     if (b.id === "b-aggiorna-ora") { aggiornaOra(); return; }
+    if (b.id === "b-coord") { e.preventDefault();
+      try { await M.scriviAlCoordinatore(S.stato, { testo: $("#co-testo").value, tipo: $("#co-tipo").value, sessione: $("#co-sess").value }); await salva(); programmaSync(); render(); stato("#co-stato", "Messaggio in coda: parte con la prossima sincronizzazione.", "ok"); }
+      catch (err) { stato("#co-stato", err.message || String(err), "err"); }
+      return; }
     if (b.id === "b-togli-routine") { conferma(b, () => { if (A && A.rimuoviRoutine) A.rimuoviRoutine(); toast("Token rimosso dal telefono. Puoi revocarlo anche su claude.ai/code/routines."); render(); }); return; }
     if (b.id === "b-notifiche") { if (A && A.richiediNotifiche) A.richiediNotifiche(); return; }
     if (b.id === "b-snap") { scaricaIstantanea(); return; }
@@ -1024,7 +1128,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
   async function esporta() {
     const file = await M.creaBackup(S.stato); if (!A) return;
     stato("#exp-stato", "Scegli dove salvare il file…");
-    A.esporta("second-brain-" + ora().slice(0, 10) + ".json", JSON.stringify(file, null, 2), "Esportato: " + M.COLLEZIONI_BACKUP.map((c) => file.dati[c].length + " " + c).join(", ") + ". Impronta " + file.hash_sha256.slice(0, 16) + "…");
+    A.esporta("second-brain-" + ora().slice(0, 10) + ".json", JSON.stringify(file, null, 2), "Esportato: " + M.COLLEZIONI_BACKUP.filter((c) => file.dati[c]).map((c) => file.dati[c].length + " " + c).join(", ") + ". Impronta " + file.hash_sha256.slice(0, 16) + "…");
   }
   window.__importato = async (ok, testo) => {
     anteprima("#imp-anteprima", ""); S.pending = null;

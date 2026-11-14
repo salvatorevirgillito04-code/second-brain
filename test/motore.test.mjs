@@ -498,3 +498,21 @@ test("JSON Lines e oggetto con elenco «conversations»", () => {
   assert.equal(M.conversazioniDaTesto(riga("a") + "\n" + riga("b")).length, 2);
   assert.equal(M.conversazioniDaJson({ conversations: [1, 2] }).length, 2);
 });
+
+test("1.10 canale coordinatore: il messaggio va in dati/app/messaggi, le risposte arrivano da coordinatore.md", async () => {
+  const gh = new FintoGitHub(); const s = await base();
+  await assert.rejects(() => M.scriviAlCoordinatore(s, { testo: "  " }), /Scrivi il messaggio/);
+  await assert.rejects(() => M.scriviAlCoordinatore(s, { testo: "usa github_pat_abc" }), /token/);
+  await assert.rejects(() => M.scriviAlCoordinatore(s, { testo: "inoltra", tipo: "inoltro", sessione: "boh" }), /sessione/);
+  const id = await M.scriviAlCoordinatore(s, { testo: "Avvia una revisione\ndel codice", tipo: "compito" });
+  const id2 = await M.scriviAlCoordinatore(s, { testo: "ciao", tipo: "inoltro", sessione: "https://claude.ai/code/session_01ABCDEFGHIJKLMN" });
+  assert.match(id, /^msg-[a-z0-9]+-[0-9a-f]{8}$/);
+  await M.sincronizza(s, gh.api(), OPZ);
+  const m = leggi(gh, "messaggi", id); assert.equal(m.testo, "Avvia una revisione\ndel codice"); assert.equal(m.tipo, "compito"); assert.equal(m.da, "app");
+  assert.equal(leggi(gh, "messaggi", id2).sessione, "session_01ABCDEFGHIJKLMN");
+  gh.scriviDiretto("dati", "dati/stato/coordinatore.md", `# Coordinatore – canale\n\n### 2026-11-15T07:33Z · da app · compito · id ${id}\nMessaggio: Avvia una revisione\nRisposta: Avviata https://claude.ai/code/session_X\n`);
+  await M.scaricaIstantanea(s, gh.api(), OPZ);
+  const v = M.analizzaCanale(s.stato_lavoro.find((x) => x.id === "coordinatore").testo);
+  assert.deepEqual(v.map((x) => [x.id, x.da, x.tipo]), [[id, "app", "compito"]]); assert.match(v[0].risposta, /Avviata/);
+  const b = await M.creaBackup(M.statoVuoto()); assert.equal("messaggi" in b.dati, false); // impronta dei backup senza messaggi invariata
+});

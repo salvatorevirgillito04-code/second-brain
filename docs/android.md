@@ -190,3 +190,8 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 
 ## 1.9.6
 - La sfera riprende a girare **appena lasci il dito**, senza attese (prima aspettava 1,5 s); torna alla sua velocità in mezzo secondo e si somma allo slancio del gesto.
+
+## 1.10.0
+- **Stile tecnico e ordinato**: superfici piatte, bordi di 1 px, angoli piccoli (4–8 px), niente bagliori, sfocature, sfumature o cielo stellato fuori dalla mappa. Un solo colore d'accento. Conteggi, date, stati e id in carattere monospaziato con cifre tabellari. Titoli di sezione con una riga di separazione. Schede come barra con sottolineatura.
+- **Coordinatore** (Stanze › Coordinatore): scrivi al coordinatore degli agenti una domanda, un compito da avviare in Claude Code o un messaggio da inoltrare a una sessione. I messaggi vanno in `dati/app/messaggi/` con la sincronizzazione; le risposte arrivano da `dati/stato/coordinatore.md`, insieme all'istantanea. I messaggi che contengono token o chiavi vengono rifiutati. Lo stesso canale riceve i messaggi di Claude (chat) e di Claude Code tramite la cartella Google Drive «Second Brain - canale coordinatore».
+- I backup senza messaggi hanno la stessa impronta di prima.
