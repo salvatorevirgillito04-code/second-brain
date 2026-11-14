@@ -1,6 +1,8 @@
-# Sessioni in attesa – rilevazione 2026-11-14T01:24Z
+# Sessioni in attesa – rilevazione 2026-11-14T02:37:26Z
 
-Bozza preparata alle 01:24 UTC. Le risposte sono suggerimenti: incollale tu, se le condividi.
+## Gestite dal coordinatore
+
+Nessuna: tutte e 6 le richieste toccano push, spese, azioni sul telefono, scelte di prodotto o dati che hai solo tu.
 
 ## 1. TCL Minimal TV — Verifica permessi tag GitHub
 https://claude.ai/code/session_01WFYYR7b1B2CRRLbwz7tXGE
