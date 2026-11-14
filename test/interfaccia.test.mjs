@@ -172,6 +172,8 @@ const zipB64 = readFileSync(join(QUI, "campioni/esportazione-claude.zip")).toStr
 await page.evaluate((b) => { window.__fileB64 = b; }, zipB64);
 await vai("impostazioni"); await page.click("#b-chat"); await page.waitForTimeout(400);
 ok((await T("#chat-anteprima")).includes("2 chat trovate") && (await T("#chat-anteprima")).includes("2 scartate") && (await T("#chat-anteprima")).includes("1 allegati"), "anteprima importazione chat dallo ZIP");
+await page.evaluate(() => window.__ripresa()); await page.waitForTimeout(400); // ritorno dal selettore dei file: ridisegno + sincronizzazione
+ok(!!(await page.$("#b-chat-ok")) && (await T("#chat-anteprima")).includes("2 chat trovate"), "anteprima delle chat ancora visibile dopo il ritorno nell'app (ridisegno)");
 const nCopie = await page.evaluate(() => Object.keys(window.__mem.copie).length);
 await page.click("#b-chat-ok"); await page.waitForTimeout(300);
 ok((await T("#chat-stato")).includes("Importate 2 chat"), "chat importate");

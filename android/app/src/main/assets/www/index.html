@@ -285,7 +285,11 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
   const statoStanza = (s) => s.stato || (s.archiviata ? "archiviata" : "attiva");
   const pallino = (cat) => `<span class="punto" style="background:var(${CAT[cat][1]})"></span>`;
   function toast(t) { const el = $("#toast"); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => (el.hidden = true), 3200); }
-  function stato(sel, t, k) { const el = $(sel); if (el) { el.textContent = t || ""; el.className = "stato" + (k ? " " + k : ""); } }
+  // Anteprime e messaggi d'importazione: restano dopo un ridisegno (es. la sincronizzazione al ritorno dal selettore dei file)
+  const MEMO = new Set(["#imp-stato", "#chat-stato", "#obs-stato", "#exp-stato"]); S.memo = {};
+  function stato(sel, t, k) { if (MEMO.has(sel)) S.memo[sel] = { t: t || "", k }; const el = $(sel); if (el) { el.textContent = t || ""; el.className = "stato" + (k ? " " + k : ""); } }
+  function anteprima(sel, html) { S.memo[sel] = { html }; const el = $(sel); if (el) el.innerHTML = html; }
+  function rimettiMemo() { for (const [sel, m] of Object.entries(S.memo)) { const el = $(sel); if (!el) continue; if (m.html !== undefined) el.innerHTML = m.html; else { el.textContent = m.t; el.className = "stato" + (m.k ? " " + m.k : ""); } } }
   function conferma(btn, fn) {
     if (btn.dataset.armato) { delete btn.dataset.armato; fn(); return; }
     btn.dataset.armato = "1"; const t = btn.textContent; btn.textContent = "Tocca di nuovo per confermare";
@@ -556,6 +560,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     const scelte = [...document.querySelectorAll("[data-link-ag],[data-link-st]")].map((el) => [el.hasAttribute("data-link-ag") ? "ag" : "st", el.dataset.linkAg || el.dataset.linkSt, el.value]);
     const attivo = document.activeElement && document.activeElement.id; const pos = attivo && document.activeElement.selectionStart;
     V.innerHTML = VISTE[v]();
+    rimettiMemo();
     for (const [k, sid, val] of scelte) { const el = document.querySelector(`[data-link-${k}="${CSS.escape(sid)}"]`); if (el && [...el.options].some((o) => o.value === val)) el.value = val; }
     if (attivo === "cerca" || attivo === "cerca-note") { const el = $("#" + attivo); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (_) {} } }
     $("#titolo").textContent = TITOLI[v];
@@ -978,12 +983,12 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     A.esporta("second-brain-" + ora().slice(0, 10) + ".json", JSON.stringify(file, null, 2), "Esportato: " + M.COLLEZIONI_BACKUP.map((c) => file.dati[c].length + " " + c).join(", ") + ". Impronta " + file.hash_sha256.slice(0, 16) + "…");
   }
   window.__importato = async (ok, testo) => {
-    const box = $("#imp-anteprima"); if (box) box.innerHTML = ""; S.pending = null;
+    anteprima("#imp-anteprima", ""); S.pending = null;
     if (!ok) { stato("#imp-stato", testo || "Nessun file scelto.", testo ? "err" : ""); return; }
     try {
       const file = JSON.parse(testo); const v = await M.verificaBackup(file); S.pending = file;
       const cols = v.versione === 1 ? M.COLLEZIONI_BACKUP_V1 : M.COLLEZIONI_BACKUP;
-      $("#imp-anteprima").innerHTML = `<div class="banner"><b>Backup ${v.versione === 1 ? "della 1.0 " : ""}del ${esc(quando(file.esportato_il))}</b><span>${cols.map((c) => (file.dati[c] || []).length + " " + c).join(", ")}${v.versione === 1 ? " (le memorie diventeranno note identiche)" : ""}</span><span class="mono">impronta ${esc(v.hashFile.slice(0, 16))}… verificata</span><span class="small">I dati del telefono saranno sostituiti.</span><div class="azioni"><button class="btn" id="b-imp-ok">Sostituisci i dati del telefono</button></div></div>`;
+      anteprima("#imp-anteprima", `<div class="banner"><b>Backup ${v.versione === 1 ? "della 1.0 " : ""}del ${esc(quando(file.esportato_il))}</b><span>${cols.map((c) => (file.dati[c] || []).length + " " + c).join(", ")}${v.versione === 1 ? " (le memorie diventeranno note identiche)" : ""}</span><span class="mono">impronta ${esc(v.hashFile.slice(0, 16))}… verificata</span><span class="small">I dati del telefono saranno sostituiti.</span><div class="azioni"><button class="btn" id="b-imp-ok">Sostituisci i dati del telefono</button></div></div>`);
       stato("#imp-stato", "File valido. Controlla e conferma.", "ok");
     } catch (e) { stato("#imp-stato", "File non utilizzabile: " + (e.message || e), "err"); }
   };
@@ -993,7 +998,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       const base = bloccato() ? M.statoVuoto() : S.stato;
       const r = await M.ripristina(base, S.pending); S.stato = base; S.origine = "ripristinato"; await salva();
       let suDisco = r.hashDopo; if (A) { const c = M.carica(A.caricaDati(), null); suDisco = await M.impronta(M.datiPuliti(c.stato)); }
-      const ok = r.identico && suDisco === r.hashAtteso; S.pending = null; render();
+      const ok = r.identico && suDisco === r.hashAtteso; S.pending = null; anteprima("#imp-anteprima", ""); render();
       stato("#imp-stato", ok ? `Importazione verificata${r.versione === 1 ? " (backup 1.0: memorie importate come note)" : ""}: impronta ${r.hashAtteso.slice(0, 16)}… corrispondente al file, anche dopo il salvataggio.` : `Attenzione: impronta diversa dopo l'importazione (${suDisco.slice(0, 12)}…). Conserva il file di backup.`, ok ? "ok" : "err");
       programmaSync();
     } catch (e) { stato("#imp-stato", "Ripristino non riuscito: " + (e.message || e) + ". I dati del telefono non sono stati salvati.", "err"); btn.disabled = false; }
@@ -1002,7 +1007,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
   // ---------- importazione chat di Claude ----------
   window.__fileScelto = async (ok, dati) => {
     if (S.attesaFile === "obsidian") return fileObsidian(ok, dati);
-    const box = $("#chat-anteprima"); if (box) box.innerHTML = ""; S.chat = null;
+    anteprima("#chat-anteprima", ""); S.chat = null;
     if (!ok) { stato("#chat-stato", dati || "Nessun file scelto.", dati ? "err" : ""); return; }
     try {
       stato("#chat-stato", "Lettura del file…");
@@ -1010,7 +1015,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       const testo = bytes[0] === 0x50 && bytes[1] === 0x4b ? await M.leggiDaZip(bytes, "conversations.json") : new TextDecoder().decode(bytes);
       const a = M.analizzaChatClaude(JSON.parse(testo));
       const gia = a.chat.filter((c) => T("note", c.id)).length; S.chat = a;
-      $("#chat-anteprima").innerHTML = `<div class="banner"><b>${a.chat.length} chat trovate</b><span>${a.chat.length - gia} nuove, ${gia} già importate (non verranno modificate)${a.scartate.length ? `, ${a.scartate.length} scartate perché vuote o non riconosciute` : ""}${a.allegatiIgnorati ? `, ${a.allegatiIgnorati} allegati non importati` : ""}.</span><span class="small">Diventeranno note originali e private in «Da organizzare», con fonte e data. Prima viene salvata una copia dei dati attuali.</span>${a.chat.length - gia ? `<div class="azioni"><button class="btn" id="b-chat-ok">Importa ${a.chat.length - gia} chat</button></div>` : ""}</div>`;
+      anteprima("#chat-anteprima", `<div class="banner"><b>${a.chat.length} chat trovate</b><span>${a.chat.length - gia} nuove, ${gia} già importate (non verranno modificate)${a.scartate.length ? `, ${a.scartate.length} scartate perché vuote o non riconosciute` : ""}${a.allegatiIgnorati ? `, ${a.allegatiIgnorati} allegati non importati` : ""}.</span><span class="small">Diventeranno note originali e private in «Da organizzare», con fonte e data. Prima viene salvata una copia dei dati attuali.</span>${a.chat.length - gia ? `<div class="azioni"><button class="btn" id="b-chat-ok">Importa ${a.chat.length - gia} chat</button></div>` : ""}</div>`);
       stato("#chat-stato", "Controlla e conferma.", "ok");
     } catch (e) { stato("#chat-stato", "File non utilizzabile: " + (e.message || e) + " Il formato dell'esportazione di Claude non è documentato: se è cambiato, mandami il messaggio.", "err"); }
   };
@@ -1022,7 +1027,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     A.esportaBinario("second-brain-obsidian-" + ora().slice(0, 10) + ".zip", btoa(bin), "application/zip", `Esportate ${file.length} pagine per Obsidian (note private comprese: conserva lo ZIP con cura).`);
   }
   async function fileObsidian(ok, dati) {
-    S.attesaFile = null; const box = $("#obs-anteprima"); if (box) box.innerHTML = "";
+    S.attesaFile = null; anteprima("#obs-anteprima", "");
     if (!ok) { stato("#obs-stato", dati || "Nessun file scelto.", dati ? "err" : ""); return; }
     try {
       const bin = atob(dati), bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
@@ -1039,7 +1044,7 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
     if (!S.chat || bloccato()) return; btn.disabled = true;
     const copia = A ? A.salvaCopia("prima-importazione-chat-" + ora().replace(/[^0-9]/g, "").slice(0, 14) + ".json", JSON.stringify(S.stato)) : "ok";
     if (copia !== "ok" && copia !== "esiste") { stato("#chat-stato", "Copia di sicurezza non salvata (" + copia + "): importazione annullata.", "err"); btn.disabled = false; return; }
-    const e = await M.importaChatClaude(S.stato, S.chat, ora()); await salva(); S.chat = null; render();
+    const e = await M.importaChatClaude(S.stato, S.chat, ora()); await salva(); S.chat = null; anteprima("#chat-anteprima", ""); render();
     stato("#chat-stato", `Importate ${e.importate} chat come note private.${e.gia_presenti ? ` ${e.gia_presenti} erano già presenti${e.piu_recenti_non_sovrascritte ? `, di cui ${e.piu_recenti_non_sovrascritte} più recenti nell'esportazione: non sovrascritte (elimina la nota e reimporta se vuoi la versione nuova)` : ""}.` : ""}`, "ok");
   }
 
