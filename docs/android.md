@@ -76,6 +76,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 | 1.8.0 | 13 | `da39eb92843f11075bcf0babdcb7472a4ad646b78754069561828228f05907f9` (commit fec4083, riprodotto due volte identico; la 1.7.2 non è stata firmata) |
 | 1.9.0 | 14 | `c817ef9838e3d5c009dc0ebc0423d3e2c89440d5a0890fb0315b9101b1adf63e` (commit cc40a61, riprodotto due volte identico) |
 | 1.9.1 | 15 | `641d278b1e70e3be9e28e8693c00a30a1e3b3428d41fb0b506e07e90d731591e` (commit 4e49be9, riprodotto due volte identico) |
+| 1.9.2 | 16 | `9cfa2caa6efecc9334938fce4e33b65e41bdf3c5d07ffe199d72a084642e6268` (commit 41868e8, riprodotto due volte identico) |
 
 ## 1.2
 - **Collegamenti scritti**: `[[Titolo]]` nel testo collega la nota con quel titolo (o prima riga) se è unica. Titoli inesistenti o ambigui non vengono collegati e sono segnalati; per quelli inesistenti c'è «Crea nota». I collegamenti scelti dall'elenco restano; quelli scritti si aggiungono al salvataggio.
@@ -163,7 +164,7 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 ## 1.9.1
 - Importazione delle chat di Claude: l'anteprima con «Importa N chat» spariva al ritorno dal selettore dei file (la sincronizzazione ridisegnava la pagina). Ora anteprime e messaggi d'importazione (chat, backup, Obsidian) restano dopo ogni ridisegno.
 
-## 1.9.2 (non ancora firmata)
+## 1.9.2
 - **Pilota automatico sempre attivo** (richiesta del 14/11/2026): niente interruttore; gira all'apertura, ogni 5 minuti con l'app aperta e a ogni sincronizzazione (anche in background).
 - **Tutto organizzato**: ogni nota senza stanza va nella stanza simile oppure in una **stanza nuova per argomento** (note simili insieme); le note del giorno nella stanza «Diario»; i modelli restano dove sono. Ciò che hai annullato o spostato tu non viene rifatto.
 - **Pulizia**: stanze e progetti creati in automatico e rimasti vuoti vengono eliminati (mai quelli creati dall'utente, mai le note); ogni eliminazione si annulla dal registro e non si ripete.
