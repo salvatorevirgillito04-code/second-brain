@@ -1,0 +1,21 @@
+{
+  "session_id": "session_01WFYYR6JVTjkAHJYKvDAttU",
+  "agenti_ids": [
+    "ag-accessibility-expert",
+    "ag-archivista",
+    "ag-code-reviewer",
+    "ag-custode-pr",
+    "ag-debugger",
+    "ag-design-system-architect",
+    "ag-guardiano-rischio",
+    "ag-ricercatore",
+    "ag-security-auditor",
+    "ag-sentinella-errori",
+    "ag-test-automator",
+    "ag-ui-designer"
+  ],
+  "agente_id": "ag-accessibility-expert",
+  "stanza_id": "st-mwfk834n-cl3dn",
+  "compito": "Rendere Second brain un cervello completamente automatico in tutte le azioni possibili (note, stanze, agenti e strumenti da utilizzare)",
+  "creato_il": "2026-11-14T07:44:34.952Z"
+}
