@@ -67,4 +67,15 @@ Le stime di costo vanno indicate come stime, mai come addebiti. Commit: «Resoco
 
 **«rapporto connettori»** (08:13, ora di Roma; attività `trig_017QzVMwoNDckV8nWaQb5rTw`, richiesta dall'utente il 14/11/2026): legge in **sola lettura** Sentry, Netlify, Supabase, Bitrise, Alpha Vantage e il saldo di TranscriptFetch. Scrive il rapporto in un unico documento Google Drive, «Second Brain – rapporto connettori». Nessuna modifica sui servizi, nessun costo, nessun push.
 
+**«Brain – automazioni»** (08:13, ora di Roma; sostituisce «rapporto connettori», che è in pausa): legge `automazioni/registro.md` dal ramo `ccr-b772bd68-cobgte` e applica a ogni connettore disponibile la sua azione in sola lettura, compresi quelli collegati dopo. Il rapporto finisce sul documento Drive «Second Brain – rapporto connettori».
+
+## Strumenti di sviluppo (dal 14/11/2026)
+- Le **attività pianificate** («aggiorna stato», coordinatore, «Brain – automazioni», resoconto) seguono SOLO le proprie istruzioni: non avviano brainstorming, piani o flussi di Superpowers.
+- Nel lavoro di sviluppo:
+  - usa le skill di Superpowers (`brainstorming`, `writing-plans`, `test-driven-development`, `systematic-debugging`, `verification-before-completion`, `requesting-code-review`) quando il compito le richiede;
+  - usa `webapp-testing` (Playwright) per provare l'interfaccia;
+  - usa gli agenti `code-reviewer`, `security-auditor` (sola lettura), `debugger` e `test-automator`.
+- **Context7**: se il connettore è disponibile, prima di usare l'API di una libreria che non conosci bene recupera la documentazione aggiornata (`resolve-library-id`, poi `query-docs`).
+- Componenti di terze parti: vedi `.claude/TERZE-PARTI.md`. Prima di aggiornarli, rifai la revisione.
+
 Catalogo: il 14/11/2026 l'utente ha autorizzato l'aggiunta (solo file nuovi) in `dati/app/{agenti,skill,stanze,progetti}` delle schede di skill e agenti reali (`.claude/`) e della stanza «Trading oro e Forex». Il progetto trading è descritto in `docs/progetto-trading.md`.
