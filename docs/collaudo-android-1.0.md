@@ -42,3 +42,4 @@ Verificato dal repository e dall'attività pianificata:
 Da controllare sul telefono:
 - che la sincronizzazione in background avvenga con l'app chiusa (in Impostazioni › Automazioni, l'ora dell'«ultima sincronizzazione in background»);
 - il pulsante «Aggiorna ora» con il token dell'attività.
+- 14/11/2026: l'utente conferma sul telefono che i controlli rimasti (sincronizzazione in background con l'app chiusa e «Aggiorna ora») sono andati bene: «Fatto, tutto corretto».
