@@ -1,1 +1,1 @@
-{"quando":"2026-11-14T18:19:01Z","esito":"ok","messaggio":"Lette 12 sessioni."}
+{"quando":"2026-11-14T18:37:11.192Z","esito":"errore","messaggio":"passo 1: list_sessions (claude-code-remote) non disponibile dopo due ricerche con ToolSearch"}
