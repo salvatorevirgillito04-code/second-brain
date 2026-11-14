@@ -1,4 +1,4 @@
-# Sessioni in attesa – rilevazione 2026-11-14T02:37:26Z
+# Sessioni in attesa – rilevazione 2026-11-14T06:48:47Z
 
 ## Gestite dal coordinatore
 
