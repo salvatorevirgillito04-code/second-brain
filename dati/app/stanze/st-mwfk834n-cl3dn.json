@@ -5,17 +5,11 @@
     "Avere la TV più leggera e fluida"
   ],
   "agenti_ids": [
-    "ag-accessibility-expert",
-    "ag-archivista",
-    "ag-custode-pr",
-    "ag-design-system-architect",
-    "ag-guardiano-rischio",
-    "ag-ricercatore",
-    "ag-sentinella-errori",
     "ag-ui-designer"
   ],
   "stato": "attiva",
   "attivita": [],
   "creato_il": "2026-11-13T22:40:07.127Z",
-  "aggiornato_il": "2026-11-14T06:59:06.383Z"
+  "aggiornato_il": "2026-11-14T17:07:01.898Z",
+  "agenti_auto": true
 }
