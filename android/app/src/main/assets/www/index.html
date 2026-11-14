@@ -647,13 +647,13 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       disegna();
     }
     let tocco = null, vel = { x: 0, y: 0 }, ultimo = null; // vel: inerzia (radianti/ms)
-    let gira = modo === "sfera", quiete = 0, spinta = 1; // quiete: ms senza tocchi né inerzia; spinta: 0→1, la rotazione riparte dolcemente
+    let gira = modo === "sfera", spinta = 1; // spinta: 0→1 in mezzo secondo, la rotazione riparte senza scatti
     const VEL_AUTO = 0.00022; // un giro ogni ~28 s
     const dita = new Map(); let pizzico = null; // ingrandimento con due dita
     const zoom = (z) => { vista.z = Math.max(0.3, Math.min(3, z)); if (!inCiclo) ridisegna(); };
     const animata = modo === "sfera";
     tela.onpointerdown = (e) => {
-      tela.setPointerCapture(e.pointerId); quiete = 0; spinta = 0; dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      tela.setPointerCapture(e.pointerId); spinta = 0; dita.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (dita.size === 2) { const [a, b] = [...dita.values()]; pizzico = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: vista.z }; tocco = null; return; }
       tocco = { x: e.clientX, y: e.clientY, vx: vista.x, vy: vista.y, px: e.clientX, py: e.clientY, mosso: false }; vel = { x: 0, y: 0 }; ultimo = performance.now();
     };
@@ -692,15 +692,14 @@ details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
       if (!tocco && (Math.abs(vel.x) + Math.abs(vel.y)) > 1e-6) { // inerzia dopo il rilascio del dito
         vista.m = G.ruota(G.ruota(vista.m, "y", vel.x * dt), "x", vel.y * dt); const f = Math.pow(0.94, dt / 16.7); vel.x *= f; vel.y *= f;
         if (Math.abs(vel.x) + Math.abs(vel.y) < 2e-6) vel = { x: 0, y: 0 };
-      } else if (!tocco && !dita.size) quiete += dt;
-      if (gira && !S.nodo && !tocco && !dita.size && quiete > 1500) { // dopo 1,5 s di quiete riparte da sola, accelerando piano
-        spinta = Math.min(1, spinta + dt / 1400); const e = spinta * spinta * (3 - 2 * spinta), s = (ora - t0) / 1000;
+      }
+      if (gira && !S.nodo && !tocco && !dita.size) { // appena lasci il dito riparte da sola (insieme all'inerzia), senza attese
+        spinta = Math.min(1, spinta + dt / 500); const e = spinta * spinta * (3 - 2 * spinta), s = (ora - t0) / 1000;
         vista.m = G.ruota(G.ruota(vista.m, "y", VEL_AUTO * e * dt), "x", VEL_AUTO * 0.35 * Math.sin(s * 0.21) * e * dt); // asse che ondeggia: non un giro meccanico
       }
       if (++giri % 120 === 0) vista.m = G.ortonormalizza(vista.m);
       disegna(); requestAnimationFrame(ciclo);
     };
-    quiete = 1e9; // all'apertura gira subito
     if (animata) { inCiclo = true; requestAnimationFrame(ciclo); }
   }
 
