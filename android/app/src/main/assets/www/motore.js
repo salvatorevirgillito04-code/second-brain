@@ -296,6 +296,68 @@
     }
     return esito;
   };
+  // ---------- 1.5: organizzazione automatica ----------
+  // Ogni nuova sessione di Claude Code finisce nella stanza (area) e nel progetto giusti: se non esistono vengono creati.
+  // Le chat importate diventano risorse della stanza più simile; le chat senza stanza ma con lo stesso argomento (almeno 2) ne creano una.
+  // Ogni nota viene organizzata UNA sola volta (campo auto_organizzata): se sposti o elimini qualcosa, l'app non lo rifà.
+  const VUOTE = new Set("della delle dello degli del dei con per tra fra una uno gli le la il lo di da in su a e o the and for with app setup".split(" "));
+  M.parole = (t) => new Set(String(t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").split(/[^a-z0-9]+/).filter((w) => w.length >= 2 && !VUOTE.has(w)));
+  M.nucleoTitolo = (t) => String(t || "").split(/\s[—–-]\s|[—–:|]|(?<=\S)-(?=[A-ZÀ-Ý])/)[0].trim().slice(0, 100);
+  const affinita = (a, b) => { const A = M.parole(a), B = M.parole(b); if (!A.size || !B.size) return 0; let c = 0; for (const w of A) if (B.has(w)) c++; return c / Math.min(A.size, B.size); };
+  function stanzaPiuSimile(stato, testo, soglia) {
+    let meglio = null, punti = 0;
+    for (const s of M.elenco(stato, "stanze")) {
+      if ((s.stato || (s.archiviata ? "archiviata" : "attiva")) === "archiviata" || s.fittizio) continue;
+      const p = Math.max(affinita(testo, s.nome), affinita(testo, s.nome + " " + (s.descrizione || "")) * 0.9);
+      if (p > punti) { punti = p; meglio = s; }
+    }
+    return punti >= soglia ? meglio : null;
+  }
+  async function nuovaStanza(stato, nome, perche) {
+    const id = "st-auto-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+    await M.salvaRecord(stato, "stanze", id, { nome, descrizione: perche, obiettivi: [], agenti_ids: [], stato: "attiva", attivita: [], automatico: true, creato_il: ora() });
+    return M.elenco(stato, "stanze").find((s) => s.id === id);
+  }
+  M.organizzaAutomatico = async function (stato) {
+    const esito = { stanze: 0, progetti: 0, note: 0 };
+    if (stato.impostazioni && stato.impostazioni.auto_organizza === false) return esito;
+    const note = M.elenco(stato, "note").filter((n) => !n.auto_organizzata && !n.corretto_il && !n.stanza_id && !n.progetto_id && !n.fittizio);
+    // 1) sessioni di Claude Code → stanza + progetto
+    for (const n of note.filter((x) => x.origine && x.origine.tipo === "sessione_claude_code")) {
+      const nome = M.nucleoTitolo(String(n.titolo || "").replace(/^Sessione:\s*/, "")) || "Senza titolo";
+      let st = stanzaPiuSimile(stato, nome, 0.5);
+      if (!st) { st = await nuovaStanza(stato, nome, `Creata automaticamente dalla sessione di Claude Code «${n.titolo.replace(/^Sessione:\s*/, "")}».`); esito.stanze++; }
+      let pr = M.elenco(stato, "progetti").find((p) => p.stanza_id === st.id && (p.stato || "attivo") === "attivo");
+      if (!pr) {
+        const pid = "pr-auto-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2, 7);
+        await M.salvaRecord(stato, "progetti", pid, { nome: st.nome, obiettivo: "", stato: "attivo", stanza_id: st.id, automatico: true, creato_il: ora() });
+        pr = { id: pid }; esito.progetti++;
+      }
+      const { id, ...d } = n;
+      const chiusa = n.origine.stato === "completata" && Date.now() - Date.parse(n.origine.aggiornata_il || 0) > 14 * 864e5;
+      await M.salvaRecord(stato, "note", id, { ...d, stanza_id: st.id, progetto_id: pr.id, categoria: chiusa ? "archivio" : "risorsa", auto_organizzata: true });
+      esito.note++;
+    }
+    // 2) chat importate → risorsa della stanza più simile; argomenti ricorrenti senza stanza → nuova stanza
+    const chat = note.filter((x) => (x.tag || []).includes("chat-claude"));
+    const senza = [];
+    for (const n of chat) {
+      const st = stanzaPiuSimile(stato, (n.titolo || "") + " " + String(n.testo || "").slice(0, 300), 0.6) || stanzaPiuSimile(stato, n.titolo, 0.5);
+      if (st) { const { id, ...d } = n; await M.salvaRecord(stato, "note", id, { ...d, stanza_id: st.id, categoria: "risorsa", auto_organizzata: true }); esito.note++; }
+      else senza.push(n);
+    }
+    const usate = new Set();
+    for (const a of senza) {
+      if (usate.has(a.id)) continue;
+      const gruppo = senza.filter((b) => !usate.has(b.id) && (b === a || affinita(M.nucleoTitolo(a.titolo), M.nucleoTitolo(b.titolo)) >= 0.6));
+      if (gruppo.length < 2) continue;
+      const st = await nuovaStanza(stato, M.nucleoTitolo(a.titolo) || "Chat", `Creata automaticamente da ${gruppo.length} chat di Claude sullo stesso argomento.`); esito.stanze++;
+      for (const n of gruppo) { usate.add(n.id); const { id, ...d } = n; await M.salvaRecord(stato, "note", id, { ...d, stanza_id: st.id, categoria: "risorsa", auto_organizzata: true }); esito.note++; }
+    }
+    if (esito.stanze || esito.note) stato.sync.ultima_organizzazione = { quando: ora(), ...esito };
+    return esito;
+  };
+
   // Promemoria per l'esportazione delle chat di claude.ai (non automatizzabile: nessuna API ufficiale).
   M.promemoriaChat = function (stato, adesso = Date.now()) {
     const imp = stato.impostazioni || {};
@@ -379,6 +441,7 @@
       esito.importate++;
     }
     stato.impostazioni ||= {}; stato.impostazioni.ultimo_import_chat = quando;
+    await M.organizzaAutomatico(stato); // esito in stato.sync.ultima_organizzazione
     return esito;
   };
 
@@ -545,7 +608,10 @@
       const f = await leggiFile(api, R, `${M.CARTELLA_STATO}/${nome}.json`);
       if (f) nuovi.push({ id: nome, ...f.dati });
     }
-    if (nuovi.length) { stato.stato_lavoro = nuovi; stato.sync.istantanea_scaricata_il = ora(); await M.noteDaSessioni(stato); }
+    const at = await api.richiesta("GET", `${R}/contents/${M.CARTELLA_STATO}/attese.md?ref=${M.RAMO}`); // risposte pronte dell'agente «sblocca attese»
+    if (at.status === 200) nuovi.push({ id: "attese", testo: M.daBase64(at.corpo.content).slice(0, 60000), sha: at.corpo.sha });
+    else if (at.status !== 404) controlla(at, "la lettura di attese.md");
+    if (nuovi.length) { stato.stato_lavoro = nuovi; stato.sync.istantanea_scaricata_il = ora(); await M.noteDaSessioni(stato); await M.organizzaAutomatico(stato); }
     return nuovi.length;
   };
 

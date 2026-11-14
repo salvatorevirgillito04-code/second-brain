@@ -85,3 +85,11 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - **Ricerca**: i risultati mostrano l'estratto del testo attorno alla parola cercata (utile nelle chat importate, che sono lunghe).
 - **Notifiche interventi**: la sincronizzazione in background avvisa quando una sessione di Claude Code risulta «attende un tuo intervento» nell'ultima istantanea; una sola notifica per richiesta. Permesso chiesto solo quando tocchi «Attiva» in Impostazioni › Automazioni. Se l'app è aperta, le richieste si vedono in Home e non vengono notificate.
 - **Widget** per la schermata Home: Da organizzare, progetti attivi, sessioni che attendono te, ora dell'ultima rilevazione; tocco su «+» = aggiunta rapida, tocco su «Attendono te» = Esecuzioni.
+
+## 1.5: spazio, risposte pronte, organizzazione automatica
+- **Grafica spaziale**: sfondo stellato con nebulose, pannelli in vetro, accenti viola e azzurro luminosi. La mappa ha due viste: **Sfera** (globo 3D che ruota; si gira trascinando) e **Rete** (grafo luminoso). Stanze e progetti sono esagoni, le note punti luminosi. Toccando un elemento si apre una scheda con il numero di collegamenti e l'elenco degli elementi collegati.
+- **Risposte pronte** in Home: l'app legge `dati/stato/attese.md`, scritto dagli agenti «sblocca attese» e coordinatore, e mostra per ogni sessione la risposta consigliata con «Copia risposta» e «Apri sessione».
+- **Organizzazione automatica** (attiva di default, si disattiva in Impostazioni › Automazioni):
+  - ogni nuova sessione di Claude Code va nella stanza con il nome più simile, oppure in una nuova stanza; ha un progetto attivo ed è registrata come *risorsa* (diventa *archivio* se completata da oltre 14 giorni);
+  - le chat importate diventano risorse della stanza più simile; almeno 2 chat sullo stesso argomento senza stanza ne creano una.
+  - Ogni nota viene organizzata una sola volta: se la sposti, l'app non la rimette dov'era. Tutto ciò che è creato in automatico ha `automatico: true`.

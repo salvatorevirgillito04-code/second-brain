@@ -37,7 +37,7 @@ Quando l'utente scrive «aggiorna stato», esegui SOLO questo, senza pianificazi
 Autorizzazione (data dall'utente il 13/11/2026): per «aggiorna stato» il push è consentito solo sul ramo `dati`, solo per `dati/stato/*`, mai con force push.
 
 Regole:
-- Non associare sessioni ad agenti o stanze: le associazioni le crea l'utente nell'app (`collegamenti`).
+- Non associare sessioni ad agenti o stanze: le associazioni le crea l'utente nell'app (`collegamenti`). Dalla 1.5 è l'app stessa a mettere le sessioni nelle stanze (organizzazione automatica, richiesta dall'utente il 14/11/2026); Claude Code non lo fa.
 - Lo stato salvato è una rilevazione puntuale, non uno stato in tempo reale.
 - Nessun token, chiave o password nel codice o nel repository. La chiave di firma è nel Google Drive dell'utente (cartella «Second Brain - firma app»), la password nel suo gestore di password.
 

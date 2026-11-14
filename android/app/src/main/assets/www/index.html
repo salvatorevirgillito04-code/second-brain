@@ -9,11 +9,12 @@
 /* Layout: barra superiore, contenuto scorrevole, navigazione in basso a portata di pollice, pulsante + per l'aggiunta rapida. Tema scuro. */
 :root{
   color-scheme:dark;
-  --bg:#141619; --pannello:#1b1e23; --rilievo:#23272e; --linea:#2e333b;
-  --testo:#e6e8eb; --tenue:#9aa1ab; --accento:#a78bfa; --accento-tenue:#2b2540; --su-accento:#17131f;
-  --inbox:#e07a8a; --progetto:#a78bfa; --area:#5eb5a6; --risorsa:#d4a65a; --archivio:#7d8590; --stanza:#6aa9e0;
-  --ok:#6cc58a; --att:#e0a64f; --err:#ef7a7a;
-  --f:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --m:ui-monospace,"Roboto Mono",Menlo,monospace;
+  --bg:#04050f; --pannello:rgba(16,19,46,.62); --rilievo:rgba(30,34,78,.72); --linea:rgba(129,140,255,.16);
+  --testo:#e9ecff; --tenue:#98a0c8; --accento:#9b8cff; --accento2:#5ad1ff; --accento-tenue:rgba(124,108,255,.18); --su-accento:#0b0a1f;
+  --inbox:#ff7eb6; --progetto:#b38cff; --area:#4fe3c1; --risorsa:#ffc46b; --archivio:#7d86b0; --stanza:#5ad1ff;
+  --ok:#5ff0a8; --att:#ffb85c; --err:#ff6b8b;
+  --alone:0 0 0 1px rgba(155,140,255,.10),0 8px 30px rgba(10,8,40,.55);
+  --f:"Inter",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; --m:ui-monospace,"Roboto Mono",Menlo,monospace;
 }
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -107,6 +108,53 @@ details.blocco summary{cursor:pointer;color:var(--tenue)}
 .foglio > form{width:100%;max-width:640px;max-height:92vh;overflow:auto;background:var(--pannello);border-top:1px solid var(--linea);border-radius:18px 18px 0 0;padding:16px;display:grid;gap:12px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:140px;z-index:30;background:var(--rilievo);border:1px solid var(--linea);border-radius:12px;padding:10px 14px;font-size:.88rem;max-width:calc(100% - 32px)}
 button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accento);outline-offset:2px}
+
+/* ---------- 1.5: tema spaziale ---------- */
+html{background:var(--bg)}
+body{background:radial-gradient(120% 70% at 85% -10%,rgba(124,92,255,.32),transparent 60%),radial-gradient(90% 60% at -10% 30%,rgba(40,140,255,.20),transparent 65%),radial-gradient(80% 50% at 60% 110%,rgba(200,80,255,.16),transparent 60%),var(--bg);background-attachment:fixed;min-height:100vh}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.75;
+  background-image:radial-gradient(1px 1px at 20px 30px,#fff,transparent),radial-gradient(1px 1px at 140px 80px,rgba(255,255,255,.8),transparent),radial-gradient(1.5px 1.5px at 90px 160px,#c9d2ff,transparent),radial-gradient(1px 1px at 230px 120px,rgba(255,255,255,.7),transparent),radial-gradient(1px 1px at 300px 40px,#9fe6ff,transparent),radial-gradient(1.2px 1.2px at 60px 250px,rgba(255,255,255,.6),transparent),radial-gradient(1px 1px at 270px 260px,#e2d8ff,transparent);
+  background-size:320px 300px}
+main{position:relative;z-index:1}.top{z-index:5}
+.top{background:rgba(4,5,15,.55);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--linea)}
+.top h1{font-weight:700;letter-spacing:.01em;background:linear-gradient(90deg,#fff,#c8c0ff 55%,var(--accento2));-webkit-background-clip:text;background-clip:text;color:transparent}
+h2{color:#aab3e6;letter-spacing:.14em}
+h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accento2);box-shadow:0 0 8px var(--accento2);margin-right:8px;vertical-align:1px}
+.blocco,.lista,.cerca,.rapido,.banner,.mappa,.scelte{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);box-shadow:var(--alone)}
+.lista{background:var(--linea)}
+.riga{background:rgba(14,17,42,.78)}
+.riga:active{background:rgba(48,52,110,.8)}
+.rapido{background:linear-gradient(160deg,rgba(40,44,100,.55),rgba(14,16,40,.7));border-color:rgba(140,150,255,.22)}
+.rapido b{font-size:1.55rem;text-shadow:0 0 14px currentColor}
+.punto{box-shadow:0 0 8px currentColor,0 0 2px currentColor}
+.btn{background:linear-gradient(135deg,var(--accento),#6e7dff 60%,var(--accento2));border:none;color:#fff;box-shadow:0 0 18px rgba(124,108,255,.45)}
+.btn.v{background:rgba(124,108,255,.08);border:1px solid rgba(155,140,255,.45);color:#d6d0ff;box-shadow:none}
+.btn.r{background:transparent;border:1px solid var(--err);color:var(--err);box-shadow:none}
+.seg button[aria-pressed="true"]{background:linear-gradient(135deg,rgba(124,108,255,.35),rgba(90,209,255,.22));border-color:rgba(155,140,255,.7);box-shadow:0 0 14px rgba(124,108,255,.35)}
+.nav{background:rgba(6,8,24,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.nav a[aria-current="page"]{color:#fff;text-shadow:0 0 10px var(--accento)}
+.nav a[aria-current="page"] svg{stroke:var(--accento2);filter:drop-shadow(0 0 6px var(--accento2))}
+.fab{border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff 0,#c9c0ff 12%,var(--accento) 45%,#3a2fb8 100%);color:#fff;box-shadow:0 0 0 6px rgba(124,108,255,.14),0 0 30px rgba(124,108,255,.7)}
+.foglio{background:rgba(2,3,12,.7);backdrop-filter:blur(6px)}
+.foglio > form{background:linear-gradient(180deg,rgba(26,28,70,.96),rgba(10,12,32,.98));border-top:1px solid rgba(155,140,255,.35)}
+.chip{background:rgba(30,34,78,.6)}
+.toast{background:rgba(26,28,70,.95);box-shadow:0 0 24px rgba(124,108,255,.4)}
+.pronte{display:grid;gap:8px}
+.pronta summary{display:grid;gap:2px;list-style:none}
+.pronta summary::-webkit-details-marker{display:none}
+.pronta[open]{border-color:rgba(255,184,92,.45);box-shadow:0 0 22px rgba(255,184,92,.12),var(--alone)}
+.risposta{border-left:2px solid var(--accento2);padding:6px 10px;background:rgba(90,209,255,.06);border-radius:0 8px 8px 0}
+/* mappa cosmica */
+.mappa{height:min(68vh,580px);background:radial-gradient(circle at 50% 45%,rgba(60,50,160,.35),rgba(4,5,15,.2) 60%),rgba(4,5,15,.6);border-color:rgba(140,150,255,.22)}
+.zoom button{background:rgba(20,22,56,.8);border-color:var(--linea);backdrop-filter:blur(8px)}
+.scheda-nodo{left:auto;right:10px;top:10px;bottom:auto;width:min(260px,calc(100% - 20px));display:grid;gap:6px;background:rgba(10,12,32,.88);border:1px solid rgba(155,140,255,.3);box-shadow:0 0 26px rgba(124,108,255,.25);backdrop-filter:blur(12px)}
+.scheda-nodo .tipo{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accento2)}
+.scheda-nodo .num{display:flex;gap:18px;font-size:.78rem;color:var(--tenue)}.scheda-nodo .num b{display:block;font-size:1.2rem;color:var(--testo);white-space:normal}
+.scheda-nodo ul{margin:0;padding:0;list-style:none;display:grid;gap:4px;max-height:120px;overflow:auto}
+.scheda-nodo li button{width:100%;text-align:left;background:rgba(40,44,100,.45);border:1px solid var(--linea);border-radius:8px;color:var(--testo);font:inherit;font-size:.8rem;padding:5px 8px;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.modi{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:4px;background:rgba(10,12,32,.8);border:1px solid var(--linea);border-radius:999px;padding:4px;backdrop-filter:blur(10px)}
+.modi button{font:inherit;font-size:.78rem;border:none;border-radius:999px;padding:6px 12px;background:transparent;color:var(--tenue);cursor:pointer}
+.modi button[aria-pressed="true"]{background:rgba(124,108,255,.35);color:#fff}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -157,6 +205,24 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   function eta(iso) { const m = minutiDa(iso); if (!isFinite(m)) return "mai"; if (m < 1) return "ora"; if (m < 60) return Math.round(m) + " min fa"; const h = m / 60; if (h < 48) return Math.round(h) + " h fa"; return Math.round(h / 24) + " giorni fa"; }
   const recente = (r) => r.aggiornato_il || r.corretto_il || r.registrato_il || r.creato_il || r.data || "";
   const titoloNota = (n) => (n.titolo && n.titolo.trim()) || String(n.testo || "").split("\n")[0].slice(0, 80) || "(nota vuota)";
+  // 1.5: risposte pronte scritte dall'agente «sblocca attese» (dati/stato/attese.md)
+  function analizzaAttese(md) {
+    return String(md || "").split(/\n(?=## )/).filter((b) => b.startsWith("## ")).map((b) => {
+      const riga = (et) => { const m = b.match(new RegExp("\\*\\*" + et + "[^*]*\\*\\*\\s*(.+)")); return m ? m[1].trim() : ""; };
+      const link = (b.match(/https:\/\/claude\.ai\/code\/session_[A-Za-z0-9]+/) || [""])[0];
+      const risp = riga("Risposta consigliata"); const cit = risp.match(/«([^»]+)»/);
+      return { titolo: b.split("\n")[0].replace(/^##\s*(\d+\.\s*)?/, ""), link, chiede: riga("Cosa chiede"), risposta: risp, copia: cit ? cit[1] : risp.replace(/\*\*|`/g, ""), rischi: riga("Rischi") };
+    });
+  }
+  function risposte() {
+    const a = (S.stato.stato_lavoro || []).find((x) => x.id === "attese"); if (!a) return "";
+    const v = analizzaAttese(a.testo); if (!v.length) return "";
+    const ora = (a.testo.match(/rilevazione\s+([0-9T:\-]+Z?)/) || [])[1];
+    return `<section><h2>Risposte pronte · ${v.length}${ora ? " · " + esc(eta(ora)) : ""}</h2><div class="pronte">${v.map((x, i) => `<details class="blocco pronta"${i === 0 ? " open" : ""}><summary><b>${esc(x.titolo)}</b><span class="small muted">${esc(x.chiede)}</span></summary>
+      ${x.risposta ? `<p class="risposta">${esc(x.risposta.replace(/\*\*|`/g, ""))}</p>` : ""}${x.rischi ? `<p class="small muted">Rischi: ${esc(x.rischi.replace(/\*\*|`/g, ""))}</p>` : ""}
+      <div class="azioni">${x.copia ? `<button class="btn" data-copia="${esc(x.copia)}">Copia risposta</button>` : ""}${x.link ? `<button class="btn v" data-sessione="${esc(x.link)}">Apri sessione</button>` : ""}</div></details>`).join("")}</div>
+      <p class="small muted">Preparate dall'agente «sblocca attese». Decidi tu: incolla la risposta nella sessione solo se la condividi.</p></section>`;
+  }
   const catNota = (n) => (CAT[n.categoria] ? n.categoria : "inbox");
   const statoStanza = (s) => s.stato || (s.archiviata ? "archiviata" : "attiva");
   const pallino = (cat) => `<span class="punto" style="background:var(${CAT[cat][1]})"></span>`;
@@ -235,6 +301,7 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
           <button class="rapido" data-vai="stanze" data-sub="esecuzioni"><b style="color:var(--area)">${ist ? lavoro : "–"}</b>${ist ? "in esecuzione · " + esc(eta(ist.rilevato_il)) : "nessuna rilevazione"}</button>
         </div>
         ${attese.length ? `<section><h2>Attendono un tuo intervento · rilevazione ${esc(eta(ist.rilevato_il))}</h2>${lista(attese.slice(0, 3).map((x) => `<button class="riga" data-apri="nota" data-id="sessione-${esc(x.id.slice(8))}"><span class="punto" style="background:var(--att)"></span><span class="t"><b>${esc(x.titolo || x.id)}</b><span>${esc(x.richiede)}</span></span></button>`), "")}</section>` : ""}
+        ${risposte()}
         <section><h2>Progetti recenti</h2>${lista(attivi.sort((a, b) => recente(b).localeCompare(recente(a))).slice(0, 4).map(rigaProgetto), "Nessun progetto. Crealo con il pulsante +.")}</section>
         <section><h2>Ultime note</h2>${lista(L("note").sort((a, b) => recente(b).localeCompare(recente(a))).slice(0, 5).map(rigaNota), "Nessuna nota. Aggiungine una con il pulsante +.")}</section>`;
     },
@@ -291,7 +358,8 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       return `<div class="legenda"><span><i class="quadro" style="background:var(--progetto)"></i>Progetti</span><span><i class="quadro" style="background:var(--stanza)"></i>Stanze</span>${Object.entries(CAT).map(([, [l, c]]) => `<span><i class="punto" style="background:var(${c})"></i>${l}</span>`).join("")}</div>
         <div class="mappa" id="mappa"><canvas id="tela" aria-label="Mappa delle relazioni"></canvas>
           <div class="zoom"><button id="zp" aria-label="Avvicina">+</button><button id="zm" aria-label="Allontana">−</button></div>
-          <div class="scheda-nodo" id="scheda" hidden><b id="scheda-t"></b><button class="btn" id="scheda-apri">Apri</button></div></div>
+          <div class="modi" role="group" aria-label="Vista"><button data-modo="sfera" aria-pressed="${S.modoMappa !== "rete"}">Sfera</button><button data-modo="rete" aria-pressed="${S.modoMappa === "rete"}">Rete</button></div>
+          <div class="scheda-nodo" id="scheda" hidden><span class="tipo" id="scheda-tipo"></span><b id="scheda-t"></b><div class="num" id="scheda-num"></div><ul id="scheda-lista"></ul><div class="azioni"><button class="btn" id="scheda-apri">Apri</button><button class="btn v" id="scheda-chiudi">Chiudi</button></div></div></div>
         <label class="check"><input type="checkbox" id="isolati"${S.isolati ? " checked" : ""}> Mostra anche gli elementi senza relazioni</label>
         <p class="small muted" id="mappa-info"></p>`;
     },
@@ -333,7 +401,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
           <p class="small muted">Vanno nel repository privato stanze, progetti, agenti, skill, collegamenti e le note che rendi accessibili agli agenti. Eliminare un dato lo toglie dalla versione attuale del repository, non dalla cronologia Git.</p></div></section>
         <section><h2>Automazioni</h2><div class="blocco"><dl class="kv">
             <dt>Sincronizzazione in background</dt><dd>ogni 30 minuti circa con rete, anche ad app chiusa · ultima: ${esc(sy.ultimo_sfondo ? quando(sy.ultimo_sfondo.quando) + (sy.ultimo_sfondo.esito === "ok" ? " (riuscita)" : " (errore: " + (sy.ultimo_sfondo.messaggio || "") + ")") : "non ancora eseguita")}</dd>
-            <dt>Stato degli agenti</dt><dd>attività pianificata in Claude Code ogni 2 ore · ultima istantanea: ${esc(istantanea() ? quando(istantanea().rilevato_il) : "nessuna")}</dd>
+            <dt>Organizzazione automatica</dt><dd>${S.stato.impostazioni && S.stato.impostazioni.auto_organizza === false ? `disattivata <button class="chip cfg" id="b-auto">Attiva</button>` : `attiva: ogni nuova sessione o chat va nella sua stanza (creata se manca), con progetto e risorse · ${esc(sy.ultima_organizzazione ? "ultima: " + quando(sy.ultima_organizzazione.quando) + ` (${sy.ultima_organizzazione.note} note, ${sy.ultima_organizzazione.stanze} stanze nuove)` : "nessuna ancora")} <button class="chip" id="b-auto">Disattiva</button>`}</dd>
+            <dt>Agenti pianificati</dt><dd>«sblocca attese» e coordinatore 2 volte al giorno, resoconto il lunedì: rispondono da soli solo alle domande senza rischi, il resto arriva qui in «Risposte pronte»</dd>
+            <dt>Stato degli agenti</dt><dd>attività pianificata in Claude Code ogni 3 ore · ultima istantanea: ${esc(istantanea() ? quando(istantanea().rilevato_il) : "nessuna")}</dd>
             <dt>«Aggiorna ora»</dt><dd>${A && A.haRoutine() ? "attivo" : "da configurare"}</dd>
             <dt>Notifiche interventi</dt><dd>${A && A.notificheConsentite && A.notificheConsentite() ? "attive: ti avviso quando una sessione attende un tuo intervento" : `disattivate <button class="chip cfg" id="b-notifiche">Attiva</button>`}</dd>
             <dt>Widget</dt><dd>tieni premuto sulla schermata Home › Widget › Second Brain</dd>
@@ -441,59 +511,121 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
   $("#indietro").onclick = () => history.back();
   const vai = (v) => { if (location.hash === "#" + v) { render(); window.scrollTo(0, 0); } else location.hash = v; };
 
-  // ---------- mappa: solo relazioni esistenti ----------
+  // ---------- mappa: solo relazioni esistenti (1.5: sfera 3D o rete luminosa) ----------
   function disegnaMappa() {
     const box = $("#mappa"), tela = $("#tela"), ctx = tela.getContext("2d"), dpr = window.devicePixelRatio || 1;
     const W = box.clientWidth, H = box.clientHeight; tela.width = W * dpr; tela.height = H * dpr; ctx.scale(dpr, dpr);
+    const fermo = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
     const archi = M.relazioni(S.stato);
     const conGrado = new Map(); for (const r of archi) { conGrado.set(r.da, (conGrado.get(r.da) || 0) + 1); conGrado.set(r.a, (conGrado.get(r.a) || 0) + 1); }
-    const tutti = [...L("note").map((n) => ({ k: "note/" + n.id, nome: titoloNota(n), col: CAT[catNota(n)][1], forma: "c", apri: ["nota", n.id] })),
-      ...L("progetti").map((p) => ({ k: "progetti/" + p.id, nome: p.nome, col: "--progetto", forma: "q", apri: ["progetto", p.id] })),
-      ...L("stanze").map((s) => ({ k: "stanze/" + s.id, nome: s.nome, col: "--stanza", forma: "q", apri: ["stanza", s.id] }))];
-    const nodi = tutti.filter((x) => S.isolati || conGrado.has(x.k)).map((x, i) => ({ ...x, x: Math.cos(i * 2.4) * (40 + i * 6), y: Math.sin(i * 2.4) * (40 + i * 6), vx: 0, vy: 0, r: 6 + Math.min(10, (conGrado.get(x.k) || 0) * 2) }));
+    const tutti = [...L("note").map((n) => ({ k: "note/" + n.id, nome: titoloNota(n), col: CAT[catNota(n)][1], tipo: CAT[catNota(n)][0], forma: "c", apri: ["nota", n.id] })),
+      ...L("progetti").map((p) => ({ k: "progetti/" + p.id, nome: p.nome, col: "--progetto", tipo: "Progetto", forma: "e", apri: ["progetto", p.id] })),
+      ...L("stanze").map((s) => ({ k: "stanze/" + s.id, nome: s.nome, col: "--stanza", tipo: "Stanza", forma: "e", apri: ["stanza", s.id] }))];
+    const nodi = tutti.filter((x) => S.isolati || conGrado.has(x.k)).map((x, i) => ({ ...x, g: conGrado.get(x.k) || 0, x: Math.cos(i * 2.4) * (40 + i * 6), y: Math.sin(i * 2.4) * (40 + i * 6), vx: 0, vy: 0 }));
+    for (const n of nodi) n.r = n.forma === "e" ? 9 + Math.min(12, n.g * 1.5) : 3.5 + Math.min(5, n.g);
     const idx = new Map(nodi.map((n) => [n.k, n])); const E = archi.map((r) => [idx.get(r.da), idx.get(r.a)]).filter(([a, b]) => a && b);
-    $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Trascina per spostarti, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
-    for (let it = 0; it < 300; it++) {
+    $("#mappa-info").textContent = nodi.length ? `${nodi.length} elementi, ${E.length} relazioni reali (collegamenti tra note, note in stanze e progetti, progetti in stanze). Trascina per ruotare o spostarti, tocca un elemento.` : "Nessuna relazione ancora: collega note tra loro, o a progetti e stanze, e compariranno qui.";
+    const css = getComputedStyle(document.documentElement), C = (v) => css.getPropertyValue(v).trim();
+    const vicini = (p) => E.filter(([a, b]) => a === p || b === p).map(([a, b]) => (a === p ? b : a));
+    const modo = S.modoMappa === "rete" ? "rete" : "sfera";
+    // --- posizioni: rete (forze 2D) ---
+    for (let it = 0; modo === "rete" && it < 300; it++) {
       for (const a of nodi) for (const b of nodi) if (a !== b) { const dx = a.x - b.x, dy = a.y - b.y, d2 = dx * dx + dy * dy + 0.01, d = Math.sqrt(d2), f = 16000 / d2; a.vx += dx / d * f; a.vy += dy / d * f; }
       for (const [a, b] of E) { const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 1, f = (d - 140) * 0.02; a.vx += dx / d * f; a.vy += dy / d * f; b.vx -= dx / d * f; b.vy -= dy / d * f; }
       for (const a of nodi) { a.vx -= a.x * 0.004; a.vy -= a.y * 0.004; a.x += a.vx * 0.5; a.y += a.vy * 0.5; a.vx *= 0.6; a.vy *= 0.6; }
     }
+    // --- posizioni: sfera (centri su spirale di Fibonacci, note vicino al loro centro) ---
+    const fib = (i, n) => { const y = 1 - (i + 0.5) / n * 2, r = Math.sqrt(1 - y * y), t = i * 2.39996; return [Math.cos(t) * r, y, Math.sin(t) * r]; };
+    const norm = (v) => { const l = Math.hypot(...v) || 1; return v.map((c) => c / l); };
+    if (modo === "sfera") {
+      const hub = nodi.filter((n) => n.forma === "e"), resto = nodi.filter((n) => n.forma !== "e");
+      hub.forEach((n, i) => (n.p = fib(i, Math.max(hub.length, 1))));
+      let seme = 7; const rnd = () => ((seme = (seme * 16807) % 2147483647) / 2147483647) - 0.5;
+      resto.forEach((n, i) => { const h = vicini(n).find((v) => v.p && v.forma === "e") || vicini(n).find((v) => v.p); n.p = h ? norm([h.p[0] + rnd() * 0.55, h.p[1] + rnd() * 0.55, h.p[2] + rnd() * 0.55]) : fib(i, resto.length); });
+    }
     const xs = nodi.map((p) => p.x), ys = nodi.map((p) => p.y);
     const bx = nodi.length ? [Math.min(...xs), Math.max(...xs)] : [0, 0], by = nodi.length ? [Math.min(...ys), Math.max(...ys)] : [0, 0];
-    const z0 = Math.min((W - 120) / (bx[1] - bx[0] || 1), (H - 80) / (by[1] - by[0] || 1), 1.4);
-    const vista = { x: W / 2 - (bx[0] + bx[1]) / 2 * z0, y: H / 2 - (by[0] + by[1]) / 2 * z0, z: z0 };
-    const css = getComputedStyle(document.documentElement), C = (v) => css.getPropertyValue(v).trim();
+    const z0 = modo === "rete" ? Math.min((W - 120) / (bx[1] - bx[0] || 1), (H - 80) / (by[1] - by[0] || 1), 2.2) : 1;
+    const vista = { x: W / 2 - (bx[0] + bx[1]) / 2 * z0, y: H / 2 - (by[0] + by[1]) / 2 * z0, z: z0, ry: 0.6, rx: -0.25 };
+    const proietta = (n) => {
+      if (modo === "rete") return { x: vista.x + n.x * vista.z, y: vista.y + n.y * vista.z, s: Math.sqrt(vista.z), a: 1, z: 0 };
+      const [x0, y0, z0_] = n.p, cy = Math.cos(vista.ry), sy = Math.sin(vista.ry), cx = Math.cos(vista.rx), sx = Math.sin(vista.rx);
+      const x1 = x0 * cy + z0_ * sy, z1 = -x0 * sy + z0_ * cy, y2 = y0 * cx - z1 * sx, z2 = y0 * sx + z1 * cx;
+      const R = Math.min(W, H) * 0.4 * vista.z, k = 1 / (1 - z2 * 0.18);
+      return { x: W / 2 + x1 * R * k, y: H / 2 + y2 * R * k, s: (0.7 + 0.45 * (z2 + 1) / 2) * Math.sqrt(vista.z), a: 0.28 + 0.72 * (z2 + 1) / 2, z: z2 };
+    };
+    const esagono = (x, y, r) => { ctx.beginPath(); for (let i = 0; i < 6; i++) { const t = Math.PI / 6 + i * Math.PI / 3; ctx[i ? "lineTo" : "moveTo"](x + r * Math.cos(t), y + r * Math.sin(t)); } ctx.closePath(); };
+    let P = new Map();
     function disegna() {
       ctx.clearRect(0, 0, W, H);
-      const sel = S.nodo && idx.get(S.nodo), vicini = new Set(sel ? E.filter(([a, b]) => a === sel || b === sel).flat() : []);
-      ctx.lineWidth = 1.3;
-      for (const [a, b] of E) { ctx.strokeStyle = sel && (a === sel || b === sel) ? C("--accento") : C("--linea"); ctx.beginPath(); ctx.moveTo(vista.x + a.x * vista.z, vista.y + a.y * vista.z); ctx.lineTo(vista.x + b.x * vista.z, vista.y + b.y * vista.z); ctx.stroke(); }
-      for (const p of nodi) {
-        const x = vista.x + p.x * vista.z, y = vista.y + p.y * vista.z, r = p.r * Math.sqrt(vista.z);
-        ctx.globalAlpha = sel && p !== sel && !vicini.has(p) ? 0.3 : 1; ctx.fillStyle = C(p.col); ctx.beginPath();
-        if (p.forma === "q") ctx.rect(x - r, y - r, r * 2, r * 2); else ctx.arc(x, y, r, 0, 7);
-        ctx.fill(); if (p === sel) { ctx.strokeStyle = C("--testo"); ctx.lineWidth = 2; ctx.stroke(); ctx.lineWidth = 1.3; }
-        if (vista.z > 0.55 || p === sel) { ctx.fillStyle = C("--testo"); ctx.font = "12px system-ui,sans-serif"; ctx.textAlign = "center"; ctx.fillText(p.nome.length > 22 ? p.nome.slice(0, 21) + "…" : p.nome, x, y + r + 14); }
+      P = new Map(nodi.map((n) => [n, proietta(n)]));
+      const sel = S.nodo && idx.get(S.nodo), vic = new Set(sel ? vicini(sel) : []);
+      if (modo === "sfera") { // atmosfera
+        const R = Math.min(W, H) * 0.4 * vista.z, g = ctx.createRadialGradient(W / 2 - R * 0.3, H / 2 - R * 0.35, R * 0.1, W / 2, H / 2, R * 1.08);
+        g.addColorStop(0, "rgba(120,110,255,.30)"); g.addColorStop(0.55, "rgba(60,70,200,.18)"); g.addColorStop(0.92, "rgba(110,90,255,.22)"); g.addColorStop(1, "rgba(90,209,255,0)");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(W / 2, H / 2, R * 1.08, 0, 7); ctx.fill();
+        ctx.strokeStyle = "rgba(160,170,255,.35)"; ctx.lineWidth = 1.2; ctx.shadowColor = "rgba(124,108,255,.9)"; ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(W / 2, H / 2, R * 1.0, 0, 7); ctx.stroke(); ctx.shadowBlur = 0;
+      }
+      ctx.globalCompositeOperation = "lighter";
+      for (const [a, b] of E) {
+        const pa = P.get(a), pb = P.get(b), acceso = sel && (a === sel || b === sel);
+        ctx.strokeStyle = acceso ? "rgba(90,209,255,.95)" : `rgba(150,160,255,${(0.10 + 0.25 * Math.min(pa.a, pb.a)) * (sel ? 0.5 : 1)})`;
+        ctx.lineWidth = acceso ? 1.8 : 0.9; ctx.beginPath(); ctx.moveTo(pa.x, pa.y); ctx.lineTo(pb.x, pb.y); ctx.stroke();
+      }
+      for (const n of [...nodi].sort((u, v) => P.get(u).z - P.get(v).z)) {
+        const q = P.get(n), r = n.r * q.s, col = C(n.col), spento = sel && n !== sel && !vic.has(n);
+        ctx.globalAlpha = q.a * (spento ? 0.3 : 1);
+        const g = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 3.2); g.addColorStop(0, col); g.addColorStop(0.35, col + "66"); g.addColorStop(1, col + "00");
+        ctx.fillStyle = g; ctx.beginPath(); ctx.arc(q.x, q.y, r * 3.2, 0, 7); ctx.fill();
+        ctx.fillStyle = "#fff"; ctx.beginPath();
+        if (n.forma === "e") { esagono(q.x, q.y, r * 0.75); ctx.fill(); ctx.strokeStyle = col; ctx.lineWidth = 1.4; esagono(q.x, q.y, r * 1.25); ctx.stroke(); }
+        else { ctx.arc(q.x, q.y, r * 0.55, 0, 7); ctx.fill(); }
+        if (n === sel) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q.x, q.y, r * 2, 0, 7); ctx.stroke(); }
         ctx.globalAlpha = 1;
       }
+      ctx.globalCompositeOperation = "source-over";
+      const nomiStanze = new Set(nodi.filter((n) => n.tipo === "Stanza").map((n) => n.nome));
+      for (const n of nodi) {
+        if (n !== sel && n.tipo === "Progetto" && nomiStanze.has(n.nome)) continue; // stesso nome della sua stanza: un'etichetta basta
+        const q = P.get(n); if (!(n === sel || (n.forma === "e" && q.z > -0.15) || (modo === "rete" && vista.z > 0.75))) continue;
+        const t = n.nome.length > 24 ? n.nome.slice(0, 23) + "…" : n.nome;
+        ctx.font = (n.forma === "e" ? "600 12px " : "11px ") + "system-ui,sans-serif"; ctx.textAlign = "center"; ctx.globalAlpha = Math.max(q.a, n === sel ? 1 : 0);
+        ctx.fillStyle = "rgba(4,5,15,.65)"; const w = ctx.measureText(t).width + 10; ctx.fillRect(q.x - w / 2, q.y + n.r * q.s * 1.5 + 2, w, 16);
+        ctx.fillStyle = "#e9ecff"; ctx.fillText(t, q.x, q.y + n.r * q.s * 1.5 + 14); ctx.globalAlpha = 1;
+      }
     }
-    let tocco = null;
-    tela.onpointerdown = (e) => { tela.setPointerCapture(e.pointerId); tocco = { x: e.clientX, y: e.clientY, vx: vista.x, vy: vista.y, mosso: false }; };
-    tela.onpointermove = (e) => { if (!tocco) return; const dx = e.clientX - tocco.x, dy = e.clientY - tocco.y; if (Math.hypot(dx, dy) > 6) tocco.mosso = true; if (tocco.mosso) { vista.x = tocco.vx + dx; vista.y = tocco.vy + dy; disegna(); } };
+    function scheda(p) {
+      S.nodo = p ? p.k : null; $("#scheda").hidden = !p; if (!p) return disegna();
+      const v = vicini(p);
+      $("#scheda-tipo").textContent = p.tipo; $("#scheda-t").textContent = p.nome;
+      $("#scheda-num").innerHTML = `<span><b>${v.length}</b>collegamenti</span><span><b>${v.filter((x) => x.forma === "c").length}</b>note</span>`;
+      $("#scheda-lista").innerHTML = v.slice(0, 8).map((x, i) => `<li><button data-i="${i}">${esc(x.nome)}</button></li>`).join("");
+      $("#scheda-lista").onclick = (e) => { const b = e.target.closest("button[data-i]"); if (b) scheda(v[+b.dataset.i]); };
+      $("#scheda-apri").onclick = () => apri(p.apri[0], p.apri[1]); $("#scheda-chiudi").onclick = () => scheda(null);
+      disegna();
+    }
+    let tocco = null, gira = modo === "sfera" && !fermo;
+    tela.onpointerdown = (e) => { tela.setPointerCapture(e.pointerId); gira = false; tocco = { x: e.clientX, y: e.clientY, vx: vista.x, vy: vista.y, rx: vista.rx, ry: vista.ry, mosso: false }; };
+    tela.onpointermove = (e) => {
+      if (!tocco) return; const dx = e.clientX - tocco.x, dy = e.clientY - tocco.y; if (Math.hypot(dx, dy) > 6) tocco.mosso = true; if (!tocco.mosso) return;
+      if (modo === "sfera") { vista.ry = tocco.ry + dx * 0.008; vista.rx = Math.max(-1.3, Math.min(1.3, tocco.rx + dy * 0.008)); } else { vista.x = tocco.vx + dx; vista.y = tocco.vy + dy; }
+      disegna();
+    };
     tela.onpointerup = (e) => {
       if (tocco && !tocco.mosso) {
         const b = tela.getBoundingClientRect(), x = e.clientX - b.left, y = e.clientY - b.top;
-        const p = nodi.find((q) => Math.hypot(vista.x + q.x * vista.z - x, vista.y + q.y * vista.z - y) < q.r * Math.sqrt(vista.z) + 12);
-        S.nodo = p ? p.k : null; $("#scheda").hidden = !p;
-        if (p) { $("#scheda-t").textContent = p.nome; $("#scheda-apri").onclick = () => apri(p.apri[0], p.apri[1]); }
-        disegna();
+        let best = null, bd = 1e9; for (const n of nodi) { const q = P.get(n), d = Math.hypot(q.x - x, q.y - y) - q.z * 6; if (d < n.r * q.s + 14 && d < bd) { bd = d; best = n; } }
+        scheda(best);
       }
       tocco = null;
     };
     $("#zp").onclick = () => { vista.z = Math.min(3, vista.z * 1.25); disegna(); };
     $("#zm").onclick = () => { vista.z = Math.max(0.3, vista.z / 1.25); disegna(); };
     $("#isolati").onchange = (e) => { S.isolati = e.target.checked; S.nodo = null; render(); };
+    document.querySelectorAll("[data-modo]").forEach((b) => (b.onclick = () => { S.modoMappa = b.dataset.modo; S.nodo = null; render(); }));
     S.nodo = null; disegna();
+    const ciclo = () => { if (!tela.isConnected) return; if (gira && !S.nodo) { vista.ry += 0.0035; disegna(); } requestAnimationFrame(ciclo); };
+    if (modo === "sfera" && !fermo) requestAnimationFrame(ciclo);
   }
 
   function apri(tipo, id) { if (tipo === "nota") S.nota = id; if (tipo === "stanza") S.stanza = id; if (tipo === "progetto") S.progetto = id; vai(tipo); }
@@ -662,6 +794,9 @@ button:focus-visible,a:focus-visible,input:focus-visible,textarea:focus-visible,
       await scrivi("collegamenti", "", { session_id: d.collega, agente_id: ag || null, stanza_id: st || null }); render(); toast("Collegamento salvato"); return;
     }
     if (d.risolvi) { await M.risolviConflitto(S.stato, d.id, d.risolvi); await salva(); render(); programmaSync(); toast("Conflitto risolto"); return; }
+    if (d.copia) { try { await navigator.clipboard.writeText(d.copia); toast("Risposta copiata: incollala nella sessione"); } catch (_) { toast("Copia non riuscita: tieni premuto sul testo per copiarlo"); } return; }
+    if (d.sessione) { if (A) A.apriLink(d.sessione); return; }
+    if (b.id === "b-auto") { S.stato.impostazioni ||= {}; S.stato.impostazioni.auto_organizza = S.stato.impostazioni.auto_organizza === false; if (S.stato.impostazioni.auto_organizza) { const e = await M.organizzaAutomatico(S.stato); toast(`Organizzate ${e.note} note, ${e.stanze} stanze nuove`); } await salva(); render(); return; }
     if (b.id === "b-sync") { sincronizza(true); return; }
     if (b.id === "b-rimanda") { S.stato.impostazioni ||= {}; S.stato.impostazioni.chat_rimandato_fino = new Date(Date.now() + 7 * 86400000).toISOString(); await salva(); render(); toast("Te lo ricordo tra 7 giorni"); return; }
     if (b.id === "b-aggiorna-ora") { aggiornaOra(); return; }
