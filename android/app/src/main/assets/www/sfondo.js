@@ -21,7 +21,6 @@
     }
     await salva();
     try { A.aggiornaWidget(JSON.stringify(M.riepilogoWidget(s))); } catch (_) {}
-    try { if (window.SBGlobo) await window.SBGlobo.inviaWidget(A, M, s, 0); } catch (_) {} // widget animato: nuovi fotogrammi a ogni sincronizzazione
     A.fine(s.sync.ultimo_sfondo.esito);
   } catch (e) { A.fine("errore: " + (e.message || e)); }
 })();

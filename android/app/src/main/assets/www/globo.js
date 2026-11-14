@@ -1,4 +1,4 @@
-// Globo neurale (1.6): usato dalla mappa (index.html) e dall'immagine del widget (index.html e sfondo.html).
+// Globo neurale della Mappa (index.html).
 // Ogni linea è una relazione reale (M.relazioni): nessun segmento decorativo che non collega nulla.
 (function (radice) {
   "use strict";
@@ -71,10 +71,7 @@
       gr.addColorStop(0, alfa(a.col, (0.18 + 0.4 * prof) * k)); gr.addColorStop(0.5, `rgba(200,205,255,${(0.10 + 0.25 * prof) * k})`); gr.addColorStop(1, alfa(b.col, (0.18 + 0.4 * prof) * k));
       ctx.strokeStyle = gr; ctx.lineWidth = acceso ? 1.9 : 1;
       ctx.beginPath(); pts.forEach((q, i) => ctx[i ? "lineTo" : "moveTo"](q.x, q.y)); ctx.stroke();
-      if (opz.onde) { // widget: la connessione si accende e si spegne a onda (nessuno spostamento → niente tremolio)
-        const w = Math.pow(Math.max(0, Math.sin((opz.fase + e.fase) * 6.2832)), 2) * prof;
-        if (w > 0.02) { ctx.strokeStyle = `rgba(170,235,255,${0.75 * w})`; ctx.lineWidth = 2.6; ctx.beginPath(); pts.forEach((q, i) => ctx[i ? "lineTo" : "moveTo"](q.x, q.y)); ctx.stroke(); }
-      } else if (opz.impulsi !== false && (!sel || acceso)) { // impulso (segnale) lungo l'assone
+      if (opz.impulsi !== false && (!sel || acceso)) { // impulso (segnale) lungo l'assone
         const u = (t * 0.00018 + e.fase) % 1, f = u * 16, i0 = Math.floor(f), q0 = pts[i0], q1 = pts[Math.min(16, i0 + 1)], w = f - i0;
         const x = q0.x + (q1.x - q0.x) * w, y = q0.y + (q1.y - q0.y) * w, rr = (acceso ? 4 : 2.6) * q0.s;
         const gi = ctx.createRadialGradient(x, y, 0, x, y, rr * 3); gi.addColorStop(0, `rgba(255,255,255,${0.9 * q0.a})`); gi.addColorStop(0.3, `rgba(150,230,255,${0.5 * q0.a})`); gi.addColorStop(1, "rgba(150,230,255,0)");
@@ -87,7 +84,7 @@
       ctx.globalAlpha = A;
       const gl = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 3); gl.addColorStop(0, n.col); gl.addColorStop(0.25, alfa(n.col, 0.32)); gl.addColorStop(1, alfa(n.col, 0));
       ctx.fillStyle = gl; ctx.beginPath(); ctx.arc(q.x, q.y, r * 3, 0, 7); ctx.fill();
-      const battito = n.forma === "e" ? 1 + 0.08 * Math.sin((opz.fase != null ? opz.fase * 12.566 : t * 0.003) + n.g) : 1; // nel widget: 2 battiti per ciclo, senza scatti
+      const battito = n.forma === "e" ? 1 + 0.08 * Math.sin(t * 0.003 + n.g) : 1; // nel widget: 2 battiti per ciclo, senza scatti
       const nu = ctx.createRadialGradient(q.x, q.y, 0, q.x, q.y, r * 0.8 * battito); nu.addColorStop(0, "#fff"); nu.addColorStop(0.6, alfa(n.col, 0.95)); nu.addColorStop(1, alfa(n.col, 0));
       ctx.fillStyle = nu; ctx.beginPath(); ctx.arc(q.x, q.y, r * 0.8 * battito, 0, 7); ctx.fill();
       if (n === sel) { ctx.strokeStyle = "#fff"; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(q.x, q.y, r * 2.1, 0, 7); ctx.stroke(); }
@@ -109,43 +106,5 @@
   };
 
   // Immagine quadrata per il widget (PNG in base64, senza prefisso). La rotazione cambia con l'ora, così il widget "vive".
-  // Fotogramma per il widget animato (PNG base64). fase ∈ [0,1): il ciclo si ripete senza scatti
-  // (oscillazione di ±0,2 rad, un passaggio degli impulsi e due battiti per ciclo). La posizione di base cambia con l'ora.
-  G.PERIODO_IMPULSO = 1 / 0.00018;
-  G.fotogrammaWidget = function (M, stato, lato, quando, fase, rete) {
-    const c = document.createElement("canvas"); c.width = c.height = lato; const ctx = c.getContext("2d");
-    rete = rete || G.costruisci(M, stato, false); fase = fase || 0;
-    const raggio = lato * 0.09; ctx.beginPath(); ctx.moveTo(raggio, 0); ctx.arcTo(lato, 0, lato, lato, raggio); ctx.arcTo(lato, lato, 0, lato, raggio); ctx.arcTo(0, lato, 0, 0, raggio); ctx.arcTo(0, 0, lato, 0, raggio); ctx.closePath(); ctx.clip();
-    const bg = ctx.createRadialGradient(lato * 0.7, lato * 0.1, 0, lato / 2, lato / 2, lato * 0.8); bg.addColorStop(0, "#1d1550"); bg.addColorStop(0.6, "#070920"); bg.addColorStop(1, "#04050f");
-    ctx.fillStyle = bg; ctx.fillRect(0, 0, lato, lato);
-    const rs = casuale(99); for (let i = 0; i < 90; i++) { const a = 0.2 + rs() * 0.6, x = rs() * lato, y = rs() * lato, w = rs() < 0.85 ? 1 : 2; ctx.fillStyle = `rgba(255,255,255,${a * (0.8 + 0.2 * Math.sin(fase * 6.283 + i))})`; ctx.fillRect(x, y, w, 1); }
-    ctx.save(); ctx.translate(0, lato * 0.02); ctx.scale(lato / 360, lato / 360);
-    const base = ((quando || Date.now()) / 3.6e6) % 6.283;
-    G.disegna(ctx, 360, 360, rete, { vista: { rx: -0.3, ry: base, z: 0.82 }, t: 0, fase, onde: true, impulsi: false, etichette: false }); // globo fermo: si anima solo la luce
-    ctx.restore();
-    ctx.fillStyle = "#e9ecff"; ctx.font = `600 ${Math.round(lato * 0.05)}px system-ui,sans-serif`; ctx.textAlign = "left"; ctx.fillText("Second Brain", lato * 0.07, lato * 0.1);
-    ctx.fillStyle = "#98a0c8"; ctx.font = `${Math.round(lato * 0.038)}px system-ui,sans-serif`;
-    ctx.fillText(rete.nodi.length ? `${rete.nodi.length} nodi · ${rete.E.length} connessioni` : "Nessuna relazione ancora", lato * 0.07, lato * 0.94);
-    return c.toDataURL("image/png").split(",")[1];
-  };
-  G.immagineWidget = (M, stato, lato, quando) => G.fotogrammaWidget(M, stato, lato, quando, 0);
-  G.FOTOGRAMMI = 16; // 16 x 200 ms con dissolvenza incrociata (vedi widget_globo.xml)
-  // Invia al ponte Android i fotogrammi uno alla volta (cede il passo all'interfaccia tra un fotogramma e l'altro), poi li pubblica.
-  G.inviaWidget = function (A, M, stato, attesa) {
-    if (!A || !A.fotogrammaGlobo || !A.pubblicaGlobo) return Promise.resolve(false);
-    const rete = G.costruisci(M, stato, false), quando = Date.now(), n = G.FOTOGRAMMI;
-    return new Promise((fine) => {
-      let i = 0;
-      const passo = () => {
-        try {
-          if (A.fotogrammaGlobo(i, G.fotogrammaWidget(M, stato, 256, quando, i / n, rete)) !== "ok") return fine(false);
-          if (++i < n) return attesa ? setTimeout(passo, attesa) : passo();
-          fine(A.pubblicaGlobo(n) === "ok");
-        } catch (_) { fine(false); }
-      };
-      passo();
-    });
-  };
-
   radice.SBGlobo = G;
 })(typeof window !== "undefined" ? window : globalThis);

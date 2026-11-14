@@ -4,6 +4,7 @@ const M = createRequire(import.meta.url)("../android/app/src/main/assets/www/mot
 const { chromium } = createRequire(import.meta.url)("playwright"); const require_fs = () => createRequire(import.meta.url)("node:fs");
 const WWW = join(dirname(fileURLToPath(import.meta.url)), "../android/app/src/main/assets/www"), OUT = process.argv[2];
 const s = M.statoVuoto(); const t = "2026-11-14T08:00:00Z";
+await M.salvaRecord(s, "note", "md1", { titolo: "Piano settimanale", testo: "## Obiettivi\nRivedere [[Widget Home]] e [[Debloat launcher]] per #second-brain.\n- [x] Firma 1.6.1\n- [ ] Collaudo sul telefono\n> Le note restano private.\n**Importante:** ==non== pubblicare. `codice`", tipo: "originale", categoria: "area", stanza_id: "st-sb", collegamenti: [], tag: ["piano"], accessibile_agenti: false, data: t, registrato_il: t });
 for (const [id, nome] of [["st-tv", "TCL Minimal TV"], ["st-sb", "Second brain"], ["st-va", "Voice assistant"], ["st-fk", "Forklift Tycoon"], ["st-tr", "Trading oro e Forex"]]) await M.salvaRecord(s, "stanze", id, { nome, stato: "attiva", obiettivi: [], agenti_ids: [] });
 await M.salvaRecord(s, "progetti", "pr-tr", { nome: "Trading oro e Forex", stato: "in pausa", stanza_id: "st-tr" });
 const temi = { "st-tv": ["Debloat launcher", "Permessi ADB", "Piano interventi fase 10", "Benchmark fluidità"], "st-sb": ["Archivio unico delle note", "Sincronizzazione ramo dati", "Widget Home", "Firma APK"], "st-va": ["Parola di attivazione", "Sintesi vocale italiana"], "st-fk": ["Diagnostica 60 fps", "Fisica del carrello", "Livelli magazzino"], "st-tr": ["XAU/USD livelli chiave", "Backtest EMA 50/200", "Regole di rischio 1%"] };
@@ -27,8 +28,9 @@ for (let dy = -120; dy <= 120 && (await p.isHidden("#scheda")); dy += 12) for (l
 await p.waitForTimeout(200); await p.screenshot({ path: join(OUT, "3-sfera-scheda.png") });
 await p.click('[data-modo="rete"]'); await p.waitForTimeout(500); await p.screenshot({ path: join(OUT, "4-rete.png") });
 await vai("stanze"); await p.screenshot({ path: join(OUT, "5-stanze.png") });
-const png = await p.evaluate(() => window.SBGlobo.immagineWidget(window.SBMotore, JSON.parse(window.Android.caricaDati()), 512, Date.parse("2026-11-14T09:00:00Z")));
-(await import("node:fs")).writeFileSync(join(OUT, "6-widget-globo.png"), Buffer.from(png, "base64"));
-const foto = await p.evaluate(() => { const G = window.SBGlobo, s = JSON.parse(window.Android.caricaDati()), q = Date.parse("2026-11-14T09:00:00Z"); return Array.from({ length: G.FOTOGRAMMI }, (_, i) => G.fotogrammaWidget(window.SBMotore, s, 300, q, i / G.FOTOGRAMMI)); });
-foto.forEach((b, i) => (require_fs().writeFileSync(join(OUT, `widget-f${String(i).padStart(2, "0")}.png`), Buffer.from(b, "base64"))));
+await p.evaluate(() => { window.__nota = "md1"; }); await p.evaluate(() => { document.querySelector("#cerca") && 0; });
+await p.evaluate(() => { location.hash = "note"; }); await p.waitForTimeout(300);
+await p.click("text=Piano settimanale"); await p.waitForTimeout(400); await p.screenshot({ path: join(OUT, "8-nota-md.png"), fullPage: true });
+await p.evaluate(() => { location.hash = "note"; }); await p.waitForTimeout(400); await p.screenshot({ path: join(OUT, "7-note.png") });
+await p.evaluate(() => { const n = JSON.parse(window.Android.caricaDati()); }); 
 await browser.close(); console.log("ok");

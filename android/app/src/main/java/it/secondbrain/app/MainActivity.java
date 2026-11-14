@@ -67,6 +67,7 @@ public class MainActivity extends Activity {
         web.addJavascriptInterface(ponte, "Android");
         web.loadUrl("https://" + HOST + "/www/index.html" + frammento(getIntent()));
         SincronizzazioneJob.pianifica(this);
+        eliminaResiduiGlobo();
 
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
@@ -81,6 +82,16 @@ public class MainActivity extends Activity {
     }
 
     static volatile boolean inPrimoPiano = false;
+
+    /** 1.8: il widget del globo è stato eliminato; rimuove i fotogrammi rimasti dalla 1.7. */
+    private void eliminaResiduiGlobo() {
+        java.io.File d = new java.io.File(getFilesDir(), "globo");
+        java.io.File[] f = d.listFiles();
+        if (f != null) for (java.io.File x : f) x.delete();
+        d.delete();
+        new java.io.File(getFilesDir(), "globo.png").delete();
+        getSharedPreferences("impostazioni", MODE_PRIVATE).edit().remove("globo_n").remove("globo_v").apply();
+    }
 
     /** Notifiche e widget aprono l'app su una sezione (#stanze) o con un'azione (aggiunta rapida). */
     private static String frammento(Intent i) {

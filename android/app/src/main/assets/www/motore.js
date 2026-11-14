@@ -369,7 +369,7 @@
 
   // ---------- 1.2: collegamenti scritti nel testo come [[Titolo]] ----------
   M.titoloNota = (n) => (n.titolo && String(n.titolo).trim()) || String(n.testo || "").split("\n")[0].slice(0, 80).trim();
-  M.estraiLink = (testo) => [...String(testo || "").matchAll(/\[\[([^\[\]\n]{1,150})\]\]/g)].map((m) => m[1].trim()).filter(Boolean);
+  M.estraiLink = (testo) => [...String(testo || "").matchAll(/\[\[([^\[\]\n]{1,150})\]\]/g)].map((m) => m[1].split("|")[0].split("#")[0].trim()).filter(Boolean); // [[Titolo|alias]] e [[Titolo#sezione]] come in Obsidian
   // Risolve un titolo: una sola nota con quel titolo → collegamento; nessuna o più di una → non collega (lo segnala).
   M.risolviTitolo = function (stato, titolo, escludiId) {
     const t = String(titolo).toLowerCase().trim();
@@ -466,6 +466,237 @@
       p += 46 + lnome + lextra + lcomm;
     }
     throw new Error(`Nell'archivio non c'è ${nomeCercato} (file trovati: ${nomi.slice(0, 8).join(", ")}).`);
+  };
+
+  // Tutte le voci di uno ZIP che soddisfano filtro(nome) → [{nome, testo}] (per le cassaforti di Obsidian).
+  M.leggiTuttiDaZip = async function (bytes, filtro, massimo = 5000) {
+    const v = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    let eocd = -1; for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) if (v.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+    if (eocd < 0) throw new Error("Archivio ZIP non valido.");
+    let p = v.getUint32(eocd + 16, true); const voci = v.getUint16(eocd + 10, true), out = [];
+    for (let k = 0; k < voci && out.length < massimo; k++) {
+      if (v.getUint32(p, true) !== 0x02014b50) throw new Error("Indice dello ZIP danneggiato.");
+      const metodo = v.getUint16(p + 10, true), compr = v.getUint32(p + 20, true), lnome = v.getUint16(p + 28, true), lextra = v.getUint16(p + 30, true), lcomm = v.getUint16(p + 32, true), loc = v.getUint32(p + 42, true);
+      const nome = new TextDecoder().decode(bytes.subarray(p + 46, p + 46 + lnome));
+      if (!nome.endsWith("/") && filtro(nome)) {
+        const inizio = loc + 30 + v.getUint16(loc + 26, true) + v.getUint16(loc + 28, true), dati = bytes.subarray(inizio, inizio + compr);
+        let testo;
+        if (metodo === 0) testo = new TextDecoder().decode(dati);
+        else if (metodo === 8) testo = await new Response(new Blob([dati]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+        else throw new Error("Compressione dello ZIP non supportata.");
+        out.push({ nome, testo });
+      }
+      p += 46 + lnome + lextra + lcomm;
+    }
+    return out;
+  };
+
+  // ---------- 1.8: come Obsidian ----------
+  // #tag nel testo (non i titoli "# Titolo", non i numeri puri, non dentro il codice)
+  M.tagsDaTesto = function (testo) {
+    const pulito = String(testo || "").replace(/```[\s\S]*?```/g, "").replace(/`[^`\n]*`/g, "");
+    const out = new Set(); for (const m of pulito.matchAll(/(^|[\s(])#([\p{L}\p{N}_\-/]+)/gu)) if (!/^\d+$/.test(m[2])) out.add(m[2].toLowerCase());
+    return [...out];
+  };
+  M.tagNota = (n) => [...new Set([...(n.tag || []).map((t) => String(t).toLowerCase()), ...M.tagsDaTesto(n.testo)])];
+  M.tuttiTag = function (stato) {
+    const c = new Map(); for (const n of M.elenco(stato, "note")) for (const t of M.tagNota(n)) c.set(t, (c.get(t) || 0) + 1);
+    return [...c].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0])).map(([tag, quante]) => ({ tag, quante }));
+  };
+  // Citazioni non collegate: altre note che nominano il titolo di questa senza collegarla
+  const regTitolo = (t) => new RegExp("(^|[^\\p{L}\\p{N}\\[])(" + t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + ")(?![\\p{L}\\p{N}\\]])", "iu");
+  M.menzioniNonCollegate = function (stato, idNota) {
+    const n = M.trova(stato, "note", idNota); if (!n) return [];
+    const t = M.titoloNota(n).trim(); if (t.length < 3) return [];
+    const r = regTitolo(t);
+    return M.elenco(stato, "note").filter((x) => x.id !== idNota && !(x.collegamenti || []).includes(idNota) && r.test(String(x.testo || "").replace(/\[\[[^\]]*\]\]/g, "")));
+  };
+  M.collegaMenzione = async function (stato, idSorgente, idDest) {
+    const s = M.trova(stato, "note", idSorgente), d = M.trova(stato, "note", idDest); if (!s || !d) return false;
+    const t = M.titoloNota(d).trim(); let fatto = false;
+    const testo = String(s.testo).replace(regTitolo(t), (m, pre, parola) => { fatto = true; return pre + "[[" + parola + "]]"; });
+    const { id, ...dati } = s;
+    await M.salvaRecord(stato, "note", id, { ...dati, testo, collegamenti: [...new Set([...(s.collegamenti || []), idDest])], aggiornato_il: ora() });
+    return fatto;
+  };
+  // Modelli: note con il tag #modello. Segnaposto come in Obsidian: {{date}} {{time}} {{title}} (anche in italiano).
+  M.modelli = (stato) => M.elenco(stato, "note").filter((n) => M.tagNota(n).includes("modello"));
+  M.applicaModello = function (testo, { titolo = "", quando = new Date() } = {}) {
+    const d = new Date(quando), z = (x) => String(x).padStart(2, "0");
+    const data = `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`, orario = `${z(d.getHours())}:${z(d.getMinutes())}`;
+    return String(testo || "").replace(/\{\{\s*(date|data)\s*\}\}/gi, data).replace(/\{\{\s*(time|ora)\s*\}\}/gi, orario).replace(/\{\{\s*(title|titolo)\s*\}\}/gi, titolo)
+      .replace(/(^|\n)#modello\b[^\n]*/g, "$1").replace(/^\n+/, "");
+  };
+  // Nota del giorno (Daily note): una sola per data; usa il modello «Nota del giorno» se esiste
+  M.notaDelGiorno = async function (stato, quando = new Date()) {
+    const d = new Date(quando), z = (x) => String(x).padStart(2, "0"), data = `${d.getFullYear()}-${z(d.getMonth() + 1)}-${z(d.getDate())}`, id = "giorno-" + data;
+    const r = stato.collezioni.note[id]; if (r && !r.sync.eliminato) return { id, nuova: false };
+    const mod = M.modelli(stato).find((m) => /giorno|daily/i.test(M.titoloNota(m)));
+    const testo = mod ? M.applicaModello(mod.testo, { titolo: data, quando: d }) : `## Attività\n- [ ] \n\n## Note\n\n`;
+    await M.salvaRecord(stato, "note", id, { titolo: data, testo, tipo: "originale", fonte: "Nota del giorno", data: d.toISOString(), registrato_il: ora(), categoria: "inbox", tag: ["giornaliero"], collegamenti: [], accessibile_agenti: false });
+    return { id, nuova: true };
+  };
+  // Spunta della n-esima casella "- [ ]" nel testo (dalla vista formattata)
+  M.spunta = function (testo, indice) {
+    let k = -1; return String(testo).replace(/^(\s*[-*+]\s+\[)( |x|X)(\])/gm, (m, a, b, c) => (++k === indice ? a + (b === " " ? "x" : " ") + c : m));
+  };
+
+  // Markdown → HTML sicuro (tutto il testo viene prima "escapato"). risolvi(titolo) → id nota o null.
+  M.markdown = function (testo, risolvi) {
+    const esc = (t) => String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    const blocchiCodice = [];
+    let src = String(testo || "").replace(/\r/g, "").replace(/```([^\n]*)\n([\s\S]*?)```/g, (m, l, c) => { blocchiCodice.push(c); return `\u0000C${blocchiCodice.length - 1}\u0000`; });
+    let casella = -1;
+    const inline = (t) => {
+      const codici = []; t = t.replace(/`([^`\n]+)`/g, (m, c) => { codici.push(c); return `\u0000I${codici.length - 1}\u0000`; });
+      t = esc(t)
+        .replace(/!?\[\[([^\[\]\n|]{1,150})(?:\|([^\[\]\n]{1,150}))?\]\]/g, (m, dest, alias) => {
+          const vero = dest.replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").split("#")[0].trim();
+          const id = risolvi ? risolvi(vero) : null, vis = alias || dest;
+          return id ? `<a class="wl" href="#nota" data-apri="nota" data-id="${esc(id)}">${vis}</a>` : `<a class="wl rotto" href="#nota" data-crea-nota="${esc(vero)}">${vis}</a>`;
+        })
+        .replace(/\[([^\]\n]{1,200})\]\((https?:\/\/[^)\s]{1,500})\)/g, (m, txt, url) => `<a class="ext" href="#" data-link="${url}">${txt}</a>`)
+        .replace(/\*\*([^*\n]+)\*\*/g, "<strong>$1</strong>").replace(/__([^_\n]+)__/g, "<strong>$1</strong>")
+        .replace(/(^|[^*\w])\*([^*\n]+)\*(?!\w)/g, "$1<em>$2</em>").replace(/(^|[^_\w])_([^_\n]+)_(?!\w)/g, "$1<em>$2</em>")
+        .replace(/~~([^~\n]+)~~/g, "<del>$1</del>").replace(/==([^=\n]+)==/g, "<mark>$1</mark>")
+        .replace(/(^|[\s(])#([\p{L}\p{N}_\-/]+)/gu, (m, pre, tag) => (/^\d+$/.test(tag) ? m : `${pre}<a class="tag" href="#note" data-tag="${tag.toLowerCase()}">#${tag}</a>`));
+      return t.replace(/\u0000I(\d+)\u0000/g, (m, i) => `<code>${esc(codici[+i])}</code>`);
+    };
+    const righe = src.split("\n"), out = []; let lista = null, para = [];
+    const chiudiPara = () => { if (para.length) { out.push(`<p>${para.map(inline).join("<br>")}</p>`); para = []; } };
+    const chiudiLista = () => { if (lista) { out.push(`</${lista}>`); lista = null; } };
+    for (const r of righe) {
+      let m;
+      if ((m = r.match(/^\u0000C(\d+)\u0000$/))) { chiudiPara(); chiudiLista(); out.push(`<pre><code>${esc(blocchiCodice[+m[1]])}</code></pre>`); continue; }
+      if (!r.trim()) { chiudiPara(); chiudiLista(); continue; }
+      if ((m = r.match(/^(#{1,6})\s+(.*)$/))) { chiudiPara(); chiudiLista(); out.push(`<h${m[1].length + 1 > 6 ? 6 : m[1].length + 1} class="md-h">${inline(m[2])}</h${m[1].length + 1 > 6 ? 6 : m[1].length + 1}>`); continue; }
+      if (/^\s*([-*_])(\s*\1){2,}\s*$/.test(r)) { chiudiPara(); chiudiLista(); out.push("<hr>"); continue; }
+      if ((m = r.match(/^>\s?(.*)$/))) { chiudiPara(); chiudiLista(); out.push(`<blockquote>${inline(m[1])}</blockquote>`); continue; }
+      if ((m = r.match(/^\s*[-*+]\s+\[( |x|X)\]\s?(.*)$/))) { chiudiPara(); if (lista !== "ul") { chiudiLista(); out.push('<ul class="task">'); lista = "ul"; } casella++; out.push(`<li><label><input type="checkbox" data-spunta="${casella}"${m[1] !== " " ? " checked" : ""}> <span>${inline(m[2])}</span></label></li>`); continue; }
+      if ((m = r.match(/^\s*[-*+]\s+(.*)$/))) { chiudiPara(); if (lista !== "ul") { chiudiLista(); out.push("<ul>"); lista = "ul"; } out.push(`<li>${inline(m[1])}</li>`); continue; }
+      if ((m = r.match(/^\s*\d+[.)]\s+(.*)$/))) { chiudiPara(); if (lista !== "ol") { chiudiLista(); out.push("<ol>"); lista = "ol"; } out.push(`<li>${inline(m[1])}</li>`); continue; }
+      chiudiLista(); para.push(r);
+    }
+    chiudiPara(); chiudiLista();
+    return out.join("\n");
+  };
+
+  // ---------- cassaforte di Obsidian: esportazione e importazione ----------
+  const CARTELLE = { inbox: "0 Da organizzare", progetto: "1 Progetti", area: "2 Aree", risorsa: "3 Risorse", archivio: "4 Archivio" };
+  const nomeFile = (t) => String(t || "Senza titolo").replace(/[\\/:*?"<>|#^\[\]\n\r\t]/g, " ").replace(/\s+/g, " ").trim().slice(0, 100) || "Senza titolo";
+  const yamlVal = (v) => (Array.isArray(v) ? `[${v.map((x) => JSON.stringify(String(x))).join(", ")}]` : v === null || v === undefined ? '""' : typeof v === "boolean" || typeof v === "number" ? String(v) : JSON.stringify(String(v)));
+  M.vaultObsidian = function (stato) {
+    const usati = new Set(), file = [], nomeDi = new Map();
+    const note = M.elenco(stato, "note").filter((n) => !n.fittizio);
+    for (const n of note) { // nomi unici (Obsidian collega per nome del file)
+      let b = nomeFile(M.titoloNota(n)), k = 2, f = b; while (usati.has(f.toLowerCase())) f = `${b} (${k++})`; usati.add(f.toLowerCase()); nomeDi.set(n.id, f);
+    }
+    for (const n of note) {
+      const st = M.trova(stato, "stanze", n.stanza_id), pr = M.trova(stato, "progetti", n.progetto_id);
+      const cat = n.progetto_id && (n.categoria || "inbox") === "inbox" ? "progetto" : (CARTELLE[n.categoria] ? n.categoria : "inbox");
+      const fm = { "sb-id": n.id, tags: M.tagNota(n), tipo: n.tipo || "", fonte: n.fonte || "", data: n.data || "", stanza: st ? st.nome : "", progetto: pr ? pr.nome : "", "accessibile-agenti": n.accessibile_agenti === true, creato: n.registrato_il || "" };
+      let corpo = String(n.testo || "");
+      const mancanti = (n.collegamenti || []).filter((x) => nomeDi.has(x) && !corpo.includes("[[" + nomeDi.get(x)));
+      if (mancanti.length) corpo += `\n\n## Collegamenti\n${mancanti.map((x) => `- [[${nomeDi.get(x)}]]`).join("\n")}\n`;
+      file.push({ percorso: `${CARTELLE[cat]}/${nomeDi.get(n.id)}.md`, testo: `---\n${Object.entries(fm).map(([k, v]) => `${k}: ${yamlVal(v)}`).join("\n")}\n---\n${corpo}` });
+    }
+    for (const s of M.elenco(stato, "stanze").filter((x) => !x.fittizio)) {
+      const dentro = note.filter((n) => n.stanza_id === s.id).map((n) => `- [[${nomeDi.get(n.id)}]]`);
+      file.push({ percorso: `Stanze/${nomeFile(s.nome)}.md`, testo: `---\nsb-id: ${yamlVal(s.id)}\ntags: ["stanza"]\n---\n${s.descrizione || ""}\n\n## Obiettivi\n${(s.obiettivi || []).map((o) => "- " + o).join("\n")}\n\n## Note\n${dentro.join("\n")}\n` });
+    }
+    return file;
+  };
+  // ZIP senza compressione (formato "store"), leggibile da qualunque programma e da Obsidian
+  const CRC = (() => { const t = new Uint32Array(256); for (let n = 0; n < 256; n++) { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; t[n] = c >>> 0; } return t; })();
+  const crc32 = (b) => { let c = 0xffffffff; for (let i = 0; i < b.length; i++) c = CRC[(c ^ b[i]) & 0xff] ^ (c >>> 8); return (c ^ 0xffffffff) >>> 0; };
+  M.zip = function (file, radice = "") {
+    const enc = new TextEncoder(), parti = [], centrali = []; let off = 0;
+    for (const f of file) {
+      const nome = enc.encode(radice + f.percorso), dati = enc.encode(f.testo), crc = crc32(dati);
+      const h = new DataView(new ArrayBuffer(30)); h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint32(14, crc, true); h.setUint32(18, dati.length, true); h.setUint32(22, dati.length, true); h.setUint16(26, nome.length, true);
+      const c = new DataView(new ArrayBuffer(46)); c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint32(16, crc, true); c.setUint32(20, dati.length, true); c.setUint32(24, dati.length, true); c.setUint16(28, nome.length, true); c.setUint32(42, off, true);
+      parti.push(new Uint8Array(h.buffer), nome, dati); centrali.push(new Uint8Array(c.buffer), nome); off += 30 + nome.length + dati.length;
+    }
+    const lc = centrali.reduce((a, b) => a + b.length, 0), e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, file.length, true); e.setUint16(10, file.length, true); e.setUint32(12, lc, true); e.setUint32(16, off, true);
+    const tutto = [...parti, ...centrali, new Uint8Array(e.buffer)], out = new Uint8Array(tutto.reduce((a, b) => a + b.length, 0));
+    let p = 0; for (const b of tutto) { out.set(b, p); p += b.length; } return out;
+  };
+  // Proprietà YAML semplici (chiave: valore, liste [a, b] o "- a")
+  M.leggiProprieta = function (testo) {
+    const m = String(testo).replace(/^﻿/, "").match(/^---\n([\s\S]*?)\n---\n?/); if (!m) return { prop: {}, corpo: String(testo) };
+    const prop = {}; let ultima = null;
+    for (const r of m[1].split("\n")) {
+      let k;
+      if ((k = r.match(/^\s*-\s+(.*)$/)) && ultima) { (prop[ultima] = Array.isArray(prop[ultima]) ? prop[ultima] : []).push(k[1].replace(/^["']|["']$/g, "")); continue; }
+      if ((k = r.match(/^([\w\-]+):\s*(.*)$/))) {
+        ultima = k[1]; let v = k[2].trim();
+        if (/^\[.*\]$/.test(v)) v = v.slice(1, -1).split(",").map((x) => x.trim().replace(/^["']|["']$/g, "")).filter(Boolean);
+        else if (v === "true" || v === "false") v = v === "true"; else v = v.replace(/^["']|["']$/g, "");
+        prop[ultima] = v === "" ? (prop[ultima] || "") : v;
+      }
+    }
+    return { prop, corpo: String(testo).slice(m[0].length) };
+  };
+  // Importa i .md di una cassaforte: note nuove PRIVATE; mai sovrascrivere note esistenti.
+  M.importaVault = async function (stato, file, quando) {
+    const esito = { importate: 0, gia_presenti: 0, ignorate: 0 }, inv = Object.fromEntries(Object.entries(CARTELLE).map(([k, v]) => [v.toLowerCase(), k]));
+    for (const f of file) {
+      if (!/\.md$/i.test(f.nome) || /(^|\/)\.(obsidian|trash)\//.test(f.nome)) { esito.ignorate++; continue; }
+      const { prop, corpo } = M.leggiProprieta(f.testo), parti = f.nome.split("/"), titolo = parti[parti.length - 1].replace(/\.md$/i, "");
+      if ((Array.isArray(prop.tags) ? prop.tags : []).includes("stanza")) { esito.ignorate++; continue; }
+      const id = /^[\w\-]{1,120}$/.test(prop["sb-id"] || "") ? prop["sb-id"] : "md-" + (await M.impronta(f.nome)).slice(0, 24);
+      if (stato.collezioni.note[id] && !stato.collezioni.note[id].sync.eliminato) { esito.gia_presenti++; continue; }
+      const cartella = (parti.length > 1 ? parti[parti.length - 2] : "").toLowerCase();
+      const tag = [...new Set([...(Array.isArray(prop.tags) ? prop.tags : prop.tags ? [prop.tags] : []).map((t) => String(t).replace(/^#/, "").toLowerCase()), "obsidian"])];
+      await M.salvaRecord(stato, "note", id, { titolo, testo: corpo.replace(/^\n+/, ""), tipo: prop.tipo || "originale", fonte: prop.fonte || `Obsidian (${f.nome})`, data: prop.data || prop.created || quando, registrato_il: quando,
+        categoria: inv[cartella] && inv[cartella] !== "progetto" ? inv[cartella] : "inbox", tag, collegamenti: [], accessibile_agenti: false });
+      esito.importate++;
+    }
+    // i [[collegamenti]] scritti diventano collegamenti reali quando il titolo è unico
+    for (const n of M.elenco(stato, "note").filter((x) => (x.tag || []).includes("obsidian"))) {
+      const c = M.collegamentiDaTesto(stato, n.testo, n.id).ids || [];
+      if (c.length && c.some((x) => !(n.collegamenti || []).includes(x))) { const { id, ...d } = n; await M.salvaRecord(stato, "note", id, { ...d, collegamenti: [...new Set([...(n.collegamenti || []), ...c])] }); }
+    }
+    return esito;
+  };
+
+  // ---------- 1.8: esecuzioni con più agenti ----------
+  M.agentiDi = (c) => (Array.isArray(c.agenti_ids) && c.agenti_ids.length ? c.agenti_ids : c.agente_id ? [c.agente_id] : []);
+  // Prepara le istruzioni per una nuova sessione di Claude Code con più agenti. La sessione si rinomina «SB·<codice> …»,
+  // così alla rilevazione successiva l'app la collega da sola agli agenti e alla stanza scelti.
+  M.preparaEsecuzione = function (stato, { agenti_ids, stanza_id, compito, modo = "coordinati" }) {
+    const ag = (agenti_ids || []).map((id) => M.trova(stato, "agenti", id)).filter(Boolean);
+    if (!ag.length) throw new Error("Scegli almeno un agente.");
+    if (!String(compito || "").trim()) throw new Error("Scrivi il compito.");
+    const codice = Math.random().toString(36).slice(2, 7), st = M.trova(stato, "stanze", stanza_id);
+    const sk = (a) => (a.skill_ids || []).map((id) => (M.trova(stato, "skill", id) || {}).nome).filter(Boolean);
+    const righe = [
+      `Esecuzione multi-agente di Second Brain (codice ${codice}).`,
+      `Per prima cosa rinomina questa sessione con set_session_title in «SB·${codice} ${String(compito).trim().slice(0, 50)}».`,
+      "", `Compito: ${String(compito).trim()}`, st ? `Stanza: ${st.nome}${st.descrizione ? " — " + st.descrizione : ""}${(st.obiettivi || []).length ? " (obiettivi: " + st.obiettivi.join("; ") + ")" : ""}` : null,
+      "", `Agenti (${modo === "sequenza" ? "uno dopo l'altro, ognuno parte dal risultato del precedente" : "in parallelo come subagenti, poi unisci i risultati"}):`,
+      ...ag.map((a, i) => `${i + 1}. ${a.nome}${a.ruolo ? " — " + a.ruolo : ""}${sk(a).length ? " · skill: " + sk(a).join(", ") : ""}${a.istruzioni ? "\n   Istruzioni: " + String(a.istruzioni).split("\n")[0].slice(0, 300) : ""}`),
+      "", "Se un agente esiste in .claude/agents usa quella definizione; altrimenti segui il ruolo e le istruzioni qui sopra.",
+      "Chiedimi solo l'essenziale. Alla fine scrivi un riepilogo: cosa ha fatto ogni agente, risultato, cosa resta da decidere.",
+    ].filter((x) => x !== null);
+    stato.impostazioni ||= {}; stato.impostazioni.esecuzioni_previste ||= {};
+    stato.impostazioni.esecuzioni_previste[codice] = { agenti_ids: ag.map((a) => a.id), stanza_id: st ? st.id : null, compito: String(compito).trim().slice(0, 300), modo, creata_il: ora() };
+    return { codice, prompt: righe.join("\n") };
+  };
+  // Collega le sessioni rinominate «SB·<codice>» alle esecuzioni previste (una volta sola)
+  M.collegaEsecuzioniPreviste = async function (stato) {
+    const prev = (stato.impostazioni && stato.impostazioni.esecuzioni_previste) || {}, ist = (stato.stato_lavoro || []).find((x) => x.id === "istantanea");
+    let n = 0; if (!ist) return n;
+    for (const se of ist.sessioni || []) {
+      const m = String(se.titolo || "").match(/^SB·([a-z0-9]{5})\b/); const p = m && prev[m[1]];
+      if (!p || p.session_id) continue;
+      if (M.elenco(stato, "collegamenti").some((c) => c.session_id === se.id)) { p.session_id = se.id; continue; }
+      const id = "co-" + m[1];
+      await M.salvaRecord(stato, "collegamenti", id, { session_id: se.id, agenti_ids: p.agenti_ids, agente_id: p.agenti_ids[0] || null, stanza_id: p.stanza_id, compito: p.compito, creato_il: ora() });
+      p.session_id = se.id; n++;
+    }
+    return n;
   };
 
   M.contaFittizi = (stato) => M.COLLEZIONI_APP.reduce((n, c) => n + M.elenco(stato, c).filter((r) => r.fittizio === true).length, 0);
@@ -611,7 +842,7 @@
     const at = await api.richiesta("GET", `${R}/contents/${M.CARTELLA_STATO}/attese.md?ref=${M.RAMO}`); // risposte pronte dell'agente «sblocca attese»
     if (at.status === 200) nuovi.push({ id: "attese", testo: M.daBase64(at.corpo.content).slice(0, 60000), sha: at.corpo.sha });
     else if (at.status !== 404) controlla(at, "la lettura di attese.md");
-    if (nuovi.length) { stato.stato_lavoro = nuovi; stato.sync.istantanea_scaricata_il = ora(); await M.noteDaSessioni(stato); await M.organizzaAutomatico(stato); }
+    if (nuovi.length) { stato.stato_lavoro = nuovi; stato.sync.istantanea_scaricata_il = ora(); await M.noteDaSessioni(stato); await M.organizzaAutomatico(stato); await M.collegaEsecuzioniPreviste(stato); }
     return nuovi.length;
   };
 

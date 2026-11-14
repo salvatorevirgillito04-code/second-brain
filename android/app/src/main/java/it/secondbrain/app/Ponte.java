@@ -43,7 +43,7 @@ public class Ponte {
     private final Cassaforte cassaforte;
     private final ClientGitHub github;
     private final ExecutorService rete = Executors.newSingleThreadExecutor();
-    private String daEsportare;
+    private byte[] daEsportare;
     private String messaggioEsportazione;
 
     Ponte(android.content.Context c, MainActivity a, WebView w) {
@@ -107,18 +107,6 @@ public class Ponte {
         WidgetSecondBrain.aggiornaTutti(ctx);
     }
 
-    /** Widget animato del globo: un fotogramma alla volta (PNG base64, disegnato da globo.js), poi pubblicaGlobo. */
-    @JavascriptInterface public String fotogrammaGlobo(int i, String b64) {
-        try {
-            if (b64 == null || b64.length() > WidgetGlobo.MAX_BYTE * 4 / 3 + 8) return "troppo grande";
-            WidgetGlobo.fotogramma(ctx, i, android.util.Base64.decode(b64, android.util.Base64.DEFAULT));
-            return "ok";
-        } catch (Exception e) { return "errore (" + e.getClass().getSimpleName() + ")"; }
-    }
-    @JavascriptInterface public String pubblicaGlobo(int n) {
-        try { WidgetGlobo.pubblica(ctx, n); return "ok"; } catch (Exception e) { return "errore (" + e.getClass().getSimpleName() + ")"; }
-    }
-
     /** Chiamato da sfondo.html al termine della sincronizzazione in background. */
     @JavascriptInterface public void fine(String esito) { esitoFine = esito; if (allaFine != null) web.post(allaFine); }
 
@@ -172,23 +160,34 @@ public class Ponte {
 
     // ---------- file (selettore di Android) ----------
     @JavascriptInterface public void esporta(String nome, String testo, String messaggioOk) {
+        if (testo == null) return;
+        salvaConScelta(nome, testo.getBytes(StandardCharsets.UTF_8), "application/json", messaggioOk);
+    }
+    /** Come esporta(), per file binari (es. lo ZIP per Obsidian), passati in base64. Massimo 60 MB. */
+    @JavascriptInterface public void esportaBinario(String nome, String b64, String tipo, String messaggioOk) {
+        if (b64 == null || b64.length() > 80 * 1024 * 1024) { chiama("__esportato", false, "File troppo grande."); return; }
+        byte[] dati;
+        try { dati = android.util.Base64.decode(b64, android.util.Base64.DEFAULT); } catch (Exception e) { chiama("__esportato", false, "Dati non validi."); return; }
+        salvaConScelta(nome, dati, tipo == null || !tipo.matches("[a-z]+/[a-z0-9.+-]+") ? "application/octet-stream" : tipo, messaggioOk);
+    }
+    private void salvaConScelta(String nome, byte[] dati, String tipo, String messaggioOk) {
         if (attivita == null) return;
-        daEsportare = testo; messaggioEsportazione = messaggioOk;
+        daEsportare = dati; messaggioEsportazione = messaggioOk;
         attivita.runOnUiThread(() -> {
             Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
-            i.setType("application/json");
+            i.setType(tipo);
             i.putExtra(Intent.EXTRA_TITLE, nome);
             try { attivita.startActivityForResult(i, MainActivity.RICHIESTA_ESPORTA); }
             catch (ActivityNotFoundException e) { chiama("__esportato", false, "Nessuna app per salvare file disponibile."); }
         });
     }
     void esportaSu(Uri uri) {
-        String testo = daEsportare; daEsportare = null;
-        if (uri == null || testo == null) { chiama("__esportato", false, "Esportazione annullata."); return; }
+        byte[] dati = daEsportare; daEsportare = null;
+        if (uri == null || dati == null) { chiama("__esportato", false, "Esportazione annullata."); return; }
         try (OutputStream out = attivita.getContentResolver().openOutputStream(uri, "wt")) {
             if (out == null) throw new IllegalStateException("destinazione non scrivibile");
-            out.write(testo.getBytes(StandardCharsets.UTF_8));
+            out.write(dati);
             out.flush();
             chiama("__esportato", true, messaggioEsportazione);
         } catch (Exception e) {

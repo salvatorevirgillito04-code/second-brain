@@ -125,3 +125,23 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - Nel widget il globo resta **fermo**: con fotogrammi sfogliati dal launcher ogni spostamento diventava un tremolio. Si anima solo la luce: le connessioni si accendono a onde e i nuclei pulsano. Così la dissolvenza tra fotogrammi è continua.
 - 16 fotogrammi da 256 px, uno ogni 200 ms, con dissolvenza di 200 ms: metà del carico della 1.7.1 (circa 4 MB nel launcher). Si accetta solo un ciclo completo, così nel `ViewFlipper` non restano fotogrammi vuoti.
 - Il globo nella Mappa dell'app resta animato e in rotazione (lì il disegno è in tempo reale).
+
+## 1.8: come Obsidian, esecuzioni con più agenti, widget del globo eliminato
+- **Note in Markdown formattato**:
+  - titoli, grassetto e corsivo, `codice`, blocchi di codice, citazioni, ==evidenziato==, liste;
+  - caselle `- [ ]` che si spuntano direttamente nella nota;
+  - `[[Titolo]]`, `[[Titolo|alias]]` e `[[Titolo#sezione]]`: un collegamento a una nota inesistente la crea con un tocco.
+  - Il testo viene sempre «ripulito» prima di essere mostrato, quindi l'HTML scritto in una nota non viene eseguito.
+- **#tag nel testo**, come in Obsidian: in Note c'è la barra dei tag con il conteggio, e un tocco filtra.
+- **Citazioni non collegate**: le note che nominano il titolo senza collegarlo, con il pulsante «Collega», che trasforma la citazione in `[[...]]`.
+- **Nota del giorno** (una per data) e **modelli**: note con il tag `#modello` e i segnaposto `{{data}}`, `{{ora}}`, `{{titolo}}`, anche nella forma inglese.
+- **Ricerca come selettore rapido**: se nessuna nota ha quel titolo, compare «Crea «…»».
+- **Cassaforte di Obsidian**:
+  - «Esporta per Obsidian» crea uno ZIP con le cartelle 0 Da organizzare, 1 Progetti, 2 Aree, 3 Risorse, 4 Archivio e Stanze; ogni nota è un file `.md` con proprietà YAML (`sb-id`, tags, stanza, progetto…) e `[[collegamenti]]`;
+  - «Importa da Obsidian» accetta lo ZIP di una cassaforte: le note nuove entrano private, quelle già presenti non vengono toccate, e prima dell'importazione si salva una copia di sicurezza.
+- **Esecuzioni con più agenti**:
+  - un collegamento può avere più agenti (`agenti_ids`, compatibile con `agente_id`);
+  - «Nuova esecuzione» prepara le istruzioni per Claude Code con gli agenti scelti (in parallelo o in sequenza);
+  - la sessione si rinomina «SB·codice», e alla rilevazione successiva l'app la collega da sola agli agenti e alla stanza.
+- **Grafica**: tipografia e spazi più curati, schede e pulsanti uniformi, indicatore della sezione attiva.
+- **Widget del globo eliminato**: codice e risorse rimossi. All'avvio l'app cancella i fotogrammi rimasti dalla 1.7. Resta il widget con i conteggi.

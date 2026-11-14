@@ -155,6 +155,56 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
 .modi{position:absolute;left:50%;bottom:10px;transform:translateX(-50%);display:flex;gap:4px;background:rgba(10,12,32,.8);border:1px solid var(--linea);border-radius:999px;padding:4px;backdrop-filter:blur(10px)}
 .modi button{font:inherit;font-size:.78rem;border:none;border-radius:999px;padding:6px 12px;background:transparent;color:var(--tenue);cursor:pointer}
 .modi button[aria-pressed="true"]{background:rgba(124,108,255,.35);color:#fff}
+
+/* ---------- 1.8: rifinitura grafica e note in stile Obsidian ---------- */
+:root{--r-s:10px;--r-m:14px;--r-l:18px;--sp-1:4px;--sp-2:8px;--sp-3:12px;--sp-4:16px;--sp-5:24px}
+body{font-size:16px;line-height:1.5;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+main{gap:var(--sp-5);padding-top:var(--sp-4)}
+h2{font-size:.72rem;margin-bottom:var(--sp-2)}
+.blocco{border-radius:var(--r-m);padding:var(--sp-4);gap:var(--sp-3);background:linear-gradient(180deg,rgba(28,32,72,.62),rgba(14,16,40,.7));border:1px solid rgba(140,150,255,.16)}
+.lista{border-radius:var(--r-m)}
+.riga{padding:14px 16px;min-height:56px}
+.riga .t b{font-weight:600;letter-spacing:-.005em}
+.rapido{border-radius:var(--r-m);padding:14px 8px}
+.titolo-grande{font-size:1.6rem;line-height:1.2;letter-spacing:-.02em}
+.btn{border-radius:12px;min-height:44px;padding:10px 16px;letter-spacing:.01em}
+.chip{min-height:28px;display:inline-flex;align-items:center;gap:4px}
+button.chip{min-height:34px}
+.tagbar{gap:6px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none;padding-bottom:2px}
+.tagbar .chip{flex:0 0 auto}
+.nav a{padding:10px 0 9px;font-weight:500}
+.nav a[aria-current="page"]{position:relative}
+.nav a[aria-current="page"]::before{content:"";position:absolute;top:0;left:30%;right:30%;height:2px;border-radius:2px;background:linear-gradient(90deg,var(--accento),var(--accento2))}
+.fab{box-shadow:0 0 0 5px rgba(124,108,255,.12),0 8px 24px rgba(60,40,200,.55)}
+input,select,textarea{border-radius:12px;padding:12px;background:rgba(8,10,30,.6)}
+textarea{line-height:1.55;font-family:var(--m);font-size:.92rem}
+/* nota formattata (Markdown) */
+.md{font-size:1.02rem;line-height:1.7;color:#e3e6fb;overflow-wrap:anywhere}
+.md > *{margin:0 0 .7em}
+.md > :last-child{margin-bottom:0}
+.md .md-h{margin:1.1em 0 .45em;line-height:1.25;letter-spacing:-.01em;color:#fff}
+.md h2.md-h{font-size:1.35rem;text-transform:none;letter-spacing:-.015em;color:#fff}
+.md h2.md-h::before{display:none}
+.md h3.md-h{font-size:1.15rem}.md h4.md-h,.md h5.md-h,.md h6.md-h{font-size:1rem;color:#cfd4ff}
+.md ul,.md ol{padding-left:1.3em}.md li{margin:.2em 0}
+.md ul.task{list-style:none;padding-left:0}
+.md ul.task label{display:flex;gap:10px;align-items:flex-start;color:inherit;font-size:inherit}
+.md ul.task input{width:20px;height:20px;margin-top:.25em;flex:0 0 20px;accent-color:var(--accento)}
+.md ul.task input:checked + span{color:var(--tenue);text-decoration:line-through}
+.md code{font-family:var(--m);font-size:.86em;background:rgba(124,108,255,.14);border:1px solid rgba(124,108,255,.25);border-radius:6px;padding:.05em .35em}
+.md pre{background:rgba(4,5,15,.75);border:1px solid var(--linea);border-radius:var(--r-s);padding:12px;overflow:auto}
+.md pre code{background:none;border:0;padding:0;font-size:.82rem}
+.md blockquote{border-left:3px solid var(--accento);margin-left:0;padding:.2em 0 .2em 12px;color:#c9cdf2}
+.md mark{background:rgba(255,196,107,.28);color:inherit;border-radius:3px;padding:0 .15em}
+.md hr{border:0;border-top:1px solid var(--linea);margin:1.2em 0}
+.md a.wl{color:#b9adff;text-decoration:none;border-bottom:1px solid rgba(185,173,255,.45)}
+.md a.wl.rotto{color:var(--tenue);border-bottom:1px dashed var(--tenue)}
+.md a.ext{color:var(--accento2)}
+.md a.tag,.chip[data-tag]{color:#9fe6ff}
+.md a.tag{text-decoration:none;background:rgba(90,209,255,.1);border-radius:999px;padding:0 .45em;font-size:.9em}
+pre.istr{white-space:pre-wrap;font-family:var(--m);font-size:.8rem;background:rgba(4,5,15,.75);border:1px solid var(--linea);border-radius:var(--r-s);padding:12px;max-height:46vh;overflow:auto}
+details.piu-agenti summary{cursor:pointer;color:var(--accento2)}
+@media (min-width:700px){main{max-width:720px}.top .in{max-width:720px}}
 @media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
@@ -249,18 +299,7 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
     if (bloccato()) { S.erroreArchivio = "salvataggio sospeso finché non ripristini un backup"; return; }
     const t = JSON.stringify(S.stato); const r = A.salvaDati(t); S.erroreArchivio = r === "ok" ? null : r; if (r === "ok") S.testoSalvato = t;
     try { if (A.aggiornaWidget) A.aggiornaWidget(JSON.stringify(M.riepilogoWidget(S.stato))); } catch (_) {}
-    aggiornaGlobo();
   }
-  // widget del globo: nuova immagine se cambiano le relazioni o ogni 15 minuti (il globo ruota con l'ora)
-  let globoFirma = "", globoQuando = 0;
-  function aggiornaGlobo() {
-    if (!A || !A.fotogrammaGlobo || !window.SBGlobo) return;
-    const firma = M.relazioni(S.stato).length + "/" + L("note").length + "/" + L("stanze").length;
-    if (firma === globoFirma && Date.now() - globoQuando < 15 * 60000) return;
-    globoFirma = firma; globoQuando = Date.now();
-    setTimeout(() => window.SBGlobo.inviaWidget(A, M, S.stato, 16), 50);
-  }
-
   async function scrivi(col, id, campi) {
     const prima = id ? T(col, id) : null;
     const dati = prima ? { ...prima, ...campi, aggiornato_il: ora() } : { ...campi, creato_il: ora() };
@@ -332,10 +371,13 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
     },
     note() {
       const q = norm(S.cercaNote);
-      const tutte = L("note").filter((n) => !q || norm(titoloNota(n) + " " + n.testo + " " + (n.fonte || "") + " " + (n.tag || []).join(" ")).includes(q)).sort((a, b) => recente(b).localeCompare(recente(a)));
+      const tutte = L("note").filter((n) => (!S.tag || M.tagNota(n).includes(S.tag)) && (!q || norm(titoloNota(n) + " " + n.testo + " " + (n.fonte || "") + " " + M.tagNota(n).join(" ")).includes(q))).sort((a, b) => recente(b).localeCompare(recente(a)));
+      const tags = M.tuttiTag(S.stato), mod = M.modelli(S.stato), esatta = q && L("note").some((n) => norm(titoloNota(n)) === q);
       const gruppi = {}; for (const n of L("note")) (gruppi[norm(n.testo)] ||= []).push(n.id);
       const doppi = Object.values(gruppi).filter((g) => g.length > 1).length;
       return `<label class="cerca"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="cerca-note" type="search" placeholder="Cerca nelle note e nei tag" value="${esc(S.cercaNote)}"></label>
+        <div class="azioni"><button class="btn" id="b-giorno">Nota del giorno</button>${mod.length ? `<button class="btn v" id="b-da-modello">Da modello · ${mod.length}</button>` : ""}${q && !esatta ? `<button class="btn v" data-crea-nota="${esc(S.cercaNote.trim())}">Crea «${esc(S.cercaNote.trim().slice(0, 40))}»</button>` : ""}</div>
+        ${tags.length ? `<div class="chips tagbar">${S.tag ? `<button class="chip cfg" data-tag="">#${esc(S.tag)} ✕</button>` : ""}${tags.filter((t) => t.tag !== S.tag).slice(0, 30).map((t) => `<button class="chip" data-tag="${esc(t.tag)}">#${esc(t.tag)} <span class="muted">${t.quante}</span></button>`).join("")}</div>` : ""}
         ${doppi ? `<p class="banner att"><b>${doppi} gruppi di possibili duplicati</b><span>Note con lo stesso testo: aprile e decidi tu se eliminarne una.</span></p>` : ""}
         ${(() => { const c = q ? 0 : M.gruppiSimili(S.stato); return c ? `<p class="banner"><b>${c} coppie di note simili</b><span>Aprendo una nota trovi le simili con la percentuale di somiglianza.</span></p>` : ""; })()}
         <section><h2>${tutte.length} note</h2>${lista(tutte.map((x) => rigaNota(x, q ? S.cercaNote : "")), "Nessuna nota trovata.")}</section>`;
@@ -349,14 +391,15 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
       return `<article class="blocco"><h3 class="titolo-grande">${esc(titoloNota(n))}</h3>
           <div class="meta">${pallino(catNota(n))}${esc(CAT[catNota(n)][0])}<span class="chip">${esc(n.tipo || "tipo non indicato")}</span><span class="chip">fonte: ${esc(n.fonte || "non indicata")}</span><span class="chip">del ${esc(giorno(n.data) || "?")}</span>
             ${n.accessibile_agenti === true ? `<span class="chip cfg">accessibile agli agenti</span>` : `<span class="chip">privata, solo sul telefono</span>`}${n.corretto_il ? `<span class="chip att">corretta il ${esc(giorno(n.corretto_il))}</span>` : ""}${n.fittizio ? `<span class="chip">prova</span>` : ""}${syncChip("note", n.id)}</div>
-          ${(n.tag || []).length ? `<div class="chips">${n.tag.map((t) => `<span class="chip">#${esc(t)}</span>`).join("")}</div>` : ""}
-          <div class="corpo">${testoConLink(n)}</div>
+          ${M.tagNota(n).length ? `<div class="chips">${M.tagNota(n).map((t) => `<button class="chip" data-tag="${esc(t)}">#${esc(t)}</button>`).join("")}</div>` : ""}
+          <div class="md">${M.markdown(n.testo, (t) => M.risolviTitolo(S.stato, t, n.id).id)}</div>
           <div class="chips">${pr ? `<button class="chip cfg" data-apri="progetto" data-id="${esc(pr.id)}">progetto: ${esc(pr.nome)}</button>` : ""}${st ? `<button class="chip cfg" data-apri="stanza" data-id="${esc(st.id)}">stanza: ${esc(st.nome)}</button>` : ""}</div>
           ${doppi.length ? `<p class="banner att"><b>Possibile duplicato</b><span>Stesso testo in: ${doppi.map((d) => esc(titoloNota(d))).join(", ")}</span></p>` : ""}
           <div class="azioni"><button class="btn" data-modifica="nota" data-id="${esc(n.id)}">Modifica</button><button class="btn r" data-elimina="note" data-id="${esc(n.id)}">Elimina</button></div></article>
         <section><h2>Sposta in</h2><div class="chips">${Object.entries(CAT).map(([k, [l]]) => `<button class="chip ${catNota(n) === k ? "cfg" : ""}" data-categoria="${k}">${l}</button>`).join("")}</div></section>
         ${(() => { const pr = M.collegamentiDaTesto(S.stato, n.testo, n.id).problemi; return pr.length ? `<section><h2>Collegamenti scritti ma non risolti</h2><div class="blocco">${pr.map((x) => `<div class="agente"><span style="flex:1;min-width:0">[[${esc(x.titolo)}]] · ${x.motivo === "ambiguo" ? "più note hanno questo titolo: rendilo unico" : "nessuna nota con questo titolo"}</span>${x.motivo === "mancante" ? `<button class="chip cfg" data-crea-da-link="${esc(x.titolo)}">Crea nota</button>` : ""}</div>`).join("")}</div></section>` : ""; })()}
         <section><h2>Riferimenti in entrata · ${ent.length}</h2>${lista(ent.map(rigaNota), "Nessuna nota rimanda qui.")}</section>
+        ${(() => { const mz = M.menzioniNonCollegate(S.stato, n.id); return mz.length ? `<section><h2>Citazioni non collegate · ${mz.length}</h2><div class="lista">${mz.map((x) => `<div class="riga"><span class="t"><b>${esc(titoloNota(x))}</b><span>${esc(M.estratto(x.testo, titoloNota(n), 50))}</span></span><button class="chip cfg" data-collega-menzione="${esc(x.id)}">Collega</button></div>`).join("")}</div></section>` : ""; })()}
         ${(() => { const sim = M.noteSimili(S.stato, n.id).filter((x) => norm(T("note", x.id).testo) !== norm(n.testo)); return sim.length ? `<section><h2>Note simili · ${sim.length}</h2><p class="small muted">Possibili doppioni: confrontale e decidi tu. Niente viene unito automaticamente.</p>${lista(sim.map((x) => rigaNota(T("note", x.id)).replace('<span class="conta">', `<span class="conta">${Math.round(x.punteggio * 100)}% · `)), "")}</section>` : ""; })()}
         <section><h2>Collegamenti in uscita · ${usc.length}</h2>${lista(usc.map(rigaNota), "Nessun collegamento. Aggiungili con Modifica.")}</section>`;
     },
@@ -428,6 +471,8 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
             <div class="azioni"><button class="btn v" data-risolvi="telefono" data-id="${esc(k)}">Tieni quella del telefono</button><button class="btn v" data-risolvi="repository" data-id="${esc(k)}">Tieni quella del repository</button></div></div>`).join("")}</section>` : ""}
         <section><h2>I tuoi dati</h2><div class="blocco">
           <div class="azioni"><button class="btn" id="b-exp">Esporta su file</button><button class="btn v" id="b-imp">Ripristina da file</button><button class="btn v" id="b-chat">Importa chat di Claude</button></div>
+          <div class="azioni"><button class="btn v" id="b-obs-esp">Esporta per Obsidian</button><button class="btn v" id="b-obs-imp">Importa da Obsidian</button></div>
+          <p class="small muted">Obsidian: lo ZIP contiene una cartella di file Markdown (.md) con proprietà, #tag e [[collegamenti]]; aprila in Obsidian come cassaforte. L'importazione aggiunge le note che non hai già, sempre private; non sovrascrive nulla.</p><p class="stato" id="obs-stato"></p><div id="obs-anteprima"></div>
           <p class="small muted">L'esportazione include tutto, anche le note private, con impronta di controllo. Il ripristino accetta anche i backup della versione 1.0.</p>
           <p class="small muted">Chat di Claude: da claude.ai (web o computer) Impostazioni › Privacy › Esporta dati; scegli qui lo ZIP ricevuto via email o il file conversations.json. Ogni chat diventa una nota originale e privata.</p>
           <p class="stato" id="exp-stato"></p><div id="imp-anteprima"></div><p class="stato" id="imp-stato"></p><div id="chat-anteprima"></div><p class="stato" id="chat-stato"></p></div></section>
@@ -478,15 +523,16 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
     if (t && t.esito === "errore") h += `<p class="banner err"><b>Ultimo aggiornamento di Claude Code non riuscito (${esc(quando(t.quando))})</b><span>${esc(t.messaggio)}</span><span class="small">Resta visibile l'istantanea precedente.</span></p>`;
     if (!ist) h += `<p class="banner att"><b>Nessuna istantanea.</b><span>L'app non legge le sessioni in tempo reale. Scrivi «aggiorna stato» in Claude Code, poi scarica l'istantanea.</span></p>`;
     else h += `<p class="banner ${minutiDa(ist.rilevato_il) > FRESCO_MIN ? "att" : ""}"><b>Istantanea del ${esc(quando(ist.rilevato_il))} · non in tempo reale</b><span>Rilevata ${esc(eta(ist.rilevato_il))} da Claude Code${minutiDa(ist.rilevato_il) > FRESCO_MIN ? ": gli stati descrivono quel momento, non adesso" : ""}. ${esc(ist.totale)} sessioni${ist.troncato ? ", elenco troncato" : ""}.</span></p>`;
+    h += `<div class="blocco"><b>Nuova esecuzione con più agenti</b><span class="small muted">Scegli gli agenti e il compito: preparo le istruzioni per Claude Code. Quando la sessione compare nella rilevazione, la collego da sola agli agenti scelti.</span><div class="azioni"><button class="btn" id="b-nuova-esec">Nuova esecuzione</button></div></div>`;
     h += `<div class="azioni">${A && A.haRoutine() ? `<button class="btn" id="b-aggiorna-ora">Aggiorna ora</button>` : `<button class="btn v" data-modifica="routine">Attiva «Aggiorna ora»</button>`}<button class="btn v" id="b-snap">Scarica istantanea dal repository</button></div><p class="stato" id="lv-stato"></p>
-      <p class="small muted">L'aggiornamento automatico gira ogni 2 ore in Claude Code; l'app scarica il risultato da sola. «Aggiorna ora» lo avvia subito: arriva in pochi minuti.</p>`;
+      <p class="small muted">L'aggiornamento automatico gira ogni 3 ore in Claude Code; l'app scarica il risultato da sola. «Aggiorna ora» lo avvia subito: arriva in pochi minuti.</p>`;
     const sess = ist ? ist.sessioni || [] : [];
     const agOpt = `<option value="">nessun agente</option>` + L("agenti").map((a) => `<option value="${esc(a.id)}">${esc(a.nome)}</option>`).join("");
     const stOpt = `<option value="">nessuna stanza</option>` + L("stanze").map((s) => `<option value="${esc(s.id)}">${esc(s.nome)}</option>`).join("");
     h += sess.map((s) => { const links = collegamentiDi("session_id", s.id); return `<div class="blocco"><b>${esc(s.titolo || "(senza titolo)")}</b><span class="mono muted">${esc(s.id)}${s.rilevatore ? " · sessione che ha eseguito l'aggiornamento" : ""}</span>
       <div class="chips">${chipRil({ s, rilevato_il: ist.rilevato_il })}<span class="chip">ultima attività ${esc(quando(s.updated_at))}</span></div>
-      ${links.map((c) => `<div class="chips"><span class="chip cfg">collegata a ${esc((T("agenti", c.agente_id) || {}).nome || "nessun agente")} · ${esc((T("stanze", c.stanza_id) || {}).nome || "nessuna stanza")}</span><button class="chip err" data-elimina="collegamenti" data-id="${esc(c.id)}">Scollega</button></div>`).join("")}
-      ${links.length ? "" : `<div class="riga2"><label>Agente <select data-link-ag="${esc(s.id)}">${agOpt}</select></label><label>Stanza <select data-link-st="${esc(s.id)}">${stOpt}</select></label></div><div class="azioni"><button class="btn v" data-collega="${esc(s.id)}">Collega</button><span class="small muted">Nessun collegamento automatico.</span></div>`}</div>`; }).join("");
+      ${links.map((c) => `<div class="chips">${M.agentiDi(c).map((id) => `<span class="chip cfg">${esc((T("agenti", id) || {}).nome || "agente eliminato")}</span>`).join("") || `<span class="chip">nessun agente</span>`}<span class="chip">${esc((T("stanze", c.stanza_id) || {}).nome || "nessuna stanza")}</span><button class="chip err" data-elimina="collegamenti" data-id="${esc(c.id)}">Scollega</button></div>`).join("")}
+      ${links.length ? "" : `<details class="piu-agenti"><summary class="small">Più agenti</summary>${caselle("ag-" + s.id.replace(/[^\w]/g, ""), L("agenti"), [])}</details><div class="riga2"><label>Agente <select data-link-ag="${esc(s.id)}">${agOpt}</select></label><label>Stanza <select data-link-st="${esc(s.id)}">${stOpt}</select></label></div><div class="azioni"><button class="btn v" data-collega="${esc(s.id)}">Collega</button><span class="small muted">Nessun collegamento automatico.</span></div>`}</div>`; }).join("");
     const ids = new Set(sess.map((s) => s.id)); const orfani = L("collegamenti").filter((c) => !ids.has(c.session_id));
     if (orfani.length) h += `<section><h2>Collegamenti a sessioni non nell'istantanea</h2>${orfani.map((c) => `<div class="blocco"><span class="mono">${esc(c.session_id)}</span><div class="chips"><span class="chip vecchio">stato non rilevato</span><button class="chip err" data-elimina="collegamenti" data-id="${esc(c.id)}">Scollega</button></div></div>`).join("")}</section>`;
     return h;
@@ -621,6 +667,34 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
   const valori = (nome) => [...document.querySelectorAll(`#${nome} input:checked`)].map((i) => i.value);
 
   const EDITOR = {
+    modello() {
+      const mod = M.modelli(S.stato);
+      foglio(`<h2>Nuova nota da modello</h2><label>Modello <select id="md-mod">${mod.map((m) => `<option value="${esc(m.id)}">${esc(titoloNota(m))}</option>`).join("")}</select></label><label>Titolo <input id="md-tit" required maxlength="150"></label><p class="small muted">Segnaposto: {{data}}, {{ora}}, {{titolo}} (anche {{date}}, {{time}}, {{title}}). Un modello è una nota con il tag #modello.</p>`, async () => {
+        const m = T("note", $("#md-mod").value), titolo = $("#md-tit").value.trim(); if (!m || !titolo) throw new Error("scegli il modello e scrivi il titolo");
+        const id = "n-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+        await M.salvaRecord(S.stato, "note", id, { titolo, testo: M.applicaModello(m.testo, { titolo }), tipo: "originale", fonte: "modello «" + titoloNota(m) + "»", data: ora(), registrato_il: ora(), categoria: "inbox", tag: [], collegamenti: [], accessibile_agenti: false });
+        await salva(); programmaSync(); S.nota = id; setTimeout(() => vai("nota"), 0); return "Nota creata dal modello";
+      });
+    },
+    esecuzione() {
+      foglio(`<h2>Nuova esecuzione con più agenti</h2><label>Compito <textarea id="es-compito" required maxlength="2000" placeholder="Cosa devono fare gli agenti?"></textarea></label>
+        <label>Agenti (almeno uno)</label>${caselle("es-ag", L("agenti"), [])}
+        <label>Stanza <select id="es-st">${opz(L("stanze").filter((s) => statoStanza(s) !== "archiviata"), "", "nessuna")}</select></label>
+        <label>Modo <select id="es-modo"><option value="coordinati">In parallelo, poi unisci i risultati</option><option value="sequenza">Uno dopo l'altro</option></select></label>`, async () => {
+        const r = M.preparaEsecuzione(S.stato, { agenti_ids: valori("es-ag"), stanza_id: $("#es-st").value, compito: $("#es-compito").value, modo: $("#es-modo").value });
+        await salva(); S.istruzioni = r; setTimeout(() => EDITOR.istruzioni(), 0); return null;
+      });
+    },
+    istruzioni() {
+      const r = S.istruzioni; if (!r) return;
+      F.innerHTML = `<form id="f-foglio"><h2>Istruzioni pronte · SB·${esc(r.codice)}</h2><pre class="istr">${esc(r.prompt)}</pre>
+        <p class="small muted">1. Copia. 2. Apri Claude Code e avvia una nuova sessione sul repository giusto. 3. Incolla. La sessione si rinomina «SB·${esc(r.codice)}…» e alla prossima rilevazione la collego agli agenti scelti.</p>
+        <div class="azioni" style="justify-content:flex-end"><button type="button" class="btn v" id="istr-chiudi">Chiudi</button><button type="button" class="btn v" id="istr-apri">Apri Claude Code</button><button type="button" class="btn" id="istr-copia">Copia</button></div></form>`;
+      F.hidden = false;
+      $("#istr-chiudi").onclick = () => { F.hidden = true; render(); };
+      $("#istr-apri").onclick = () => A && A.apriLink("https://claude.ai/code");
+      $("#istr-copia").onclick = async () => { try { await navigator.clipboard.writeText(r.prompt); toast("Istruzioni copiate"); } catch (_) { toast("Copia non riuscita: tieni premuto sul testo"); } };
+    },
     rapido() {
       let tipo = "nota";
       foglio(`<h2>Aggiunta rapida</h2><textarea id="r-testo" required maxlength="8000" placeholder="Scrivi un'idea, una nota o un'attività"></textarea>
@@ -742,12 +816,18 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
   // ---------- azioni ----------
   const BLOCCHI = {
     stanze: (id) => L("note").filter((n) => n.stanza_id === id).length + L("progetti").filter((p) => p.stanza_id === id).length + collegamentiDi("stanza_id", id).length ? "La stanza ha note, progetti o esecuzioni collegate: archiviala o sposta prima i collegamenti." : null,
-    agenti: (id) => L("stanze").some((s) => (s.agenti_ids || []).includes(id)) || collegamentiDi("agente_id", id).length ? "L'agente è assegnato a stanze o collegato a esecuzioni: rimuovi prima le assegnazioni." : null,
+    agenti: (id) => L("stanze").some((s) => (s.agenti_ids || []).includes(id)) || L("collegamenti").some((c) => M.agentiDi(c).includes(id)) ? "L'agente è assegnato a stanze o collegato a esecuzioni: rimuovi prima le assegnazioni." : null,
     skill: (id) => L("agenti").some((a) => (a.skill_ids || []).includes(id)) ? "La skill è usata da un agente: toglila prima dalla sua scheda." : null,
     progetti: (id) => L("note").some((n) => n.progetto_id === id) ? "Il progetto ha note collegate: archivialo o scollega prima le note." : null,
   };
+  document.addEventListener("change", async (e) => {
+    const c = e.target.closest("[data-spunta]"); if (!c || !S.nota) return;
+    const n = T("note", S.nota); if (!n) return;
+    await scrivi("note", n.id, { testo: M.spunta(n.testo, +c.dataset.spunta) }); render();
+  });
   document.addEventListener("click", async (e) => {
-    const b = e.target.closest("button,[data-apri]"); if (!b || F.contains(b)) return;
+    const b = e.target.closest("button,[data-apri],[data-tag],[data-crea-nota],[data-link]"); if (!b || F.contains(b)) return;
+    if (b.tagName === "A") e.preventDefault();
     const d = b.dataset;
     if (d.apri) { e.preventDefault(); apri(d.apri, d.id); return; }
     if (d.org) { S.org = d.org; if (d.vai) vai(d.vai); else render(); return; }
@@ -766,10 +846,20 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
     if (d.attVia) { const s = T("stanze", S.stanza); await scrivi("stanze", s.id, { attivita: (s.attivita || []).filter((a) => a.id !== d.attVia) }); render(); return; }
     if (d.collega) {
       const ag = document.querySelector(`[data-link-ag="${CSS.escape(d.collega)}"]`).value, st = document.querySelector(`[data-link-st="${CSS.escape(d.collega)}"]`).value;
-      if (!ag && !st) { stato("#lv-stato", "Scegli almeno un agente o una stanza.", "att"); return; }
-      await scrivi("collegamenti", "", { session_id: d.collega, agente_id: ag || null, stanza_id: st || null }); render(); toast("Collegamento salvato"); return;
+      if (!ag && !st && !valori("ag-" + d.collega.replace(/[^\w]/g, "")).length) { stato("#lv-stato", "Scegli almeno un agente o una stanza.", "att"); return; }
+      const extra = valori("ag-" + d.collega.replace(/[^\w]/g, "")), tutti = [...new Set([ag, ...extra].filter(Boolean))];
+      await scrivi("collegamenti", "", { session_id: d.collega, agente_id: tutti[0] || null, agenti_ids: tutti, stanza_id: st || null }); render(); toast(tutti.length > 1 ? `Collegata a ${tutti.length} agenti` : "Collegamento salvato"); return;
     }
     if (d.risolvi) { await M.risolviConflitto(S.stato, d.id, d.risolvi); await salva(); render(); programmaSync(); toast("Conflitto risolto"); return; }
+    if (d.tag !== undefined) { S.tag = d.tag || null; S.cercaNote = ""; vai("note"); render(); return; }
+    if (d.creaNota !== undefined) { const id = M.nuovoId ? M.nuovoId("n") : "n-" + Date.now().toString(36); await M.salvaRecord(S.stato, "note", id, { titolo: d.creaNota.slice(0, 150), testo: "", tipo: "originale", fonte: "scritta nell'app", data: ora(), registrato_il: ora(), categoria: "inbox", tag: [], collegamenti: [], accessibile_agenti: false }); await salva(); S.nota = id; vai("nota"); setTimeout(() => EDITOR.nota(id), 120); return; }
+    if (d.link) { if (A) A.apriLink(d.link); return; }
+    if (d.collegaMenzione) { await M.collegaMenzione(S.stato, d.collegaMenzione, S.nota); await salva(); render(); programmaSync(); toast("Collegata: la citazione ora è un [[collegamento]]"); return; }
+    if (b.id === "b-giorno") { const g = await M.notaDelGiorno(S.stato); await salva(); S.nota = g.id; vai("nota"); if (g.nuova) toast("Nota del giorno creata"); return; }
+    if (b.id === "b-da-modello") { EDITOR.modello(); return; }
+    if (b.id === "b-obs-esp") { esportaObsidian(); return; }
+    if (b.id === "b-obs-imp") { if (A) { S.attesaFile = "obsidian"; stato("#obs-stato", "Scegli lo ZIP della cassaforte…"); A.importaFile(); } return; }
+    if (b.id === "b-nuova-esec") { EDITOR.esecuzione(); return; }
     if (d.copia) { try { await navigator.clipboard.writeText(d.copia); toast("Risposta copiata: incollala nella sessione"); } catch (_) { toast("Copia non riuscita: tieni premuto sul testo per copiarlo"); } return; }
     if (d.sessione) { if (A) A.apriLink(d.sessione); return; }
     if (b.id === "b-auto") { S.stato.impostazioni ||= {}; S.stato.impostazioni.auto_organizza = S.stato.impostazioni.auto_organizza === false; if (S.stato.impostazioni.auto_organizza) { const e = await M.organizzaAutomatico(S.stato); toast(`Organizzate ${e.note} note, ${e.stanze} stanze nuove`); } await salva(); render(); return; }
@@ -781,7 +871,7 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
     if (b.id === "b-exp") { esporta(); return; }
     if (b.id === "b-imp") { if (A) { stato("#imp-stato", "Scegli il file…"); A.importa(); } return; }
     if (b.id === "b-imp-ok") { ripristina(b); return; }
-    if (b.id === "b-chat") { if (A) { stato("#chat-stato", "Scegli lo ZIP o conversations.json…"); A.importaFile(); } return; }
+    if (b.id === "b-chat") { if (A) { S.attesaFile = "chat"; stato("#chat-stato", "Scegli lo ZIP o conversations.json…"); A.importaFile(); } return; }
     if (b.id === "b-chat-ok") { importaChat(b); return; }
     if (b.id === "b-fitt") { conferma(b, async () => { const n = await M.eliminaFittizi(S.stato); await salva(); programmaSync(); render(); toast(`Eliminati ${n} elementi di prova; i dati reali sono rimasti.`); }); return; }
   });
@@ -874,6 +964,7 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
 
   // ---------- importazione chat di Claude ----------
   window.__fileScelto = async (ok, dati) => {
+    if (S.attesaFile === "obsidian") return fileObsidian(ok, dati);
     const box = $("#chat-anteprima"); if (box) box.innerHTML = ""; S.chat = null;
     if (!ok) { stato("#chat-stato", dati || "Nessun file scelto.", dati ? "err" : ""); return; }
     try {
@@ -886,6 +977,27 @@ h2::before{content:"";display:inline-block;width:6px;height:6px;border-radius:50
       stato("#chat-stato", "Controlla e conferma.", "ok");
     } catch (e) { stato("#chat-stato", "File non utilizzabile: " + (e.message || e) + " Il formato dell'esportazione di Claude non è documentato: se è cambiato, mandami il messaggio.", "err"); }
   };
+  // ---------- Obsidian: cassaforte ZIP ----------
+  function esportaObsidian() {
+    if (!A || !A.esportaBinario) { stato("#obs-stato", "Aggiorna l'app per esportare per Obsidian.", "err"); return; }
+    const file = M.vaultObsidian(S.stato), zip = M.zip(file, "Second Brain/");
+    let bin = ""; for (let i = 0; i < zip.length; i += 0x8000) bin += String.fromCharCode.apply(null, zip.subarray(i, i + 0x8000));
+    A.esportaBinario("second-brain-obsidian-" + ora().slice(0, 10) + ".zip", btoa(bin), "application/zip", `Esportate ${file.length} pagine per Obsidian (note private comprese: conserva lo ZIP con cura).`);
+  }
+  async function fileObsidian(ok, dati) {
+    S.attesaFile = null; const box = $("#obs-anteprima"); if (box) box.innerHTML = "";
+    if (!ok) { stato("#obs-stato", dati || "Nessun file scelto.", dati ? "err" : ""); return; }
+    try {
+      const bin = atob(dati), bytes = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      if (!(bytes[0] === 0x50 && bytes[1] === 0x4b)) throw new Error("serve lo ZIP della cassaforte (comprimi la cartella di Obsidian).");
+      const file = await M.leggiTuttiDaZip(bytes, (n) => /\.md$/i.test(n));
+      if (!file.length) throw new Error("nello ZIP non ci sono file .md.");
+      const copia = A ? A.salvaCopia("prima-importazione-obsidian-" + ora().replace(/[^0-9]/g, "").slice(0, 14) + ".json", JSON.stringify(S.stato)) : "ok";
+      if (copia !== "ok" && copia !== "esiste") throw new Error("copia di sicurezza non riuscita: " + copia);
+      const e = await M.importaVault(S.stato, file, ora()); await M.organizzaAutomatico(S.stato); await salva(); render(); programmaSync();
+      stato("#obs-stato", `Importate ${e.importate} note (private), ${e.gia_presenti} già presenti non toccate, ${e.ignorate} file ignorati.`, "ok");
+    } catch (err) { stato("#obs-stato", "Importazione non riuscita: " + (err.message || err), "err"); }
+  }
   async function importaChat(btn) {
     if (!S.chat || bloccato()) return; btn.disabled = true;
     const copia = A ? A.salvaCopia("prima-importazione-chat-" + ora().replace(/[^0-9]/g, "").slice(0, 14) + ".json", JSON.stringify(S.stato)) : "ok";
