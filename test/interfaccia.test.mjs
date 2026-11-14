@@ -110,6 +110,7 @@ const pizzica = await page.evaluate(async () => { // due dita che si allontanano
   const t = document.querySelector("#tela"), r = t.getBoundingClientRect(), cx = r.left + r.width / 2, cy = r.top + r.height / 2, prima = t.toDataURL();
   const ev = (tipo, id, x) => t.dispatchEvent(new PointerEvent(tipo, { pointerId: id, clientX: x, clientY: cy, bubbles: true, isPrimary: id === 1 }));
   t.setPointerCapture = () => {}; ev("pointerdown", 1, cx - 20); ev("pointerdown", 2, cx + 20); ev("pointermove", 1, cx - 80); ev("pointermove", 2, cx + 80); ev("pointerup", 1, cx - 80); ev("pointerup", 2, cx + 80);
+  await new Promise((ok) => requestAnimationFrame(() => requestAnimationFrame(ok))); // 1.9.2: un solo disegno per fotogramma
   return t.toDataURL() !== prima && document.querySelector("#scheda").hidden; });
 ok(pizzica, "mappa: ingrandimento con due dita, senza aprire schede");
 if (FOTO) await page.screenshot({ path: join(FOTO, "mappa.png") });

@@ -359,6 +359,10 @@
     const reg = (stato.impostazioni && stato.impostazioni.registro_auto) || [], v = reg.find((x) => x.n === n);
     if (!v || v.annullata) return { ok: false, motivo: "non trovata" };
     const r = M.trova(stato, v.col, v.id);
+    if (v.tipo === "stanza_eliminata" || v.tipo === "progetto_eliminato") {
+      if (r) return { ok: false, motivo: "esiste già" };
+      await M.salvaRecord(stato, v.col, v.id, v.dati); fatti(stato)["elimina|" + v.col + "|" + v.id] = 1; v.annullata = ora(); return { ok: true };
+    }
     if (v.tipo === "stanza_creata" || v.tipo === "progetto_creato") {
       if (!r) { v.annullata = ora(); return { ok: true }; }
       const progAuto = v.col === "stanze" ? M.elenco(stato, "progetti").filter((p) => p.stanza_id === v.id && p.automatico).map((p) => p.id) : [v.id];
@@ -440,8 +444,10 @@
   };
 
   async function pilota(stato) {
-    const esito = { tag: 0, collegamenti: 0, agenti: 0, note_manuali: 0 }, F = fatti(stato);
-    for (const k of Object.keys(F)) { const [tipo, a, b] = k.split("|"), col = tipo === "agenti" ? "stanze" : "note";
+    const esito = { tag: 0, collegamenti: 0, agenti: 0, note_manuali: 0, stanze_nuove: 0, eliminate: 0 }, F = fatti(stato);
+    for (const k of Object.keys(F)) { const [tipo, a, b] = k.split("|");
+      if (tipo === "elimina") { if (!(stato.collezioni[a] || {})[b]) delete F[k]; continue; } // eliminazione annullata: resta finché esiste il record
+      const col = tipo === "agenti" ? "stanze" : "note";
       if (!stato.collezioni[col][a] || stato.collezioni[col][a].sync.eliminato || (tipo === "link" && !stato.collezioni.note[b])) delete F[k]; }
     const prev = stato.impostazioni.esecuzioni_previste || {};
     for (const [c, p] of Object.entries(prev)) if (p.session_id && Date.now() - Date.parse(p.creata_il || 0) > 30 * 864e5) delete prev[c];
@@ -454,6 +460,46 @@
       const n = M.trova(stato, "note", n0.id); if (!st || !n || n.stanza_id) continue;
       await sposta(stato, n, { stanza_id: st.id, ...(!n.categoria || n.categoria === "inbox" ? { categoria: "risorsa" } : {}) }, `parole in comune con la stanza «${st.nome}»`, st.nome);
       esito.note_manuali++;
+    }
+    // a2) tutto il resto (1.9.2): ogni nota ancora senza stanza va in una stanza nuova per argomento (note simili insieme);
+    //     le note del giorno nella stanza «Diario». I modelli restano dove sono. Ciò che hai annullato non viene rifatto.
+    if (opzione(stato, "note")) {
+      const resto = M.elenco(stato, "note").filter((n) => !n.fittizio && !n.stanza_id && !n.progetto_id && !n.auto_organizzata && !F["stanza|" + n.id]
+        && !M.tagNota(n).includes("modello") && !(n.origine && n.origine.tipo === "sessione_claude_code" && /^Sessione: Esecuzione multi-agente/i.test(n.titolo || "")));
+      const argomento = (n) => (M.tagNota(n).includes("giornaliero") ? "Diario" : (M.nucleoTitolo(M.titoloNota(n)) || "Note").slice(0, 60));
+      const usate = new Set();
+      for (const a of resto) {
+        if (usate.has(a.id)) continue;
+        const ka = argomento(a), gruppo = resto.filter((b) => !usate.has(b.id) && (b === a || (ka === "Diario" ? argomento(b) === "Diario" : affinita(ka, argomento(b)) >= 0.6)));
+        gruppo.forEach((g) => usate.add(g.id));
+        let st = stanzaPiuSimile(stato, ka, 0.6) || stanzaGenerica(stato, ka) || M.elenco(stato, "stanze").find((x) => (x.stato || "attiva") !== "archiviata" && String(x.nome).toLowerCase() === ka.toLowerCase());
+        if (!st) {
+          st = await nuovaStanza(stato, ka, gruppo.length > 1 ? `Creata automaticamente da ${gruppo.length} note sullo stesso argomento.` : "Creata automaticamente per una nota senza stanza simile.");
+          esito.stanze_nuove++; registra(stato, { tipo: "stanza_creata", col: "stanze", id: st.id, impronta: (({ id: _i, ...d }) => M.canon({ ...d, agenti_ids: [], agenti_auto: undefined }))(st), perche: gruppo.length > 1 ? `${gruppo.length} note sullo stesso argomento` : "nessuna stanza simile", titolo: st.nome });
+        }
+        for (const g of gruppo) {
+          const n = M.trova(stato, "note", g.id); if (!n || n.stanza_id) continue;
+          await sposta(stato, n, { stanza_id: st.id, ...(!n.categoria || n.categoria === "inbox" ? { categoria: "risorsa" } : {}) }, gruppo.length > 1 ? "note sullo stesso argomento" : "argomento nuovo: stanza dedicata", st.nome);
+          esito.note_manuali++;
+        }
+      }
+    }
+    // a3) pulizia (1.9.2): stanze e progetti creati in automatico rimasti vuoti vengono eliminati (annullabile dal registro).
+    //     Mai le stanze o i progetti creati da te, mai le note.
+    {
+      const noteTutte = M.elenco(stato, "note"), coll = M.elenco(stato, "collegamenti"), prev = Object.values(stato.impostazioni.esecuzioni_previste || {});
+      for (const p of M.elenco(stato, "progetti")) {
+        if (!p.automatico || F["elimina|progetti|" + p.id] || noteTutte.some((n) => n.progetto_id === p.id)) continue;
+        const { id, ...d } = p; M.eliminaRecord(stato, "progetti", id); esito.eliminate++;
+        registra(stato, { tipo: "progetto_eliminato", col: "progetti", id, dati: d, perche: "progetto automatico senza note", titolo: p.nome });
+      }
+      for (const st of M.elenco(stato, "stanze")) {
+        if (!st.automatico || F["elimina|stanze|" + st.id] || (st.obiettivi || []).length || ((st.agenti_ids || []).length && !st.agenti_auto)) continue;
+        if (noteTutte.some((n) => n.stanza_id === st.id) || M.elenco(stato, "progetti").some((p) => p.stanza_id === st.id) || coll.some((c) => c.stanza_id === st.id)
+          || prev.some((x) => x.stanza_id === st.id && !x.session_id)) continue;
+        const { id, ...d } = st; M.eliminaRecord(stato, "stanze", id); esito.eliminate++;
+        registra(stato, { tipo: "stanza_eliminata", col: "stanze", id, dati: d, perche: "stanza automatica rimasta vuota", titolo: st.nome });
+      }
     }
     // b) tag: solo tag che usi già in almeno 2 note, se la parola compare nella nota; nel campo separato tag_auto
     if (opzione(stato, "tag")) {
@@ -510,7 +556,7 @@
   let inCorso = false;
   M.organizzaAutomatico = async function (stato) {
     const esito = { stanze: 0, progetti: 0, note: 0 };
-    if (stato.impostazioni && stato.impostazioni.auto_organizza === false) return esito;
+    // 1.9.2: il pilota è sempre attivo (richiesta dell'utente del 14/11/2026); l'impostazione auto_organizza non lo spegne più
     if (inCorso) return esito; // un giro alla volta: due giri insieme creerebbero stanze doppie
     inCorso = true;
     try { return await organizza(stato, esito); } finally { inCorso = false; }
@@ -560,8 +606,8 @@
       for (const g of gruppo) { usate.add(g.id); const n = M.trova(stato, "note", g.id); if (!n || n.stanza_id) continue; await sposta(stato, n, { stanza_id: st.id, categoria: "risorsa" }, "chat sullo stesso argomento", st.nome); esito.note++; }
     }
     // 3) pilota automatico (1.9): note scritte a mano, tag, collegamenti, agenti nelle stanze
-    const pe = await pilota(stato); esito.note += pe.note_manuali; delete pe.note_manuali; Object.assign(esito, pe);
-    if (esito.stanze || esito.note || esito.tag || esito.collegamenti || esito.agenti) stato.sync.ultima_organizzazione = { quando: ora(), ...esito };
+    const pe = await pilota(stato); esito.note += pe.note_manuali; esito.stanze += pe.stanze_nuove; delete pe.note_manuali; delete pe.stanze_nuove; Object.assign(esito, pe);
+    if (esito.stanze || esito.note || esito.tag || esito.collegamenti || esito.agenti || esito.eliminate) stato.sync.ultima_organizzazione = { quando: ora(), ...esito };
     return esito;
   }
 

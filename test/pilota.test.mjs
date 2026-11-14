@@ -195,7 +195,7 @@ test("preparaEsecuzione: codice [a-z0-9]{5} unico, compito ripulito, blocco dati
 });
 
 // ---------- 9. impostazioni ----------
-test("auto_organizza false: nessuna azione; auto_tag false: disattiva solo i tag", async () => {
+test("pilota sempre attivo (auto_organizza ignorato); auto_tag false disattiva solo i tag", async () => {
   const prepara = async () => {
     const s = M.statoVuoto(); await agentiBase(s);
     await stanza(s, "st-tv", "TCL Minimal TV"); await stanza(s, "st-tr", "Trading oro e Forex");
@@ -205,10 +205,9 @@ test("auto_organizza false: nessuna azione; auto_tag false: disattiva solo i tag
     await nota(s, "d", "Diario", "Rivedo il Piano Lisbona.");
     return s;
   };
-  const s1 = await prepara(); s1.impostazioni = { auto_organizza: false };
-  const prima = JSON.stringify(s1.collezioni);
-  assert.deepEqual(await M.organizzaAutomatico(s1), { stanze: 0, progetti: 0, note: 0 });
-  assert.equal(JSON.stringify(s1.collezioni), prima, "nessuna modifica"); assert.equal(registro(s1).length, 0);
+  const s1 = await prepara(); s1.impostazioni = { auto_organizza: false }; // 1.9.2: sempre attivo, l'impostazione vecchia non lo spegne
+  await M.organizzaAutomatico(s1);
+  assert.equal(M.trova(s1, "note", "n-tv").stanza_id, "st-tv"); assert.ok(registro(s1).length > 0);
   const s2 = await prepara(); s2.impostazioni = { auto_tag: false };
   const e = await M.organizzaAutomatico(s2);
   assert.equal(e.tag, 0); assert.ok(!M.elenco(s2, "note").some((n) => (n.tag_auto || []).length), "nessun tag automatico");
@@ -250,4 +249,33 @@ test("opzione nomi generici: la stanza creata da una sessione privata non porta 
   await M.organizzaAutomatico(s);
   assert.equal(M.elenco(s, "stanze").length, 1, "stesso argomento: stessa stanza generica");
   assert.equal(M.trova(s, "note", "sessione-P2").stanza_id, st[0].id);
+});
+
+// ---------- 1.9.2: tutto organizzato, pulizia dei vuoti ----------
+test("ogni nota senza stanza trova posto: stanza simile, oppure nuova stanza per argomento (note simili insieme); note del giorno in «Diario»; modelli no", async () => {
+  const s = M.statoVuoto(); await stanza(s, "st-tv", "TCL Minimal TV");
+  await nota(s, "n1", "Ricette pane", "farina"); await nota(s, "n2", "Ricette pane integrale", "farina integrale");
+  await nota(s, "n3", "Corso di chitarra", "accordi"); await nota(s, "n4", "Idee TCL Minimal TV", "launcher");
+  await nota(s, "g1", "2026-11-14", "oggi", { tag: ["giornaliero"] }); await nota(s, "m1", "Modello riunione", "#modello");
+  const e = await M.organizzaAutomatico(s);
+  const dove = (id) => { const n = M.trova(s, "note", id); return n.stanza_id ? M.trova(s, "stanze", n.stanza_id).nome : null; };
+  assert.equal(dove("n4"), "TCL Minimal TV");
+  assert.equal(dove("n1"), dove("n2")); assert.equal(dove("n1"), "Ricette pane");
+  assert.equal(dove("n3"), "Corso di chitarra"); assert.equal(dove("g1"), "Diario"); assert.equal(dove("m1"), null, "i modelli restano dove sono");
+  assert.equal(e.stanze, 3); assert.equal(e.note, 5);
+  assert.ok(M.elenco(s, "note").every((n) => n.accessibile_agenti === false), "nessuna nota resa condivisa");
+});
+test("stanze e progetti automatici rimasti vuoti vengono eliminati; quelli creati da te, o con obiettivi, no; l'eliminazione si annulla e non si ripete", async () => {
+  const s = M.statoVuoto();
+  await stanza(s, "st-auto-vuota", "Vuota", { automatico: true }); await stanza(s, "st-auto-piena", "Piena", { automatico: true });
+  await stanza(s, "st-auto-obiettivi", "Con obiettivi", { automatico: true, obiettivi: ["finire"] }); await stanza(s, "st-mia", "Mia vuota");
+  await M.salvaRecord(s, "progetti", "pr-auto-v", { nome: "Vuota", stato: "attivo", stanza_id: "st-auto-vuota", automatico: true });
+  await nota(s, "n1", "Qualcosa", "x", { stanza_id: "st-auto-piena", auto_organizzata: true });
+  const e = await M.organizzaAutomatico(s);
+  assert.equal(e.eliminate, 2, "progetto vuoto, poi la sua stanza");
+  assert.equal(M.trova(s, "stanze", "st-auto-vuota"), null); assert.equal(M.trova(s, "progetti", "pr-auto-v"), null);
+  assert.ok(M.trova(s, "stanze", "st-auto-piena") && M.trova(s, "stanze", "st-auto-obiettivi") && M.trova(s, "stanze", "st-mia"));
+  const v = voce(s, "stanza_eliminata", "st-auto-vuota");
+  assert.deepEqual(await M.annullaAuto(s, v.n), { ok: true }); assert.equal(M.trova(s, "stanze", "st-auto-vuota").nome, "Vuota");
+  await M.organizzaAutomatico(s); assert.ok(M.trova(s, "stanze", "st-auto-vuota"), "dopo l'annullamento non viene eliminata di nuovo");
 });

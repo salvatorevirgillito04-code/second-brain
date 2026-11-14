@@ -342,7 +342,7 @@ test("chat di Claude: JSON e ZIP danno lo stesso risultato; note originali, priv
   assert.equal(n.tipo, "originale"); assert.equal(n.accessibile_agenti, false); assert.equal(n.data, "2026-10-01T10:00:00Z"); assert.match(n.fonte, /Piano trasloco/);
   assert.match(n.testo, /Tu \(2026-10-01 10:00\):\nCome organizzo/); assert.match(n.testo, /Claude .*:\nParti da una checklist/);
   assert.match(M.trova(s, "note", "chat-bbbb-2222").testo, /àèì €/);
-  assert.equal(M.inAttesa(s), 0, "le chat importate sono private: niente da inviare");
+  assert.equal(Object.values(s.collezioni.note).filter((r) => r.sync.sporco).length, 0, "le chat importate sono private: nessuna nota da inviare (1.9.2: possono esserci stanze nuove)");
   await M.salvaRecord(s, "note", "chat-aaaa-1111", { ...n, id: undefined, testo: n.testo + "\nmia aggiunta" });
   const a2 = M.analizzaChatClaude(json); a2.chat[0].aggiornata = "2026-12-01T00:00:00Z";
   const e2 = await M.importaChatClaude(s, a2, "2026-11-14T00:00:00.000Z");
@@ -417,15 +417,14 @@ test("organizzazione automatica: sessioni nella stanza giusta o in una nuova, ch
   // l'utente sposta una nota: l'app non la riorganizza
   const { id, ...d } = M.trova(s, "note", "sessione-A"); await M.salvaRecord(s, "note", id, { ...d, stanza_id: null, progetto_id: null });
   await M.organizzaAutomatico(s); assert.equal(st("A"), null);
-  // chat importate: risorsa della stanza simile; due chat sullo stesso argomento senza stanza → nuova stanza; chat isolata resta da organizzare
+  // chat importate: risorsa della stanza simile; due chat sullo stesso argomento senza stanza → nuova stanza; chat isolata → stanza tutta sua (1.9.2)
   const chat = (t) => ({ id: "chat-" + t.replace(/\W/g, ""), uuid: t, titolo: t, testo: "testo " + t, creata: "2026-11-01", aggiornata: "2026-11-01", messaggi: 2 });
   await M.importaChatClaude(s, { chat: [chat("Ottimizzare TCL Minimal TV"), chat("Ricette pane"), chat("Ricette pane integrale"), chat("Viaggio Lisbona")] }, "2026-11-14T00:00:00Z");
   assert.equal(M.trova(s, "note", "chat-OttimizzareTCLMinimalTV").stanza_id, "st-tv");
   assert.equal(M.trova(s, "note", "chat-OttimizzareTCLMinimalTV").categoria, "risorsa");
   assert.ok(M.trova(s, "note", "chat-Ricettepane").stanza_id); assert.equal(M.trova(s, "note", "chat-Ricettepane").stanza_id, M.trova(s, "note", "chat-Ricettepaneintegrale").stanza_id);
-  assert.equal(M.trova(s, "note", "chat-ViaggioLisbona").stanza_id ?? null, null);
-  // disattivabile
-  s.impostazioni.auto_organizza = false; assert.deepEqual(await M.organizzaAutomatico(s), { stanze: 0, progetti: 0, note: 0 });
+  const lis = M.trova(s, "note", "chat-ViaggioLisbona"); assert.ok(lis.stanza_id); assert.equal(M.trova(s, "stanze", lis.stanza_id).nome, "Viaggio Lisbona");
+  assert.equal(st("A"), null, "la nota spostata da te resta dove l'hai messa");
 });
 
 // ---------- 1.8 ----------

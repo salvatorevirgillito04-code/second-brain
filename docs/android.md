@@ -164,5 +164,9 @@ Token a grana fine: *Only select repositories → second-brain*; *Repository per
 - Importazione delle chat di Claude: l'anteprima con «Importa N chat» spariva al ritorno dal selettore dei file (la sincronizzazione ridisegnava la pagina). Ora anteprime e messaggi d'importazione (chat, backup, Obsidian) restano dopo ogni ridisegno.
 
 ## 1.9.2 (non ancora firmata)
+- **Pilota automatico sempre attivo** (richiesta del 14/11/2026): niente interruttore; gira all'apertura, ogni 5 minuti con l'app aperta e a ogni sincronizzazione (anche in background).
+- **Tutto organizzato**: ogni nota senza stanza va nella stanza simile oppure in una **stanza nuova per argomento** (note simili insieme); le note del giorno nella stanza «Diario»; i modelli restano dove sono. Ciò che hai annullato o spostato tu non viene rifatto.
+- **Pulizia**: stanze e progetti creati in automatico e rimasti vuoti vengono eliminati (mai quelli creati dall'utente, mai le note); ogni eliminazione si annulla dal registro e non si ripete.
+- **Sfera della Mappa**: rotazione libera a 360° in ogni direzione (matrice di rotazione al posto degli angoli, niente blocco a ±75°), inerzia al rilascio del dito, un solo disegno per fotogramma, aloni e sfondo preparati una volta (circa 2,3 volte più veloce nel disegno, misurato in Chromium), risoluzione limitata a 2×.
 - Nuovo formato dell'esportazione di claude.ai: l'email porta un elenco di file (manifest JSON) con link a più ZIP. Se scegli l'elenco, l'app lo riconosce e mostra «Scarica conversations-000.zip» (apre il link su claude.ai, che scade dopo 24 ore); poi si sceglie lo ZIP scaricato.
 - Lo ZIP delle conversazioni è accettato anche senza un unico `conversations.json`: legge tutti i file .json/.jsonl con conversazioni (anche uno per chat) e le varianti di campi id/title/messages/role.
