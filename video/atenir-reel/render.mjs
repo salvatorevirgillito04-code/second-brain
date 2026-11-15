@@ -1,7 +1,8 @@
 // Renderizza reel.html fotogramma per fotogramma e lo codifica in MP4 (H.264, 1080x1920).
 // Uso: node render.mjs [uscita.mp4] [--fps 30] [--da 0] [--a <durata>]
 // La pagina deve esporre window.DURATA (secondi) e window.vaiA(t) che disegna l'istante t.
-import { chromium } from 'playwright';
+import { createRequire } from 'node:module';
+const { chromium } = createRequire(import.meta.url)('playwright'); // installato globalmente (require lo trova, import no)
 import { spawn } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
