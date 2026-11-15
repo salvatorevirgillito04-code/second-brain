@@ -57,22 +57,14 @@
       <feTurbulence id="boil-turb" type="turbulence" baseFrequency="0.025" numOctaves="2" seed="1" result="n"/>
       <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
-    <!-- Pennellata ad acquerello come quella del logo: bordi sfrangiati + macchie più chiare -->
+    <!-- Pennellata piatta con bordo appena irregolare (tratto di pennarello), niente macchie d'acquerello -->
     <filter id="acquerello" filterUnits="userSpaceOnUse" x="-40" y="480" width="1160" height="720">
-      <feTurbulence type="fractalNoise" baseFrequency="0.006 0.022" numOctaves="4" seed="4" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="38" xChannelSelector="R" yChannelSelector="G" result="d"/>
-      <feTurbulence type="fractalNoise" baseFrequency="0.004 0.016" numOctaves="3" seed="11" result="m"/>
-      <feColorMatrix in="m" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -0.9 0.62" result="chiaro"/>
-      <feComposite in="chiaro" in2="d" operator="in" result="macchie"/>
-      <feMerge><feMergeNode in="d"/><feMergeNode in="macchie"/></feMerge>
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.06" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
     <filter id="acquerello-nastro" filterUnits="userSpaceOnUse" x="-60" y="0" width="420" height="2240">
-      <feTurbulence type="fractalNoise" baseFrequency="0.006 0.022" numOctaves="4" seed="4" result="n"/>
-      <feDisplacementMap in="SourceGraphic" in2="n" scale="38" xChannelSelector="R" yChannelSelector="G" result="d"/>
-      <feTurbulence type="fractalNoise" baseFrequency="0.004 0.016" numOctaves="3" seed="11" result="m"/>
-      <feColorMatrix in="m" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -0.9 0.62" result="chiaro"/>
-      <feComposite in="chiaro" in2="d" operator="in" result="macchie"/>
-      <feMerge><feMergeNode in="d"/><feMergeNode in="macchie"/></feMerge>
+      <feTurbulence type="fractalNoise" baseFrequency="0.02 0.06" numOctaves="2" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="9" xChannelSelector="R" yChannelSelector="G"/>
     </filter>
   </defs>
 </svg>

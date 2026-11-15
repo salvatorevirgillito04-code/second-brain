@@ -23,7 +23,10 @@ const posizionali = argv.filter((a, i) => !a.startsWith('--') && !argv[i - 1]?.s
 const uscita = path.resolve(posizionali[0] ?? path.join(qui, 'atenir-reel.mp4'));
 const temporaneo = uscita.replace(/\.mp4$/i, '') + '.tmp.mp4';
 const FPS = opz('--fps', 30);
-const colonna = path.join(qui, 'audio', 'colonna.wav');
+// Musica: traccia Epidemic Sound preparata (licenza dell'utente, non nel repository) se presente,
+// altrimenti la colonna sonora originale sintetizzata da audio/musica.py.
+const colonnaEpidemic = path.join(qui, 'audio', 'epidemic', 'colonna-epidemic.wav');
+const colonna = existsSync(colonnaEpidemic) ? colonnaEpidemic : path.join(qui, 'audio', 'colonna.wav');
 if (FPS <= 0) esci('--fps deve essere maggiore di 0');
 
 const browser = await chromium.launch();
