@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { existsSync } from 'node:fs';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import path from 'node:path';
 
 const { chromium } = createRequire(import.meta.url)('playwright'); // installato globalmente: import diretto non funziona
@@ -131,18 +131,18 @@ const rapporto = (a, b) => { const [x, y] = [lumRel(a), lumRel(b)].sort((p, q) =
 const visibile = (s) => s.scenaVisibile && s.opacita > 0.5 && !s.coperta && !s.ritagliata;
 
 // ---------------------------------------------------------------- 1
-test('1. caricamento senza errori, senza rete, con Fredoka e Nunito caricati', async () => {
+test('1. caricamento senza errori, senza rete, con Fraunces e DM Sans caricati', async () => {
   assert.equal(await page.evaluate(() => window.DURATA), 19, 'window.DURATA');
   assert.equal(await page.evaluate(() => typeof window.vaiA), 'function', 'window.vaiA');
   assert.deepEqual(richiesteRete, [], `richieste di rete: ${richiesteRete.join(', ')}`);
   assert.deepEqual(errori, [], `errori nella pagina:\n${errori.join('\n')}`);
   const font = await page.evaluate(() => [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, '')));
-  for (const fam of ['Fredoka', 'Nunito']) {
+  for (const fam of ['Fraunces', 'DM Sans']) {
     assert.ok(font.includes(fam), `font ${fam} non caricato (caricati: ${font.join(', ') || 'nessuno'})`);
   }
   // I testi usano davvero i font attesi (nessun ripiego silenzioso su system-ui).
-  const ok = await page.evaluate(() => [document.fonts.check('600 104px Fredoka'), document.fonts.check('800 54px Nunito')]);
-  assert.deepEqual(ok, [true, true], 'document.fonts.check per Fredoka 600 / Nunito 800');
+  const ok = await page.evaluate(() => [document.fonts.check('italic 400 116px Fraunces'), document.fonts.check('500 54px "DM Sans"')]);
+  assert.deepEqual(ok, [true, true], 'document.fonts.check per Fraunces corsivo / DM Sans 500');
 });
 
 // ---------------------------------------------------------------- 2
@@ -262,7 +262,7 @@ test('6. nessun lampeggio: luminanza media senza più di 3 variazioni ≥ 10% in
 
 // ---------------------------------------------------------------- 7
 const haFfprobe = (() => { try { execFileSync('ffprobe', ['-version'], { stdio: 'ignore' }); return true; } catch { return false; } })();
-test('7. MP4: 1080x1920, 30 fps, 19 s ± 0,05, h264, yuv420p', {
+test('7. MP4: 1080x1920, 30 fps, 19 s ± 0,05, h264, yuv420p, colonna sonora', {
   skip: !existsSync(MP4) ? 'atenir-reel.mp4 assente' : !haFfprobe ? 'ffprobe non disponibile' : false,
 }, () => {
   const info = JSON.parse(execFileSync('ffprobe', ['-v', 'error', '-show_streams', '-show_format', '-of', 'json', MP4], { encoding: 'utf8' }));
@@ -281,4 +281,14 @@ test('7. MP4: 1080x1920, 30 fps, 19 s ± 0,05, h264, yuv420p', {
   assert.ok(Math.abs(dv - 19) <= 0.05, `durata video ${dv} s`);
   const df = Number(info.format.duration);
   assert.ok(Math.abs(df - 19) <= 0.05, `durata contenitore ${df} s`);
+  // Colonna sonora: una traccia AAC lunga quanto il video, non muta, senza picchi oltre -0,5 dBFS.
+  const audio = info.streams.filter((s) => s.codec_type === 'audio');
+  assert.equal(audio.length, 1, 'una traccia audio');
+  assert.equal(audio[0].codec_name, 'aac');
+  assert.ok(Math.abs(Number(audio[0].duration) - 19) <= 0.05, `durata audio ${audio[0].duration} s`);
+  const { stderr } = spawnSync('ffmpeg', ['-hide_banner', '-i', MP4, '-af', 'volumedetect', '-vn', '-f', 'null', '-'], { encoding: 'utf8' });
+  const media = Number(/mean_volume: (-?[\d.]+) dB/.exec(stderr)?.[1]);
+  const picco = Number(/max_volume: (-?[\d.]+) dB/.exec(stderr)?.[1]);
+  assert.ok(media > -40, `audio quasi muto (media ${media} dB)`);
+  assert.ok(picco <= -0.5, `picco audio troppo alto (${picco} dB)`);
 });

@@ -1,3 +1,5 @@
+> **Aggiornamento 15/11/2026 (v3):** su richiesta, stile meno infantile. Il logo è l'immagine fornita dall'utente (`assets/logo.png`), non più la scritta ricostruita; titoli in Fraunces corsivo, testo in DM Sans, contorni da 5 px, movimenti senza rimbalzi. Le sezioni sotto su Fredoka/Nunito e sul logo testuale restano come storia.
+
 # Atenir – brand per il reel
 
 Borse, borsette, berretti e sciarpotti fatti all'uncinetto. Tono: giovane, artistico, fatto a mano. I colori sono quelli di un cesto di gomitoli: l'arcobaleno completo, mai un colore solo.

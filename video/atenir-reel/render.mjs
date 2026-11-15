@@ -4,7 +4,7 @@
 // Playwright è installato globalmente nell'ambiente: require() lo trova, un import ESM no.
 import { createRequire } from 'node:module';
 import { spawn } from 'node:child_process';
-import { renameSync, rmSync } from 'node:fs';
+import { existsSync, renameSync, rmSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
@@ -23,6 +23,7 @@ const posizionali = argv.filter((a, i) => !a.startsWith('--') && !argv[i - 1]?.s
 const uscita = path.resolve(posizionali[0] ?? path.join(qui, 'atenir-reel.mp4'));
 const temporaneo = uscita.replace(/\.mp4$/i, '') + '.tmp.mp4';
 const FPS = opz('--fps', 30);
+const colonna = path.join(qui, 'audio', 'colonna.wav');
 if (FPS <= 0) esci('--fps deve essere maggiore di 0');
 
 const browser = await chromium.launch();
@@ -51,13 +52,16 @@ try {
   ff = spawn('ffmpeg', [
     '-y', '-loglevel', 'error',
     '-f', 'image2pipe', '-framerate', String(FPS), '-c:v', 'png', '-i', '-',
-    // Traccia audio muta, voluta: alcune app di montaggio gestiscono meglio i file con audio.
-    // La musica si sceglie su Instagram al momento della pubblicazione.
-    '-f', 'lavfi', '-t', String(totale / FPS), '-i', 'anullsrc=r=44100:cl=stereo', '-shortest',
+    // Colonna sonora originale (audio/musica.py → audio/colonna.wav), tagliata sull'intervallo renderizzato.
+    // Se manca, traccia muta: alcune app di montaggio gestiscono meglio i file con audio.
+    ...(existsSync(colonna)
+      ? ['-ss', String(da), '-t', String(totale / FPS), '-i', colonna]
+      : ['-f', 'lavfi', '-t', String(totale / FPS), '-i', 'anullsrc=r=44100:cl=stereo']),
+    '-shortest',
     '-vf', 'scale=out_color_matrix=bt709:out_range=tv,format=yuv420p',
     '-c:v', 'libx264', '-preset', 'medium', '-crf', '18', '-profile:v', 'high',
     '-colorspace', 'bt709', '-color_primaries', 'bt709', '-color_trc', 'bt709', '-color_range', 'tv',
-    '-c:a', 'aac', '-b:a', '128k', '-movflags', '+faststart', '-f', 'mp4', temporaneo,
+    '-c:a', 'aac', '-b:a', '192k', '-movflags', '+faststart', '-f', 'mp4', temporaneo,
   ], { stdio: ['pipe', 'inherit', 'inherit'] });
   const fine = new Promise((ok, ko) => {
     ff.on('error', (e) => ko(new Error('ffmpeg non avviabile: ' + e.message)));
