@@ -21,8 +21,6 @@
   svg .ol { stroke: var(--at-ink); stroke-width: var(--at-stroke); stroke-linejoin: round; stroke-linecap: round; }
   svg .tb { transform-box: fill-box; transform-origin: center; }
   .logo-img { position: absolute; height: auto; display: block; }
-  .logo { font-family: var(--at-font-display); font-weight: 700; paint-order: stroke; stroke: var(--at-ink);
-    stroke-width: var(--at-stroke); stroke-linejoin: round; }
   #contatore { position: absolute; top: 254px; left: 0; width: 1080px; height: 28px; z-index: 5; }
   #contatore i { position: absolute; top: 14px; width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%;
     background: var(--at-ink); opacity: .25; box-sizing: border-box; }
@@ -53,6 +51,9 @@
 <script>
 // ===== Configurazione =====
 const HANDLE = '@atenir';      // segnaposto: da confermare prima della pubblicazione
+// Foto vere dei prodotti: metti il percorso di un PNG/WebP scontornato (1440x1440, prodotto al centro,
+// base a ~85% dell'altezza) al posto di null. Con null si usa l'illustrazione. Tempi e animazioni non cambiano.
+const FOTO = { borsa: null, borsetta: null, berretto: null, sciarpotto: null };
 const DURATA = 19;             // secondi (570 fotogrammi a 30 fps)
 const ARC = ['red', 'orange', 'yellow', 'green', 'blue', 'indigo', 'violet'];
 const v = (c) => `var(--at-${c})`;
@@ -158,6 +159,13 @@ const ART = {
   },
 };
 
+// Foto se presente, altrimenti illustrazione SVG (con id dei clipPath resi unici per le miniature).
+function contenuto(slot, etichetta, prefisso = 'clip-') {
+  if (FOTO[slot]) return `<img src="${FOTO[slot]}" alt="" width="720" height="720" style="width:100%;height:100%;object-fit:contain">`;
+  const svg = ART[slot]().replace(/id="clip-/g, `id="${prefisso}`).replace(/url\(#clip-/g, `url(#${prefisso}`);
+  return `<svg viewBox="0 0 720 720" ${etichetta ? `role="img" aria-label="${etichetta}"` : 'aria-hidden="true"'} style="width:100%;height:100%;overflow:visible">${svg}</svg>`;
+}
+
 // ===== Costruzione delle scene =====
 const reel = document.getElementById('reel');
 const scena = (id, bg, html) => {
@@ -195,7 +203,7 @@ const CATEGORIE = [
 ];
 CATEGORIE.forEach((c) => scena(c.id, c.bg, `
   <div class="macchia" style="background:${v(c.macchia)}"></div>
-  <figure class="at-prodotto" data-slot="${c.slot}"><div class="sway"><svg viewBox="0 0 720 720" role="img" aria-label="${c.titolo}">${ART[c.slot]()}</svg></div></figure>
+  <figure class="at-prodotto" data-slot="${c.slot}"><div class="sway">${contenuto(c.slot, c.titolo)}</div></figure>
   <p class="at-testo titolo" style="top:1240px;height:140px">${c.titolo}</p>
   <p class="at-testo sotto" style="top:1400px;height:100px">${c.sotto}</p>`));
 
@@ -221,7 +229,7 @@ scena('s6-valore', 'indigo', `
 
 // Scena 7 – invito all'azione
 const mini = CATEGORIE.map((c, i) => `<div class="mini" style="position:absolute;left:${240 + i * 180 - 75}px;top:1390px;width:150px;height:150px">
-  <svg viewBox="0 0 720 720" style="width:100%;height:100%;overflow:visible">${ART[c.slot]().replace(/id="clip-([a-z]+)"/g, 'id="mclip-$1"').replace(/url\(#clip-/g, 'url(#mclip-')}</svg></div>`).join('');
+  ${contenuto(c.slot, '', 'mclip-')}</div>`).join('');
 scena('s7-cta', 'cream', `
   <svg class="piena" viewBox="0 0 1080 1920">
     ${[400, 360, 320, 280, 240, 200, 160].map((r, i) => `<path class="arco" d="M${540 - r} 640 A${r} ${r} 0 0 1 ${540 + r} 640" pathLength="1" style="fill:none;stroke:${v(ARC[i])};stroke-width:36px;stroke-linecap:round;stroke-dasharray:1 1"/>`).join('')}
@@ -244,7 +252,7 @@ reel.insertAdjacentHTML('beforeend', `<div id="contatore">${[486, 522, 558, 594]
 // ===== Motore di animazione deterministico =====
 const E = { out: 'cubic-bezier(0.33,1,0.68,1)', back: 'cubic-bezier(0.34,1.56,0.64,1)', inout: 'cubic-bezier(0.65,0,0.35,1)',
   in: 'cubic-bezier(0.32,0,0.67,0)', sine: 'cubic-bezier(0.37,0,0.63,1)', lin: 'linear' };
-const $$ = (sel, root = document) => (typeof sel === 'string' ? [...root.querySelectorAll(sel)] : [sel]);
+const $$ = (sel, root = document) => (typeof sel === 'string' ? [...root.querySelectorAll(sel)] : [sel]).filter(Boolean);
 function A(sel, kf, start, dur, ease = 'out', o = {}) {
   $$(sel, o.root).forEach((el, i) => el.animate(kf, {
     delay: (start + (o.stagger || 0) * i) * 1000, duration: dur * 1000, easing: E[ease],
@@ -272,7 +280,7 @@ CATEGORIE.forEach((c, k) => {
   const T = 3 + k * 2.5, root = document.getElementById(c.id), q = (s) => root.querySelector(s);
   A(q('.macchia'), [{ scale: 0.85, rotate: '-4deg' }, { scale: 1, rotate: '0deg' }], T, 0.5, 'out');
   const fig = q('.at-prodotto');
-  if (c.slot === 'sciarpotto') {
+  if (c.slot === 'sciarpotto' && !FOTO[c.slot]) {
     A(fig, [{ opacity: 0 }, { opacity: 1 }], T + 0.05, 0.15, 'lin');
     A('.riga', [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], T + 0.05, 0.8, 'inout', { root });
     A('.frange-a, .frange-b', [{ opacity: 0 }, { opacity: 1 }], T + 0.8, 0.15, 'lin', { root });
@@ -308,7 +316,7 @@ A('#catenella', [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 13.1, 0.9, '
 oscilla('#uncinetto-in > g', 'translate', '0 0', '-12px 8px', 13.4, 0.9);
 txtIn('#fatto', 13.15); txtIn('#unico', 13.3);
 A('#timbro', [{ scale: 1.6, rotate: '-30deg', opacity: 0 }, { scale: 1, rotate: '-10deg', opacity: 1 }], 13.9, 0.35, 'back');
-['#fatto', '#unico', '#timbro'].forEach((s) => A(s, [{ opacity: 1 }, { opacity: 0 }], 15.1, 0.15, 'in', { fill: 'forwards' }));
+['#fatto', '#unico', '#timbro'].forEach((s) => txtOut(s, 15.1, 0.15));
 
 // Scena 7
 A('.arco', [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 15.5, 0.6, 'out', { stagger: 0.05 });
