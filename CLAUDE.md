@@ -69,7 +69,7 @@ Le stime di costo vanno indicate come stime, mai come addebiti. Commit: «Resoco
 
 **«Brain – automazioni»** (08:13, ora di Roma; sostituisce «rapporto connettori», che è in pausa): legge `automazioni/registro.md` dal ramo `ccr-b772bd68-cobgte` e applica a ogni connettore disponibile la sua azione in sola lettura, compresi quelli collegati dopo. Il rapporto finisce sul documento Drive «Second Brain – rapporto connettori».
 
-**«canale coordinatore»** (richiesta dell'utente del 14/11/2026): il coordinatore comunica con Claude (chat), Claude Code e l'app.
+**«canale coordinatore»** (08:33–23:33 ogni 3 ore, ora di Roma; attività `trig_01QdoaYE4mGUdeJvH6zLgtwo`, richiesta dell'utente del 14/11/2026): il coordinatore comunica con Claude (chat), Claude Code e l'app.
 - Canale: la cartella Google Drive «Second Brain - canale coordinatore» (id `1DfbL8f8V2edrfCi9eoyR74WflSoQ9tRj`). Ogni messaggio è un file nuovo `PER-COORDINATORE …`, ogni risposta un file `RISPOSTA …` con `Rif: <id>`; le regole sono nel file LEGGIMI.
 - Dall'app (1.10): i messaggi stanno in `dati/app/messaggi/`, le risposte in `dati/stato/coordinatore.md`. Push consentito solo per quel file, sul ramo `dati`, mai con force push.
 - Istruzioni complete e testo da incollare nella sessione «Second Brain-Stato» (le attività si creano solo da lì): `automazioni/canale-coordinatore.md`.
