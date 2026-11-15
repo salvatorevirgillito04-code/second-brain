@@ -24,6 +24,7 @@ public class MainActivity extends Activity {
     static final String HOST = "appassets.androidplatform.net";
     static final int RICHIESTA_ESPORTA = 1;
     static final int RICHIESTA_IMPORTA = 2;
+    static final int RICHIESTA_NOTIFICHE = 3;
 
     WebView web;
     Ponte ponte;
@@ -64,8 +65,9 @@ public class MainActivity extends Activity {
 
         ponte = new Ponte(this, this, web);
         web.addJavascriptInterface(ponte, "Android");
-        web.loadUrl("https://" + HOST + "/www/index.html");
+        web.loadUrl("https://" + HOST + "/www/index.html" + frammento(getIntent()));
         SincronizzazioneJob.pianifica(this);
+        eliminaResiduiGlobo();
 
         if (Build.VERSION.SDK_INT >= 33) {
             getOnBackInvokedDispatcher().registerOnBackInvokedCallback(OnBackInvokedDispatcher.PRIORITY_DEFAULT, () -> {
@@ -80,6 +82,37 @@ public class MainActivity extends Activity {
     }
 
     static volatile boolean inPrimoPiano = false;
+
+    /** 1.8: il widget del globo è stato eliminato; rimuove i fotogrammi rimasti dalla 1.7. */
+    private void eliminaResiduiGlobo() {
+        java.io.File d = new java.io.File(getFilesDir(), "globo");
+        java.io.File[] f = d.listFiles();
+        if (f != null) for (java.io.File x : f) x.delete();
+        d.delete();
+        new java.io.File(getFilesDir(), "globo.png").delete();
+        getSharedPreferences("impostazioni", MODE_PRIVATE).edit().remove("globo_n").remove("globo_v").apply();
+    }
+
+    /** Notifiche e widget aprono l'app su una sezione (#stanze) o con un'azione (aggiunta rapida). */
+    private static String frammento(Intent i) {
+        if (i == null) return "";
+        String v = i.getStringExtra("vista"), a = i.getStringExtra("azione");
+        if ("rapido".equals(a)) return "#home-rapido";
+        return v != null && v.matches("[a-z]{3,20}") ? "#" + v : "";
+    }
+
+    @Override
+    protected void onNewIntent(Intent i) {
+        super.onNewIntent(i);
+        String f = frammento(i);
+        if (web != null && !f.isEmpty()) web.evaluateJavascript("window.__apri && window.__apri(" + org.json.JSONObject.quote(f.substring(1)) + ")", null);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int codice, String[] permessi, int[] esiti) {
+        super.onRequestPermissionsResult(codice, permessi, esiti);
+        if (codice == RICHIESTA_NOTIFICHE && ponte != null) ponte.esitoNotifiche();
+    }
 
     @Override
     protected void onPause() { inPrimoPiano = false; super.onPause(); }

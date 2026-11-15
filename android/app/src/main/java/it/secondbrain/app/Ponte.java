@@ -43,7 +43,7 @@ public class Ponte {
     private final Cassaforte cassaforte;
     private final ClientGitHub github;
     private final ExecutorService rete = Executors.newSingleThreadExecutor();
-    private String daEsportare;
+    private byte[] daEsportare;
     private String messaggioEsportazione;
 
     Ponte(android.content.Context c, MainActivity a, WebView w) {
@@ -74,6 +74,37 @@ public class Ponte {
             final String js = "window.__risposta(" + JSONObject.quote(id) + "," + r.stato + "," + JSONObject.quote(r.corpo == null ? "" : r.corpo) + ")";
             web.post(() -> web.evaluateJavascript(js, null));
         });
+    }
+
+    // ---------- 1.4: notifiche e widget ----------
+    @JavascriptInterface public boolean notificheConsentite() {
+        if (android.os.Build.VERSION.SDK_INT >= 33 && ctx.checkSelfPermission(android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) return false;
+        return ctx.getSystemService(android.app.NotificationManager.class).areNotificationsEnabled();
+    }
+    /** Chiede il permesso (Android 13+); l'esito arriva a window.__notifiche(true|false). */
+    @JavascriptInterface public void richiediNotifiche() {
+        if (attivita == null) return;
+        attivita.runOnUiThread(() -> {
+            if (android.os.Build.VERSION.SDK_INT >= 33) attivita.requestPermissions(new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, MainActivity.RICHIESTA_NOTIFICHE);
+            else chiama("__notifiche", notificheConsentite(), "");
+        });
+    }
+    void esitoNotifiche() { chiama("__notifiche", notificheConsentite(), ""); }
+    @JavascriptInterface public boolean notifica(String id, String titolo, String testo) {
+        if (!notificheConsentite()) return false;
+        android.app.NotificationManager nm = ctx.getSystemService(android.app.NotificationManager.class);
+        nm.createNotificationChannel(new android.app.NotificationChannel("interventi", "Interventi richiesti dalle sessioni", android.app.NotificationManager.IMPORTANCE_DEFAULT));
+        Intent apri = new Intent(ctx, MainActivity.class).putExtra("vista", "stanze").addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        android.app.PendingIntent pi = android.app.PendingIntent.getActivity(ctx, Math.abs(id.hashCode()), apri, android.app.PendingIntent.FLAG_IMMUTABLE | android.app.PendingIntent.FLAG_UPDATE_CURRENT);
+        android.app.Notification n = new android.app.Notification.Builder(ctx, "interventi")
+                .setSmallIcon(R.drawable.ic_notifica).setContentTitle(titolo).setContentText(testo)
+                .setStyle(new android.app.Notification.BigTextStyle().bigText(testo)).setContentIntent(pi).setAutoCancel(true).build();
+        nm.notify(id, 1, n);
+        return true;
+    }
+    @JavascriptInterface public void aggiornaWidget(String json) {
+        prefs.edit().putString("widget", json == null ? "{}" : json).apply();
+        WidgetSecondBrain.aggiornaTutti(ctx);
     }
 
     /** Chiamato da sfondo.html al termine della sincronizzazione in background. */
@@ -129,23 +160,34 @@ public class Ponte {
 
     // ---------- file (selettore di Android) ----------
     @JavascriptInterface public void esporta(String nome, String testo, String messaggioOk) {
+        if (testo == null) return;
+        salvaConScelta(nome, testo.getBytes(StandardCharsets.UTF_8), "application/json", messaggioOk);
+    }
+    /** Come esporta(), per file binari (es. lo ZIP per Obsidian), passati in base64. Massimo 60 MB. */
+    @JavascriptInterface public void esportaBinario(String nome, String b64, String tipo, String messaggioOk) {
+        if (b64 == null || b64.length() > 80 * 1024 * 1024) { chiama("__esportato", false, "File troppo grande."); return; }
+        byte[] dati;
+        try { dati = android.util.Base64.decode(b64, android.util.Base64.DEFAULT); } catch (Exception e) { chiama("__esportato", false, "Dati non validi."); return; }
+        salvaConScelta(nome, dati, tipo == null || !tipo.matches("[a-z]+/[a-z0-9.+-]+") ? "application/octet-stream" : tipo, messaggioOk);
+    }
+    private void salvaConScelta(String nome, byte[] dati, String tipo, String messaggioOk) {
         if (attivita == null) return;
-        daEsportare = testo; messaggioEsportazione = messaggioOk;
+        daEsportare = dati; messaggioEsportazione = messaggioOk;
         attivita.runOnUiThread(() -> {
             Intent i = new Intent(Intent.ACTION_CREATE_DOCUMENT);
             i.addCategory(Intent.CATEGORY_OPENABLE);
-            i.setType("application/json");
+            i.setType(tipo);
             i.putExtra(Intent.EXTRA_TITLE, nome);
             try { attivita.startActivityForResult(i, MainActivity.RICHIESTA_ESPORTA); }
             catch (ActivityNotFoundException e) { chiama("__esportato", false, "Nessuna app per salvare file disponibile."); }
         });
     }
     void esportaSu(Uri uri) {
-        String testo = daEsportare; daEsportare = null;
-        if (uri == null || testo == null) { chiama("__esportato", false, "Esportazione annullata."); return; }
+        byte[] dati = daEsportare; daEsportare = null;
+        if (uri == null || dati == null) { chiama("__esportato", false, "Esportazione annullata."); return; }
         try (OutputStream out = attivita.getContentResolver().openOutputStream(uri, "wt")) {
             if (out == null) throw new IllegalStateException("destinazione non scrivibile");
-            out.write(testo.getBytes(StandardCharsets.UTF_8));
+            out.write(dati);
             out.flush();
             chiama("__esportato", true, messaggioEsportazione);
         } catch (Exception e) {
@@ -214,7 +256,7 @@ public class Ponte {
         });
     }
 
-    private void chiama(String funzione, boolean ok, String testo) {
+    void chiama(String funzione, boolean ok, String testo) {
         final String js = "window." + funzione + " && window." + funzione + "(" + ok + "," + JSONObject.quote(testo == null ? "" : testo) + ")";
         web.post(() -> web.evaluateJavascript(js, null));
     }

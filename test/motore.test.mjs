@@ -361,7 +361,8 @@ test("sessioni → note private; aggiornate solo se cambiano e se non le hai mod
   await M.sincronizza(s, gh.api(), OPZ);
   const n = M.trova(s, "note", "sessione-ABC");
   assert.equal(n.tipo, "riassunto"); assert.equal(n.accessibile_agenti, false); assert.match(n.testo, /attende un tuo intervento/); assert.match(n.testo, /decidi Y/); assert.match(n.testo, /non in tempo reale/);
-  assert.equal(M.inAttesa(s), 0); assert.equal(gh.file("dati", "dati/app/note/sessione-ABC.json"), undefined);
+  assert.equal(M.inAttesa(s), 2, "da inviare solo la stanza e il progetto creati in automatico"); assert.equal(gh.file("dati", "dati/app/note/sessione-ABC.json"), undefined);
+  assert.equal(M.elenco(s, "stanze").filter((x) => x.automatico).length, 1); assert.equal(n.categoria, "risorsa"); assert.ok(n.stanza_id && n.progetto_id);
   gh.scriviDiretto("dati", "dati/stato/istantanea.json", ist("COMPLETED", "2026-11-13T12:00:00Z"));
   await M.sincronizza(s, gh.api(), OPZ);
   assert.match(M.trova(s, "note", "sessione-ABC").testo, /completata/);
@@ -379,4 +380,93 @@ test("promemoria esportazione chat: dopo 30 giorni o mai importate; rimandabile"
   assert.deepEqual(M.promemoriaChat(s, Date.parse("2026-12-05T00:00:00Z")), { giorni: 34 });
   s.impostazioni.chat_rimandato_fino = "2026-12-10T00:00:00Z";
   assert.equal(M.promemoriaChat(s, Date.parse("2026-12-05T00:00:00Z")), null);
+});
+
+// ---------- 1.4 ----------
+test("estratto di ricerca, interventi da notificare una sola volta, riepilogo per il widget", async () => {
+  assert.equal(M.estratto("a ".repeat(200) + "parola chiave qui" + " b".repeat(200), "chiave").includes("parola chiave qui"), true);
+  assert.match(M.estratto("x".repeat(500) + "Trovami", "trovami"), /^….*Trovami$/);
+  const s = M.statoVuoto();
+  s.stato_lavoro = [{ id: "istantanea", rilevato_il: "2026-11-13T22:00:00Z", sessioni: [
+    { id: "session_A", titolo: "A", status_bucket: "SESSION_STATUS_BUCKET_BLOCKED", updated_at: "t1", richiede: "decidi" },
+    { id: "session_B", titolo: "B", status_bucket: "SESSION_STATUS_BUCKET_WORKING", updated_at: "t1" }] }];
+  const da = M.interventiDaNotificare(s); assert.deepEqual(da.map((x) => x.id), ["session_A"]);
+  M.segnaNotificati(s, da); assert.equal(M.interventiDaNotificare(s).length, 0, "non notificare due volte");
+  s.stato_lavoro[0].sessioni[0].updated_at = "t2"; assert.equal(M.interventiDaNotificare(s).length, 1, "nuova richiesta → nuova notifica");
+  await M.salvaRecord(s, "note", "n1", { testo: "x" }); await M.salvaRecord(s, "note", "n2", { testo: "y", categoria: "risorsa" });
+  await M.salvaRecord(s, "progetti", "p1", { nome: "P" });
+  const w = M.riepilogoWidget(s); assert.equal(w.inbox, 1); assert.equal(w.progetti, 1); assert.equal(w.attesa, 1); assert.equal(w.rilevato, "2026-11-13T22:00:00Z");
+});
+
+// ---------- 1.5 ----------
+test("organizzazione automatica: sessioni nella stanza giusta o in una nuova, chat come risorse, mai due volte", async () => {
+  const gh = new FintoGitHub(); const s = M.statoVuoto();
+  await M.sincronizza(s, gh.api(), OPZ);
+  await M.salvaRecord(s, "stanze", "st-tv", { nome: "TCL Minimal TV", stato: "attiva", obiettivi: [], agenti_ids: [] });
+  await M.salvaRecord(s, "stanze", "st-sb", { nome: "Second brain", stato: "attiva", obiettivi: [], agenti_ids: [] });
+  const se = (id, titolo) => ({ id: "session_" + id, titolo, status_bucket: "SESSION_STATUS_BUCKET_WORKING", updated_at: "2026-11-13T10:00:00Z", created_at: "2026-11-01T00:00:00Z" });
+  gh.scriviDiretto("dati", "dati/stato/istantanea.json", JSON.stringify({ rilevato_il: "2026-11-14T00:00:00Z", sessioni: [
+    se("A", "TCL Minimal TV — Verifica permessi tag GitHub"), se("B", "TCL TV ADB diagnostica"), se("C", "Second Brain-Stato"), se("D", "Negozio miglioramenti"), se("E", "Negozio: pagamenti")] }));
+  gh.scriviDiretto("dati", "dati/stato/attese.md", "# Sessioni in attesa\n\n## 1. Negozio\n- **Risposta consigliata:** «Sì»");
+  await M.sincronizza(s, gh.api(), OPZ);
+  const st = (id) => M.trova(s, "note", "sessione-" + id).stanza_id;
+  assert.equal(st("A"), "st-tv"); assert.equal(st("B"), "st-tv"); assert.equal(st("C"), "st-sb");
+  assert.equal(st("D"), st("E"), "stesso argomento → stessa nuova stanza"); assert.equal(M.trova(s, "stanze", st("D")).nome, "Negozio miglioramenti");
+  assert.equal(M.elenco(s, "stanze").length, 3); assert.equal(M.elenco(s, "progetti").length, 3, "un progetto attivo per stanza");
+  assert.match(s.stato_lavoro.find((x) => x.id === "attese").testo, /Risposta consigliata/);
+  // l'utente sposta una nota: l'app non la riorganizza
+  const { id, ...d } = M.trova(s, "note", "sessione-A"); await M.salvaRecord(s, "note", id, { ...d, stanza_id: null, progetto_id: null });
+  await M.organizzaAutomatico(s); assert.equal(st("A"), null);
+  // chat importate: risorsa della stanza simile; due chat sullo stesso argomento senza stanza → nuova stanza; chat isolata resta da organizzare
+  const chat = (t) => ({ id: "chat-" + t.replace(/\W/g, ""), uuid: t, titolo: t, testo: "testo " + t, creata: "2026-11-01", aggiornata: "2026-11-01", messaggi: 2 });
+  await M.importaChatClaude(s, { chat: [chat("Ottimizzare TCL Minimal TV"), chat("Ricette pane"), chat("Ricette pane integrale"), chat("Viaggio Lisbona")] }, "2026-11-14T00:00:00Z");
+  assert.equal(M.trova(s, "note", "chat-OttimizzareTCLMinimalTV").stanza_id, "st-tv");
+  assert.equal(M.trova(s, "note", "chat-OttimizzareTCLMinimalTV").categoria, "risorsa");
+  assert.ok(M.trova(s, "note", "chat-Ricettepane").stanza_id); assert.equal(M.trova(s, "note", "chat-Ricettepane").stanza_id, M.trova(s, "note", "chat-Ricettepaneintegrale").stanza_id);
+  assert.equal(M.trova(s, "note", "chat-ViaggioLisbona").stanza_id ?? null, null);
+  // disattivabile
+  s.impostazioni.auto_organizza = false; assert.deepEqual(await M.organizzaAutomatico(s), { stanze: 0, progetti: 0, note: 0 });
+});
+
+// ---------- 1.8 ----------
+test("Obsidian: markdown sicuro, tag, citazioni non collegate, nota del giorno, modelli, cassaforte ZIP andata e ritorno", async () => {
+  const s = M.statoVuoto(), q = "2026-11-14T08:00:00Z";
+  const nota = (id, titolo, testo, extra = {}) => M.salvaRecord(s, "note", id, { titolo, testo, tipo: "originale", categoria: "inbox", tag: [], collegamenti: [], accessibile_agenti: false, data: q, registrato_il: q, ...extra });
+  await nota("a", "Progetto Alfa", "# Piano\nVedi [[Beta|la beta]] e #lavoro/urgente.\n- [ ] uno\n- [x] due\n<script>alert(1)</script> **forte** ==evid== `#nontag`");
+  await nota("b", "Beta", "Parlo del Progetto Alfa senza collegarlo.");
+  await nota("m", "Modello Nota del giorno", "#modello\n## {{data}}\n- [ ] ");
+  const h = M.markdown(M.trova(s, "note", "a").testo, (t) => M.risolviTitolo(s, t, "a").id);
+  assert.match(h, /<h2 class="md-h">Piano<\/h2>/); assert.match(h, /data-id="b">la beta<\/a>/); assert.match(h, /data-tag="lavoro\/urgente"/);
+  assert.match(h, /data-spunta="0"/); assert.match(h, /data-spunta="1" checked/); assert.ok(!h.includes("<script>"), "niente HTML eseguibile"); assert.match(h, /<strong>forte<\/strong>/); assert.match(h, /<code>#nontag<\/code>/);
+  assert.deepEqual(M.tagsDaTesto("# Titolo\n#a #12 c#d (#e) `#f`"), ["a", "e"]);
+  assert.equal(M.spunta("- [ ] uno\n- [x] due", 1), "- [ ] uno\n- [ ] due");
+  assert.deepEqual(M.estraiLink("[[Beta|alias]] [[Gamma#sezione]]"), ["Beta", "Gamma"]);
+  assert.deepEqual(M.menzioniNonCollegate(s, "a").map((x) => x.id), ["b"]);
+  assert.equal(await M.collegaMenzione(s, "b", "a"), true); assert.match(M.trova(s, "note", "b").testo, /\[\[Progetto Alfa\]\]/); assert.deepEqual(M.trova(s, "note", "b").collegamenti, ["a"]);
+  assert.equal(M.menzioniNonCollegate(s, "a").length, 0);
+  const g = await M.notaDelGiorno(s, new Date(2026, 10, 14, 9, 30)); assert.equal(g.id, "giorno-2026-11-14"); assert.equal(g.nuova, true);
+  assert.match(M.trova(s, "note", g.id).testo, /^## 2026-11-14/); assert.equal((await M.notaDelGiorno(s, new Date(2026, 10, 14, 20))).nuova, false);
+  // cassaforte: esporta → zip → rileggi → importa in un archivio vuoto
+  const file = M.vaultObsidian(s); assert.ok(file.some((f) => f.percorso === "0 Da organizzare/Progetto Alfa.md"));
+  const zip = M.zip(file, "Second Brain/"), letti = await M.leggiTuttiDaZip(zip, (n) => n.endsWith(".md"));
+  assert.equal(letti.length, file.length);
+  const s2 = M.statoVuoto(), e = await M.importaVault(s2, letti, q);
+  assert.equal(e.importate, 4); assert.equal(M.trova(s2, "note", "a").titolo, "Progetto Alfa"); assert.equal(M.trova(s2, "note", "a").accessibile_agenti, false);
+  assert.ok(M.trova(s2, "note", "b").collegamenti.includes("a"), "i [[collegamenti]] tornano collegamenti reali");
+  assert.deepEqual((await M.importaVault(s2, letti, q)).gia_presenti, 4, "mai sovrascrivere");
+});
+
+test("esecuzioni con più agenti: istruzioni, collegamento automatico alla sessione rinominata", async () => {
+  const gh = new FintoGitHub(); const s = M.statoVuoto(); await M.sincronizza(s, gh.api(), OPZ);
+  await M.salvaRecord(s, "agenti", "ag1", { nome: "ui-designer", ruolo: "UI", skill_ids: [] });
+  await M.salvaRecord(s, "agenti", "ag2", { nome: "accessibility-expert", ruolo: "A11y", skill_ids: [] });
+  await M.salvaRecord(s, "stanze", "st", { nome: "Second brain", stato: "attiva" });
+  assert.throws(() => M.preparaEsecuzione(s, { agenti_ids: [], compito: "x" }), /almeno un agente/);
+  const { codice, prompt } = M.preparaEsecuzione(s, { agenti_ids: ["ag1", "ag2"], stanza_id: "st", compito: "Rivedi la Home" });
+  assert.match(prompt, new RegExp(`SB·${codice}`)); assert.match(prompt, /ui-designer/); assert.match(prompt, /accessibility-expert/);
+  gh.scriviDiretto("dati", "dati/stato/istantanea.json", JSON.stringify({ rilevato_il: "2026-11-14T09:00:00Z", sessioni: [{ id: "session_X1", titolo: `SB·${codice} Rivedi la Home`, status_bucket: "SESSION_STATUS_BUCKET_WORKING" }] }));
+  await M.sincronizza(s, gh.api(), OPZ);
+  const c = M.elenco(s, "collegamenti"); assert.equal(c.length, 1); assert.deepEqual(M.agentiDi(c[0]), ["ag1", "ag2"]); assert.equal(c[0].stanza_id, "st");
+  await M.sincronizza(s, gh.api(), OPZ); assert.equal(M.elenco(s, "collegamenti").length, 1, "una volta sola");
+  assert.deepEqual(M.agentiDi({ agente_id: "z" }), ["z"], "compatibile con i collegamenti a un solo agente");
 });
