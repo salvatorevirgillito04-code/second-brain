@@ -37,7 +37,7 @@ try {
   page.on('pageerror', (e) => errori.push(e.message));
   await page.goto(pathToFileURL(path.join(qui, 'reel.html')).href);
   await page.evaluate(async () => {
-    await Promise.all(['600 100px Fredoka', '700 100px Fredoka', '700 50px Nunito', '800 50px Nunito'].map((f) => document.fonts.load(f)));
+    await Promise.all(['132px "Bagel Fat One"', '600 54px "Bricolage Grotesque"', '700 54px "Bricolage Grotesque"'].map((f) => document.fonts.load(f)));
     await document.fonts.ready;
     await Promise.all([...document.images].map((i) => i.decode()));
   });

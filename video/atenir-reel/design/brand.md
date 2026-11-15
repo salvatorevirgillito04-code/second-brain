@@ -1,4 +1,6 @@
-> **Aggiornamento 15/11/2026 (v3):** su richiesta, stile meno infantile. Il logo è l'immagine fornita dall'utente (`assets/logo.png`), non più la scritta ricostruita; titoli in Fraunces corsivo, testo in DM Sans, contorni da 5 px, movimenti senza rimbalzi. Le sezioni sotto su Fredoka/Nunito e sul logo testuale restano come storia.
+> **Aggiornamento 15/11/2026 (v4):** su richiesta, design moderno e creativo nello stile del logo: tavolozza campionata dal logo (rosso #BF2E2E, terracotta #C77945, giallo #FFBD59, verde #5B9A4C, blu pennellata #2E6BF5, azzurro #6894C5, viola #5E16EA, contorno bordeaux #7B0D0D, raggi #F2A33A, svolazzi #3B2BB8), titoli Bagel Fat One con contorno bordeaux e ombra piena, testo Bricolage Grotesque, pennellate ad acquerello, raggi e svolazzi come nel logo.
+>
+> **(v3, superata):** su richiesta, stile meno infantile. Il logo è l'immagine fornita dall'utente (`assets/logo.png`), non più la scritta ricostruita; titoli in Fraunces corsivo, testo in DM Sans, contorni da 5 px, movimenti senza rimbalzi. Le sezioni sotto su Fredoka/Nunito e sul logo testuale restano come storia.
 
 # Atenir – brand per il reel
 

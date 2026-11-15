@@ -8,45 +8,72 @@
   html, body { margin: 0; background: var(--at-cream); }
   #reel { width: 1080px; height: 1920px; position: relative; overflow: hidden; background: var(--at-cream); }
   .at-scena { position: absolute; inset: 0; overflow: hidden; }
-  .at-scena svg.piena { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; }
+  .at-scena svg.piena { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; overflow: visible; }
   .at-testo { position: absolute; left: var(--at-safe-side); right: var(--at-safe-side); display: flex;
-    align-items: center; justify-content: center; text-align: center; text-wrap: balance; color: var(--at-ink); margin: 0; }
-  .titolo { font-family: var(--at-font-display); font-size: var(--at-fs-title); font-weight: var(--at-fw-display);
-    font-style: italic; font-size: 116px; line-height: 1.02; letter-spacing: -0.02em; font-variation-settings: 'opsz' 144, 'SOFT' 50; }
-  .sotto { font-family: var(--at-font-body); font-size: var(--at-fs-body); font-weight: 500; line-height: 1.2; letter-spacing: -0.01em; }
-  .macchia { position: absolute; left: 170px; top: 400px; width: 740px; height: 820px; border-radius: 370px 370px 28px 28px; }
-  .at-prodotto { position: absolute; left: 180px; top: 480px; width: 720px; height: 720px; margin: 0; transform-origin: 50% 85%; }
+    align-items: center; justify-content: center; text-align: center; color: var(--at-ink); margin: 0; }
+  /* Titoli «a bolla» come le lettere del logo: riempimento pieno, contorno bordeaux, ombra piena da adesivo */
+  .titolo { font-family: var(--at-font-display); font-size: 132px; font-weight: 400; line-height: 1.05; letter-spacing: 0.01em;
+    -webkit-text-stroke: 10px var(--at-outline); paint-order: stroke fill; text-shadow: 0 9px 0 var(--at-outline); }
+  .titolo .tilt { display: inline-block; transform: rotate(-3deg); white-space: nowrap; }
+  .titolo .l { display: inline-block; }
+  .sotto { font-family: var(--at-font-body); font-size: var(--at-fs-body); font-weight: 600; line-height: 1.15; letter-spacing: -0.015em;
+    font-variation-settings: 'opsz' 48; }
+  .eco { position: absolute; left: 0; top: 300px; white-space: nowrap; font-family: var(--at-font-display); font-size: 330px;
+    line-height: 1; color: transparent; -webkit-text-stroke: 4px var(--at-outline); opacity: .13; }
+  .at-prodotto { position: absolute; left: 180px; top: 470px; width: 720px; height: 720px; margin: 0; transform-origin: 50% 85%; }
   .at-prodotto .sway { width: 100%; height: 100%; transform-origin: 50% 85%; }
-  .at-prodotto svg { width: 100%; height: 100%; overflow: visible; }
-  svg .ol { stroke: var(--at-ink); stroke-width: var(--at-stroke); stroke-linejoin: round; stroke-linecap: round; }
+  .at-prodotto svg, .mini svg { width: 100%; height: 100%; overflow: visible; filter: url(#boil); }
+  svg .ol { stroke: var(--at-outline); stroke-width: var(--at-stroke); stroke-linejoin: round; stroke-linecap: round; }
   svg .tb { transform-box: fill-box; transform-origin: center; }
   .logo-img { position: absolute; height: auto; display: block; }
-  #contatore { position: absolute; top: 250px; left: 0; width: 1080px; text-align: center; z-index: 5; color: var(--at-ink);
-    font-family: var(--at-font-body); font-size: var(--at-fs-small); font-weight: 500; letter-spacing: 0.18em; }
-  #filo-wipe { position: absolute; top: -140px; left: 0; width: 280px; height: 2200px; z-index: 10; visibility: hidden; }
-  .pill { position: absolute; left: 260px; top: 1240px; width: 560px; height: 120px; border-radius: 60px; background: var(--at-ink);
-    color: var(--at-white); display: flex; align-items: center; justify-content: center; gap: 20px;
-    font-family: var(--at-font-body); font-size: var(--at-fs-body); font-weight: 500; color: var(--at-cream); }
+  #contatore { position: absolute; top: 246px; left: 0; width: 1080px; text-align: center; z-index: 5; color: var(--at-outline);
+    font-family: var(--at-font-display); font-size: 44px; letter-spacing: 0.06em; }
+  #filo-wipe { position: absolute; top: -160px; left: 0; width: 300px; height: 2240px; z-index: 10; visibility: hidden; overflow: visible; }
+  .pill { position: absolute; left: 250px; width: 580px; height: 124px; display: flex; align-items: center; justify-content: center; gap: 18px;
+    font-family: var(--at-font-body); font-size: var(--at-fs-body); font-weight: 700; color: var(--at-cream); border-radius: 62px;
+    background: var(--at-violet); box-shadow: 0 9px 0 var(--at-outline); border: 6px solid var(--at-outline); box-sizing: border-box; }
 </style>
 </head>
 <body>
-<!-- Definizioni condivise: texture «punto uncinetto», gradiente arcobaleno -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs>
+    <!-- Texture «punto uncinetto» -->
     <pattern id="at-punto" width="24" height="20" patternUnits="userSpaceOnUse">
-      <ellipse cx="7" cy="10" rx="4" ry="8" transform="rotate(-25 7 10)" fill="none" stroke="#2A1D3A" stroke-opacity="0.18" stroke-width="2"/>
-      <ellipse cx="17" cy="10" rx="4" ry="8" transform="rotate(25 17 10)" fill="none" stroke="#2A1D3A" stroke-opacity="0.18" stroke-width="2"/>
+      <ellipse cx="7" cy="10" rx="4" ry="8" transform="rotate(-25 7 10)" fill="none" stroke="#3A0D10" stroke-opacity="0.18" stroke-width="2"/>
+      <ellipse cx="17" cy="10" rx="4" ry="8" transform="rotate(25 17 10)" fill="none" stroke="#3A0D10" stroke-opacity="0.18" stroke-width="2"/>
     </pattern>
     <linearGradient id="at-arcobaleno" gradientUnits="userSpaceOnUse" x1="100" y1="0" x2="980" y2="0">
-      <stop offset="0" stop-color="#E2434B"/><stop offset=".1667" stop-color="#F5892A"/><stop offset=".3333" stop-color="#FBC72E"/>
-      <stop offset=".5" stop-color="#3DB37A"/><stop offset=".6667" stop-color="#2E9FE0"/><stop offset=".8333" stop-color="#4B55C9"/>
-      <stop offset="1" stop-color="#9254DE"/>
+      <stop offset="0" stop-color="#BF2E2E"/><stop offset=".1667" stop-color="#C77945"/><stop offset=".3333" stop-color="#FFBD59"/>
+      <stop offset=".5" stop-color="#5B9A4C"/><stop offset=".6667" stop-color="#2E6BF5"/><stop offset=".8333" stop-color="#6894C5"/>
+      <stop offset="1" stop-color="#5E16EA"/>
     </linearGradient>
     <linearGradient id="at-arcobaleno-v" x1="0" y1="1" x2="0" y2="0">
-      <stop offset="0" stop-color="#E2434B"/><stop offset=".1667" stop-color="#F5892A"/><stop offset=".3333" stop-color="#FBC72E"/>
-      <stop offset=".5" stop-color="#3DB37A"/><stop offset=".6667" stop-color="#2E9FE0"/><stop offset=".8333" stop-color="#4B55C9"/>
-      <stop offset="1" stop-color="#9254DE"/>
+      <stop offset="0" stop-color="#BF2E2E"/><stop offset=".1667" stop-color="#C77945"/><stop offset=".3333" stop-color="#FFBD59"/>
+      <stop offset=".5" stop-color="#5B9A4C"/><stop offset=".6667" stop-color="#2E6BF5"/><stop offset=".8333" stop-color="#6894C5"/>
+      <stop offset="1" stop-color="#5E16EA"/>
     </linearGradient>
+    <!-- Tratto «che vibra» a passo uno (line boil): il seme cambia 10 volte al secondo, in modo deterministico -->
+    <filter id="boil" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence id="boil-turb" type="turbulence" baseFrequency="0.025" numOctaves="2" seed="1" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="6" xChannelSelector="R" yChannelSelector="G"/>
+    </filter>
+    <!-- Pennellata ad acquerello come quella del logo: bordi sfrangiati + macchie più chiare -->
+    <filter id="acquerello" filterUnits="userSpaceOnUse" x="-40" y="480" width="1160" height="720">
+      <feTurbulence type="fractalNoise" baseFrequency="0.006 0.022" numOctaves="4" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="38" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.004 0.016" numOctaves="3" seed="11" result="m"/>
+      <feColorMatrix in="m" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -0.9 0.62" result="chiaro"/>
+      <feComposite in="chiaro" in2="d" operator="in" result="macchie"/>
+      <feMerge><feMergeNode in="d"/><feMergeNode in="macchie"/></feMerge>
+    </filter>
+    <filter id="acquerello-nastro" filterUnits="userSpaceOnUse" x="-60" y="0" width="420" height="2240">
+      <feTurbulence type="fractalNoise" baseFrequency="0.006 0.022" numOctaves="4" seed="4" result="n"/>
+      <feDisplacementMap in="SourceGraphic" in2="n" scale="38" xChannelSelector="R" yChannelSelector="G" result="d"/>
+      <feTurbulence type="fractalNoise" baseFrequency="0.004 0.016" numOctaves="3" seed="11" result="m"/>
+      <feColorMatrix in="m" type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 -0.9 0.62" result="chiaro"/>
+      <feComposite in="chiaro" in2="d" operator="in" result="macchie"/>
+      <feMerge><feMergeNode in="d"/><feMergeNode in="macchie"/></feMerge>
+    </filter>
   </defs>
 </svg>
 
@@ -54,7 +81,7 @@
 
 <script>
 // ===== Configurazione =====
-const HANDLE = '@atenir';      // segnaposto: da confermare prima della pubblicazione
+const HANDLE = '@atenir';      // confermato dall'utente
 // Foto vere dei prodotti: metti il percorso di un PNG/WebP scontornato (1440x1440, prodotto al centro,
 // base a ~85% dell'altezza) al posto di null. Con null si usa l'illustrazione. Tempi e animazioni non cambiano.
 const FOTO = { borsa: null, borsetta: null, berretto: null, sciarpotto: null };
@@ -65,27 +92,27 @@ const fl = (c) => `style="fill:${v(c)}"`;
 const st = (c, w) => `style="fill:none;stroke:${v(c)};stroke-width:${w}px"`;
 const tex = (d) => `<path d="${d}" fill="url(#at-punto)"/>`;
 
-// ===== Illustrazioni prodotto (viewBox 720x720) =====
+// ===== Illustrazioni prodotto (viewBox 720x720), contorno bordeaux come il logo =====
 const ART = {
   borsa() {
     const corpo = 'M150 300 H570 L540 640 Q540 665 515 665 H205 Q180 665 180 640 Z';
     const frange = [0, 1, 2, 3, 4].map((i) => `<line x1="${448 + i * 6}" y1="318" x2="${438 + i * 6}" y2="362" class="ol" style="stroke:${v('violet')};stroke-width:7px"/>`).join('');
     return `
-      <path d="M230 300 C230 110 490 110 490 300" class="ol" style="fill:none;stroke-width:42px"/>
-      <path d="M230 300 C230 110 490 110 490 300" ${st('indigo', 34)} stroke-linecap="round"/>
+      <path d="M230 300 C230 110 490 110 490 300" class="ol" style="fill:none;stroke-width:48px"/>
+      <path d="M230 300 C230 110 490 110 490 300" ${st('violet', 34)} stroke-linecap="round"/>
       <clipPath id="clip-borsa"><path d="${corpo}"/></clipPath>
       <path d="${corpo}" class="ol" ${fl('blue')}/>
       <g clip-path="url(#clip-borsa)">
         <rect x="140" y="300" width="440" height="120" ${fl('blue')}/>
         <rect x="140" y="420" width="440" height="120" ${fl('green')}/>
-        <rect x="140" y="540" width="440" height="130" ${fl('yellow')}/>
+        <rect x="140" y="540" width="440" height="130" ${fl('red')}/>
         <rect x="140" y="300" width="440" height="370" fill="url(#at-punto)"/>
       </g>
       <path d="${corpo}" fill="none" class="ol"/>
-      <rect x="140" y="284" width="440" height="36" rx="18" class="ol" ${fl('red')}/>
+      <rect x="140" y="284" width="440" height="36" rx="18" class="ol" ${fl('orange')}/>
       <rect x="140" y="284" width="440" height="36" rx="18" fill="url(#at-punto)"/>
       <g class="at-dettaglio manico tb">
-        <path d="M260 300 C260 150 460 150 460 300" class="ol" style="fill:none;stroke-width:42px"/>
+        <path d="M260 300 C260 150 460 150 460 300" class="ol" style="fill:none;stroke-width:48px"/>
         <path d="M260 300 C260 150 460 150 460 300" ${st('orange', 34)} stroke-linecap="round"/>
       </g>
       <g class="at-dettaglio nappina" style="transform-origin:460px 300px">
@@ -102,9 +129,9 @@ const ART = {
     });
     const patta = 'M150 340 H570 A210 110 0 0 1 150 340 Z';
     return `
-      <path d="M170 360 C170 80 550 80 550 360" class="ol" style="fill:none;stroke-width:24px"/>
+      <path d="M170 360 C170 80 550 80 550 360" class="ol" style="fill:none;stroke-width:30px"/>
       <path d="M170 360 C170 80 550 80 550 360" ${st('orange', 16)}/>
-      <path d="M170 360 C170 80 550 80 550 360" style="fill:none;stroke:#2A1D3A;stroke-opacity:.3;stroke-width:16px;stroke-dasharray:2 18"/>
+      <path d="M170 360 C170 80 550 80 550 360" style="fill:none;stroke:#3A0D10;stroke-opacity:.3;stroke-width:16px;stroke-dasharray:2 18"/>
       <clipPath id="clip-borsetta"><rect x="150" y="340" width="420" height="300" rx="28"/></clipPath>
       <rect x="150" y="340" width="420" height="300" rx="28" class="ol" ${fl('cream')}/>
       <g clip-path="url(#clip-borsetta)">${q}
@@ -125,7 +152,7 @@ const ART = {
     const cupola = 'M130 520 C130 200 590 200 590 520 Z';
     const onda = (y) => { let d = `M100 ${y}`; for (let x = 100; x < 620; x += 40) d += ` q20 -14 40 0`; return d; };
     let coste = '';
-    for (let x = 134; x <= 586; x += 24) coste += `<line x1="${x}" y1="522" x2="${x}" y2="618" style="stroke:#2A1D3A;stroke-opacity:.2;stroke-width:4px"/>`;
+    for (let x = 134; x <= 586; x += 24) coste += `<line x1="${x}" y1="522" x2="${x}" y2="618" style="stroke:#3A0D10;stroke-opacity:.2;stroke-width:4px"/>`;
     const bordi = Array.from({ length: 20 }, (_, i) => {
       const a = (i * 18 * Math.PI) / 180; return [360 + 80 * Math.cos(a), 215 + 80 * Math.sin(a)];
     });
@@ -139,7 +166,7 @@ const ART = {
       <path d="${cupola}" class="ol" ${fl('red')}/>
       <g clip-path="url(#clip-cupola)">
         ${tex(cupola)}
-        <path d="${onda(360)}" ${st('yellow', 10)}/><path d="${onda(420)}" ${st('green', 10)}/><path d="${onda(480)}" ${st('blue', 10)}/>
+        <path d="${onda(360)}" ${st('yellow', 10)}/><path d="${onda(420)}" ${st('green', 10)}/><path d="${onda(480)}" ${st('indigo', 10)}/>
       </g>
       <path d="${cupola}" fill="none" class="ol"/>
       <rect x="110" y="510" width="500" height="120" rx="30" class="ol" ${fl('violet')}/>
@@ -151,7 +178,7 @@ const ART = {
   },
   sciarpotto() {
     const asse = 'M120 160 C420 160 560 300 360 380 C160 460 300 600 600 600';
-    const righe = [[158, 'ink'], [150, 'red'], [128, 'orange'], [106, 'yellow'], [84, 'green'], [62, 'blue'], [40, 'indigo'], [18, 'violet']]
+    const righe = [[164, 'outline'], [150, 'red'], [128, 'orange'], [106, 'yellow'], [84, 'green'], [62, 'blue'], [40, 'indigo'], [18, 'violet']]
       .map(([w, c]) => `<path class="riga" d="${asse}" pathLength="1" style="fill:none;stroke:${v(c)};stroke-width:${w}px;stroke-linecap:butt;stroke-dasharray:1 1"/>`).join('')
       + `<path class="riga" d="${asse}" pathLength="1" style="fill:none;stroke:url(#at-punto);stroke-width:150px;stroke-linecap:butt;stroke-dasharray:1 1"/>`;
     const frangia = (x0, dx, y0, cl, orig) => `<g class="at-dettaglio ${cl}" style="transform-origin:${orig}">` +
@@ -167,93 +194,130 @@ const ART = {
 function contenuto(slot, etichetta, prefisso = 'clip-') {
   if (FOTO[slot]) return `<img src="${FOTO[slot]}" alt="" width="720" height="720" style="width:100%;height:100%;object-fit:contain">`;
   const svg = ART[slot]().replace(/id="clip-/g, `id="${prefisso}`).replace(/url\(#clip-/g, `url(#${prefisso}`);
-  return `<svg viewBox="0 0 720 720" ${etichetta ? `role="img" aria-label="${etichetta}"` : 'aria-hidden="true"'} style="width:100%;height:100%;overflow:visible">${svg}</svg>`;
+  return `<svg viewBox="0 0 720 720" ${etichetta ? `role="img" aria-label="${etichetta}"` : 'aria-hidden="true"'}>${svg}</svg>`;
 }
+
+// ===== Elementi grafici presi dal logo =====
+// Raggi arancio (come intorno al logo): linee che partono da un centro, disegnate verso l'esterno.
+const raggi = (cx, cy, angoli, r0 = 60, r1 = 130, cls = 'raggio') => angoli.map((a) => {
+  const t = (a * Math.PI) / 180, c = Math.cos(t), s = Math.sin(t);
+  return `<path class="${cls}" d="M${(cx + r0 * c).toFixed(1)} ${(cy + r0 * s).toFixed(1)} L${(cx + r1 * c).toFixed(1)} ${(cy + r1 * s).toFixed(1)}"
+    pathLength="1" style="fill:none;stroke:${v('spark')};stroke-width:7px;stroke-linecap:round;stroke-dasharray:1 1"/>`;
+}).join('');
+// Svolazzo con ricciolo finale (come le linee sopra e sotto il logo).
+const svolazzo = (x1, y, x2, curva = 34, verso = 1, cls = 'svolazzo') =>
+  `<path class="${cls}" d="M${x1} ${y} C${x1 + (x2 - x1) * 0.3} ${y - curva} ${x1 + (x2 - x1) * 0.7} ${y - curva} ${x2} ${y} q${24 * verso} 14 ${4 * verso} 34 l${-14 * verso} -4"
+    pathLength="1" style="fill:none;stroke:${v('swoosh')};stroke-width:7px;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 1"/>`;
+// Pennellata ad acquerello: un tratto molto largo «dipinto» da sinistra a destra.
+const pennellata = (x1, y1, x2, y2, larghezza, colore, cls = 'pennellata') =>
+  `<g filter="url(#acquerello)"><path class="${cls}" d="M${x1} ${y1} Q${(x1 + x2) / 2} ${(y1 + y2) / 2 - 40} ${x2} ${y2}" pathLength="1"
+    style="fill:none;stroke:${v(colore)};stroke-width:${larghezza}px;stroke-linecap:round;stroke-dasharray:1 1"/></g>`;
+// Titolo a lettere separate (entrano una alla volta), inclinato come uno sticker.
+const lettere = (testo, colori) => `<span class="tilt">${[...testo].map((ch, i) =>
+  ch === ' ' ? ' ' : `<span class="l"${colori ? ` style="color:${v(colori[i % colori.length])}"` : ''}>${ch}</span>`).join('')}</span>`;
 
 // ===== Costruzione delle scene =====
 const reel = document.getElementById('reel');
 const scena = (id, bg, html) => {
   const s = document.createElement('section');
-  s.className = 'at-scena'; s.id = id; s.style.background = v(bg); s.innerHTML = html;
+  s.className = 'at-scena'; s.id = id; s.style.background = `url(assets/grana.png) ${v(bg)}`; s.innerHTML = html; // sfondo con grana della carta
   reel.appendChild(s); return s;
 };
 
-// Scena 1 – aggancio
+// Scena 1 – aggancio: il gomitolo srotola il filo che «scrive» il logo
 scena('s1-aggancio', 'cream', `
   <svg class="piena" viewBox="0 0 1080 1920">
-    <path id="filo1" d="M300 1320 C430 1300 200 1290 120 1240 C40 1190 200 1120 130 1060 C60 1000 90 900 175 840"
+    <path id="filo1" d="M300 1360 C430 1340 200 1330 120 1280 C40 1230 200 1160 130 1100 C60 1040 90 900 175 840"
       pathLength="1" style="fill:none;stroke:url(#at-arcobaleno-v);stroke-width:12px;stroke-linecap:round;stroke-dasharray:1 1"/>
-    <g id="gomitolo-in"><g id="gomitolo-rot" class="tb"><g id="gomitolo-scala" class="tb">
-      <clipPath id="clip-gom"><circle cx="230" cy="1360" r="100"/></clipPath>
-      <circle cx="230" cy="1360" r="100" ${fl('violet')}/>
+    <g style="filter:url(#boil)">
+      ${raggi(870, 1160, [-60, -25, 10], 70, 140, 'raggio1')}
+      ${raggi(200, 1460, [160, 195, 230], 70, 130, 'raggio1')}
+    </g>
+    <g id="gomitolo-in"><g id="gomitolo-rot" class="tb"><g id="gomitolo-scala" class="tb" style="filter:url(#boil)">
+      <clipPath id="clip-gom"><circle cx="230" cy="1400" r="100"/></clipPath>
+      <circle cx="230" cy="1400" r="100" ${fl('violet')}/>
       <g clip-path="url(#clip-gom)">
-        ${[0, 35, 70, 110, 150].map((a, i) => `<ellipse cx="230" cy="1360" rx="100" ry="38" transform="rotate(${a} 230 1360)" ${st(ARC[i], 14)}/>`).join('')}
-        <circle cx="230" cy="1360" r="100" fill="url(#at-punto)"/>
+        ${[0, 35, 70, 110, 150].map((a, i) => `<ellipse cx="230" cy="1400" rx="100" ry="38" transform="rotate(${a} 230 1400)" ${st(ARC[i], 14)}/>`).join('')}
+        <circle cx="230" cy="1400" r="100" fill="url(#at-punto)"/>
       </g>
-      <circle cx="230" cy="1360" r="100" fill="none" class="ol"/>
+      <circle cx="230" cy="1400" r="100" fill="none" class="ol"/>
     </g></g></g>
   </svg>
-  <img id="logo1" class="logo-img" src="assets/logo.png" alt="Atenir" style="left:90px;top:560px;width:900px">
-  <p class="at-testo titolo" id="tag1" style="top:1055px;height:250px">Un filo.<br>Mille colori.</p>`);
+  <img id="logo1" class="logo-img" src="assets/logo.png" alt="Atenir" style="left:60px;top:500px;width:960px">
+  <p class="at-testo titolo" id="tag1" style="top:1060px;height:300px;flex-direction:column;font-size:116px">
+    <span class="riga1">${lettere('Un filo,', ['ink'])}</span><span class="riga2">${lettere('mille colori.', ['red', 'orange', 'yellow', 'green', 'blue', 'violet'])}</span></p>`);
 
 // Scene 2–5 – categorie
 const CATEGORIE = [
-  { id: 's2-borse', slot: 'borsa', bg: 'cream', macchia: 'yellow', titolo: 'Borse', sotto: 'Capienti, morbide, tue.', dot: 'blue' },
-  { id: 's3-borsette', slot: 'borsetta', bg: 'cream', macchia: 'green', titolo: 'Borsette', sotto: 'Piccole, piene di carattere.', dot: 'violet' },
-  { id: 's4-berretti', slot: 'berretto', bg: 'cream', macchia: 'orange', titolo: 'Berretti', sotto: 'Caldi, con il pompon.', dot: 'red' },
-  { id: 's5-sciarpotti', slot: 'sciarpotto', bg: 'cream', macchia: 'blue', titolo: 'Sciarpotti', sotto: 'Da avvolgere. Da sfoggiare.', dot: 'green' },
+  { id: 's2-borse', slot: 'borsa', pennello: 'yellow', colore: 'violet', titolo: 'Borse', sotto: 'Capienti, morbide, tue.' },
+  { id: 's3-borsette', slot: 'borsetta', pennello: 'indigo', colore: 'red', titolo: 'Borsette', sotto: 'Piccole, piene di carattere.' },
+  { id: 's4-berretti', slot: 'berretto', pennello: 'green', colore: 'blue', titolo: 'Berretti', sotto: 'Caldi, con il pompon.' },
+  { id: 's5-sciarpotti', slot: 'sciarpotto', pennello: 'orange', colore: 'violet', titolo: 'Sciarpotti', sotto: 'Da avvolgere. Da sfoggiare.' },
 ];
-CATEGORIE.forEach((c) => scena(c.id, c.bg, `
-  <div class="macchia" style="background:${v(c.macchia)}"></div>
+CATEGORIE.forEach((c) => scena(c.id, 'cream', `
+  <div class="eco">${(c.titolo.toUpperCase() + ' · ').repeat(4)}</div>
+  <svg class="piena" viewBox="0 0 1080 1920">
+    ${pennellata(150, 900, 930, 760, 470, c.pennello)}
+    <g style="filter:url(#boil)">
+      ${raggi(190, 470, [200, 235, 270], 40, 110)}
+      ${raggi(900, 1130, [20, 55, 90], 40, 110)}
+      ${svolazzo(250, 1185, 760, 24, 1)}
+    </g>
+  </svg>
   <figure class="at-prodotto" data-slot="${c.slot}"><div class="sway">${contenuto(c.slot, c.titolo)}</div></figure>
-  <p class="at-testo titolo" style="top:1240px;height:140px">${c.titolo}</p>
-  <p class="at-testo sotto" style="top:1400px;height:100px">${c.sotto}</p>`));
+  <p class="at-testo titolo" style="top:1215px;height:165px;color:${v(c.colore)}">${lettere(c.titolo)}</p>
+  <p class="at-testo sotto" style="top:1395px;height:90px">${c.sotto}</p>`));
 
 // Scena 6 – valore
 let catenella = 'M785 340 C900 420 905 590 880 640';
 for (let i = 0; i < 6; i++) { const x = 880 - i * 113; catenella += ` C${x + 12} 560 ${x - 125} 560 ${x - 113} 640`; }
-scena('s6-valore', 'ink', `
+scena('s6-valore', 'violet', `
   <svg class="piena" viewBox="0 0 1080 1920">
-    <path id="catenella" d="${catenella}" pathLength="1" style="fill:none;stroke:url(#at-arcobaleno);stroke-width:14px;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 1"/>
-    <g id="uncinetto-in"><g id="uncinetto" transform="rotate(-30 560 470)">
-      <rect x="300" y="459" width="520" height="22" rx="11" ${fl('cream')}/>
+    ${pennellata(110, 860, 970, 800, 230, 'blue', 'pennellata6')}
+    <path id="catenella" d="${catenella}" pathLength="1" style="fill:none;stroke:url(#at-arcobaleno);stroke-width:14px;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:1 1;filter:url(#boil)"/>
+    <g id="uncinetto-in"><g id="uncinetto" transform="rotate(-30 560 470)" style="filter:url(#boil)">
+      <rect x="300" y="459" width="520" height="22" rx="11" class="ol" ${fl('cream')} style="fill:${v('cream')};stroke-width:5px"/>
       <path d="M808 470 a16 16 0 1 0 -6 -26" style="fill:none;stroke:${v('cream')};stroke-width:12px;stroke-linecap:round"/>
-      <rect x="320" y="452" width="150" height="36" rx="18" ${fl('yellow')}/>
+      <rect x="320" y="452" width="150" height="36" rx="18" class="ol" style="fill:${v('yellow')};stroke-width:5px"/>
     </g></g>
-    <g id="timbro" class="tb" style="rotate:-10deg">
-      <circle cx="540" cy="1260" r="120" style="fill:none;stroke:${v('cream')};stroke-width:3px"/>
-      <circle cx="540" cy="1260" r="106" style="fill:none;stroke:${v('cream')};stroke-width:2px;stroke-dasharray:8 8;opacity:.6"/>
-      <text x="540" y="1282" text-anchor="middle" class="at-testo-svg" style="font-family:var(--at-font-display);font-style:italic;font-weight:400;font-size:72px;fill:${v('cream')}">1 di 1</text>
+    <g style="filter:url(#boil)">${raggi(540, 1300, [20, 160, 200, 340], 150, 205, 'raggio6')}</g>
+    <g id="timbro" class="tb" style="rotate:-8deg;filter:url(#boil)">
+      <circle cx="540" cy="1300" r="118" style="fill:${v('yellow')};stroke:${v('outline')};stroke-width:7px"/>
+      <circle cx="540" cy="1300" r="100" style="fill:none;stroke:${v('outline')};stroke-width:3px;stroke-dasharray:9 9"/>
+      <text x="540" y="1328" text-anchor="middle" style="font-family:var(--at-font-display);font-size:78px;fill:${v('outline')}">1 di 1</text>
     </g>
   </svg>
-  <p class="at-testo titolo" id="fatto" style="top:760px;height:140px;color:${v('cream')}">Fatto a mano</p>
-  <p class="at-testo titolo" id="unico" style="top:920px;height:140px;color:${v('yellow')}">Pezzo unico</p>`);
+  <p class="at-testo titolo" id="fatto" style="top:760px;height:150px;color:${v('cream')}">${lettere('Fatto a mano')}</p>
+  <p class="at-testo titolo" id="unico" style="top:940px;height:150px;color:${v('yellow')}">${lettere('Pezzo unico')}</p>`);
 
 // Scena 7 – invito all'azione
-const mini = CATEGORIE.map((c, i) => `<div class="mini" style="position:absolute;left:${240 + i * 180 - 75}px;top:1390px;width:150px;height:150px">
+const mini = CATEGORIE.map((c, i) => `<div class="mini" style="position:absolute;left:${240 + i * 180 - 75}px;top:1385px;width:150px;height:150px;rotate:${[-6, 4, -3, 6][i]}deg">
   ${contenuto(c.slot, '', 'mclip-')}</div>`).join('');
 scena('s7-cta', 'cream', `
   <svg class="piena" viewBox="0 0 1080 1920">
-    ${ARC.map((c, i) => { const y = 380 + i * 30; let d = `M-40 ${y}`; for (let x = -40; x < 1120; x += 240) d += ` c80 -${40 + i * 4} 160 ${40 + i * 4} 240 0`;
-      return `<path class="filo7" d="${d}" pathLength="1" style="fill:none;stroke:${v(c)};stroke-width:12px;stroke-linecap:round;stroke-dasharray:1 1"/>`; }).join('')}
+    <g style="filter:url(#boil)">
+      ${raggi(170, 470, [190, 225, 260], 50, 130, 'raggio7')}
+      ${raggi(920, 900, [10, 45, 80], 50, 130, 'raggio7')}
+    </g>
   </svg>
-  <img id="logo7" class="logo-img" src="assets/logo.png" alt="" style="left:200px;top:640px;width:680px">
-  <p class="at-testo sotto" id="scegli" style="top:1010px;height:80px">Scegli il tuo colore</p>
-  <p class="at-testo titolo" id="handle" style="top:1085px;height:130px"></p>
-  <div class="pill at-testo" id="pill" style="left:260px;right:auto">
-    <svg id="freccia" width="40" height="40" viewBox="0 0 40 40"><path d="M20 34 V6 M8 18 L20 6 L32 18" style="fill:none;stroke:${v('yellow')};stroke-width:4px;stroke-linecap:round;stroke-linejoin:round"/></svg>
+  <img id="logo7" class="logo-img" src="assets/logo.png" alt="" style="left:80px;top:400px;width:920px">
+  <p class="at-testo sotto" id="scegli" style="top:910px;height:80px">Scegli il tuo colore</p>
+  <p class="at-testo titolo" id="handle" style="top:990px;height:160px;color:${v('violet')}"></p>
+  <div class="pill at-testo" id="pill" style="top:1185px;left:250px;right:auto">
+    <svg id="freccia" width="40" height="40" viewBox="0 0 40 40"><path d="M20 34 V6 M8 18 L20 6 L32 18" style="fill:none;stroke:${v('yellow')};stroke-width:6px;stroke-linecap:round;stroke-linejoin:round"/></svg>
     <span>Link in bio</span>
   </div>
   ${mini}`);
-document.getElementById('handle').textContent = HANDLE;
+document.getElementById('handle').innerHTML = lettere(HANDLE);
 
-// Contatore e transizione condivisi
+// Contatore, transizione «pennellate arcobaleno» e grana della carta
 reel.insertAdjacentHTML('beforeend', `<div id="contatore"></div>
-  <svg id="filo-wipe" viewBox="0 0 280 2200"><clipPath id="clip-nastro"><rect width="280" height="2200" rx="140"/></clipPath>
-  <g clip-path="url(#clip-nastro)">${ARC.map((c, i) => `<rect x="${i * 40}" width="40" height="2200" ${fl(c)}/>`).join('')}<rect width="280" height="2200" fill="url(#at-punto)"/></g></svg>`);
+  <svg id="filo-wipe" viewBox="0 0 300 2240"><g filter="url(#acquerello-nastro)">${ARC.map((c, i) =>
+    `<rect x="${10 + i * 40}" y="40" width="44" height="2160" rx="22" ${fl(c)}/>`).join('')}</g></svg>
+`);
 
 // ===== Motore di animazione deterministico =====
-const E = { out: 'cubic-bezier(0.33,1,0.68,1)', back: 'cubic-bezier(0.34,1.56,0.64,1)', inout: 'cubic-bezier(0.65,0,0.35,1)',
+const E = { out: 'cubic-bezier(0.16,1,0.3,1)', pop: 'cubic-bezier(0.34,1.35,0.64,1)', inout: 'cubic-bezier(0.65,0,0.35,1)',
   in: 'cubic-bezier(0.32,0,0.67,0)', sine: 'cubic-bezier(0.37,0,0.63,1)', lin: 'linear' };
 const $$ = (sel, root = document) => (typeof sel === 'string' ? [...root.querySelectorAll(sel)] : [sel]).filter(Boolean);
 function A(sel, kf, start, dur, ease = 'out', o = {}) {
@@ -262,28 +326,38 @@ function A(sel, kf, start, dur, ease = 'out', o = {}) {
     fill: o.fill || 'both', iterations: o.it || 1, direction: o.dir || 'normal',
   }));
 }
-const txtIn = (el, t, root) => A(el, [{ opacity: 0, translate: '0 40px' }, { opacity: 1, translate: '0 0' }], t, 0.3, 'out', { root });
+const disegna = (sel, t, dur, o = {}) => A(sel, [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], t, dur, o.ease || 'out', o);
+const txtIn = (el, t, root) => A(el, [{ opacity: 0, translate: '0 40px' }, { opacity: 1, translate: '0 0' }], t, 0.35, 'out', { root });
 const txtOut = (el, t, dur = 0.2, root) => A(el, [{ opacity: 1, translate: '0 0' }, { opacity: 0, translate: '0 -24px' }], t, dur, 'in', { root, fill: 'forwards' });
 const oscilla = (el, prop, a, b, t, periodo, root) => A(el, [{ [prop]: a }, { [prop]: b }], t, periodo / 2, 'sine', { root, it: Infinity, dir: 'alternate', fill: 'forwards' });
+// Lettere che saltano dentro una alla volta (inclinazione alternata, deterministica)
+const lettereIn = (p, t, passo = 0.025) => {
+  $$('.l', p).forEach((l, i) => A(l, [{ opacity: 0, translate: '0 70px', rotate: `${i % 2 ? 9 : -9}deg` },
+    { opacity: 1, translate: '0 0', rotate: '0deg' }], t + i * passo, 0.35, 'pop'));
+};
 
 // Scena 1
 A('#gomitolo-in', [{ translate: '-190px 60px', rotate: '-200deg' }, { translate: '0 0', rotate: '0deg' }], 0, 0.6, 'out');
 document.getElementById('gomitolo-in').style.cssText = 'transform-box:fill-box;transform-origin:center';
 A('#gomitolo-rot', [{ rotate: '0deg' }, { rotate: '-256.5deg' }], 0.15, 2.85, 'lin');
 A('#gomitolo-scala', [{ scale: 1 }, { scale: 0.85 }], 0.15, 1.4, 'lin');
-A('#filo1', [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 0.15, 0.6, 'inout');
-// Il logo dell'utente viene «scritto» da sinistra a destra, come se lo tracciasse il filo.
+disegna('#filo1', 0.15, 0.6, { ease: 'inout' });
+// Il logo viene «scritto» da sinistra a destra, come se lo tracciasse il filo; poi un piccolo assestamento.
 A('#logo1', [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], 0.55, 0.8, 'inout');
-txtIn('#tag1', 0.9);
+A('#logo1', [{ rotate: '-2deg' }, { rotate: '0deg' }], 0.55, 1.0, 'out', { fill: 'forwards' });
+lettereIn(document.querySelector('#tag1 .riga1'), 0.85, 0.03);
+lettereIn(document.querySelector('#tag1 .riga2'), 1.0, 0.02);
+disegna('.raggio1', 1.25, 0.35, { stagger: 0.05 });
 
 // Scene 2–5
 CATEGORIE.forEach((c, k) => {
   const T = 3 + k * 2.5, root = document.getElementById(c.id), q = (s) => root.querySelector(s);
-  A(q('.macchia'), [{ clipPath: 'inset(100% 0 0 0 round 370px 370px 28px 28px)' }, { clipPath: 'inset(0% 0 0 0 round 370px 370px 28px 28px)' }], T - 0.05, 0.7, 'out');
+  A(q('.eco'), [{ translate: '40px 0' }, { translate: '-560px 0' }], T - 0.25, 2.75, 'lin');
+  disegna('.pennellata', T - 0.05, 0.5, { root, ease: 'inout' });
   const fig = q('.at-prodotto');
   if (c.slot === 'sciarpotto' && !FOTO[c.slot]) {
-    A(fig, [{ opacity: 0 }, { opacity: 1 }], T + 0.05, 0.15, 'lin');
-    A('.riga', [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], T + 0.05, 0.8, 'inout', { root });
+    A(fig, [{ opacity: 0, rotate: '-6deg' }, { opacity: 1, rotate: '-3deg' }], T + 0.05, 0.3, 'out');
+    disegna('.riga', T + 0.05, 0.8, { root, ease: 'inout' });
     A('.frange-a, .frange-b', [{ opacity: 0 }, { opacity: 1 }], T + 0.8, 0.15, 'lin', { root });
     root.querySelectorAll('.frange-a, .frange-b').forEach((g) => {
       const w = document.createElementNS('http://www.w3.org/2000/svg', 'g'); w.style.transformOrigin = g.style.transformOrigin;
@@ -291,44 +365,51 @@ CATEGORIE.forEach((c, k) => {
       oscilla(w, 'rotate', '-6deg', '6deg', T + 0.8, 1.2);
     });
   } else {
-    A(fig, [{ scale: 0.94, translate: '0 50px', opacity: 0 }, { scale: 1, translate: '0 0', opacity: 1 }], T + 0.1, 0.6, 'out');
+    // «Sticker» che cade sul foglio: dall'alto, leggermente ruotato, si assesta inclinato di -3°
+    A(fig, [{ scale: 1.15, translate: '0 -90px', rotate: '8deg', opacity: 0 }, { scale: 1, translate: '0 0', rotate: '-3deg', opacity: 1 }], T + 0.1, 0.5, 'pop');
   }
-  A(q('.sway'), [{ rotate: '0deg' }, { rotate: '1deg', easing: 'ease-out' }, { rotate: '0deg', easing: 'ease-in' }, { rotate: '-1deg', easing: 'ease-out' }, { rotate: '0deg', easing: 'ease-in' }], T + 0.55, 1.6, 'lin', { it: Infinity, fill: 'forwards' });
+  A(q('.sway'), [{ rotate: '0deg' }, { rotate: '1.5deg', easing: 'ease-out' }, { rotate: '0deg', easing: 'ease-in' }, { rotate: '-1.5deg', easing: 'ease-out' }, { rotate: '0deg', easing: 'ease-in' }], T + 0.6, 1.6, 'lin', { it: Infinity, fill: 'forwards' });
   if (c.slot === 'borsa') {
-    oscilla(q('.manico'), 'translate', '0 0', '0 -5px', T + 0.55, 1.6);
-    oscilla(q('.nappina'), 'rotate', '-6deg', '6deg', T + 0.55, 1.6);
+    oscilla(q('.manico'), 'translate', '0 0', '0 -7px', T + 0.6, 1.6);
+    oscilla(q('.nappina'), 'rotate', '-8deg', '8deg', T + 0.6, 1.2);
   } else if (c.slot === 'borsetta') {
-    A(q('.patta'), [{ scale: '1 1' }, { scale: '1 0.95' }, { scale: '1 1' }], T + 0.6, 0.6, 'out', { fill: 'forwards' });
-    A(q('.bottone'), [{ scale: 1 }, { scale: 1.06 }, { scale: 1 }], T + 1.2, 0.4, 'sine', { fill: 'forwards' });
+    A(q('.patta'), [{ scale: '1 1' }, { scale: '1 0.92' }, { scale: '1 1' }], T + 0.65, 0.5, 'out', { fill: 'forwards' });
+    A(q('.bottone'), [{ scale: 1 }, { scale: 1.12 }, { scale: 1 }], T + 1.15, 0.35, 'sine', { fill: 'forwards' });
   } else if (c.slot === 'berretto') {
-    const salto = [{ translate: '0 0', scale: '1 1' }, { translate: '0 -12px', scale: '0.98 1.02', offset: 0.35 },
-      { translate: '0 0', scale: '1.015 0.985', offset: 0.7 }, { translate: '0 0', scale: '1 1', offset: 0.875 }, { translate: '0 0', scale: '1 1' }];
-    A(q('.pompon'), salto, T + 0.6, 0.8, 'sine', { it: 2, fill: 'forwards' });
+    const salto = [{ translate: '0 0', scale: '1 1' }, { translate: '0 -18px', scale: '0.96 1.04', offset: 0.35 },
+      { translate: '0 0', scale: '1.03 0.97', offset: 0.7 }, { translate: '0 0', scale: '1 1', offset: 0.875 }, { translate: '0 0', scale: '1 1' }];
+    A(q('.pompon'), salto, T + 0.65, 0.8, 'sine', { it: 2, fill: 'forwards' });
   }
+  disegna('.raggio', T + 0.45, 0.3, { root, stagger: 0.05 });
+  disegna('.svolazzo', T + 0.35, 0.5, { root, ease: 'inout' });
   const [tit, sot] = root.querySelectorAll('.at-testo');
-  txtIn(tit, T + 0.15); txtIn(sot, T + 0.25);
-  txtOut(tit, T + 2.05); txtOut(sot, T + 2.05);
+  lettereIn(tit, T + 0.1); txtIn(sot, T + 0.3);
+  txtOut(tit, T + 2.2); txtOut(sot, T + 2.2);
 });
 
 // Scena 6
-A('#uncinetto-in', [{ translate: '160px -120px', rotate: '-20deg', opacity: 0 }, { translate: '0 0', rotate: '0deg', opacity: 1 }], 13, 0.4, 'out');
+disegna('.pennellata6', 13.0, 0.5, { ease: 'inout' });
+A('#uncinetto-in', [{ translate: '160px -120px', rotate: '-20deg', opacity: 0 }, { translate: '0 0', rotate: '0deg', opacity: 1 }], 13, 0.45, 'out');
 document.getElementById('uncinetto-in').style.cssText = 'transform-box:fill-box;transform-origin:center';
-A('#catenella', [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 13.1, 0.9, 'inout');
-oscilla('#uncinetto-in > g', 'translate', '0 0', '-8px 5px', 13.4, 0.9);
-txtIn('#fatto', 13.15); txtIn('#unico', 13.3);
-A('#timbro', [{ scale: 1.08, rotate: '-16deg', opacity: 0 }, { scale: 1, rotate: '-10deg', opacity: 1 }], 13.9, 0.5, 'out');
+disegna('#catenella', 13.1, 0.9, { ease: 'inout' });
+oscilla('#uncinetto-in > g', 'translate', '0 0', '-10px 6px', 13.55, 0.9);
+lettereIn(document.getElementById('fatto'), 13.1, 0.02);
+lettereIn(document.getElementById('unico'), 13.3, 0.02);
+A('#timbro', [{ scale: 1.5, rotate: '-24deg', opacity: 0 }, { scale: 1, rotate: '-8deg', opacity: 1 }], 13.75, 0.4, 'pop');
+disegna('.raggio6', 13.95, 0.3, { stagger: 0.05 });
 ['#fatto', '#unico', '#timbro'].forEach((s) => txtOut(s, 15.1, 0.15));
 
 // Scena 7
-A('.filo7', [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 15.45, 0.9, 'inout', { stagger: 0.04 });
-A('#logo7', [{ scale: 0.96, opacity: 0 }, { scale: 1, opacity: 1 }], 15.7, 0.6, 'out');
-txtIn('#scegli', 15.85); txtIn('#handle', 16.0);
-A('#pill', [{ translate: '0 30px', opacity: 0 }, { translate: '0 0', opacity: 1 }], 16.2, 0.5, 'out');
-A('.mini', [{ translate: '0 24px', opacity: 0 }, { translate: '0 0', opacity: 1 }], 16.4, 0.5, 'out', { stagger: 0.08 });
-oscilla('#pill', 'scale', 1, 1.02, 17, 1.6);
-oscilla('#freccia', 'translate', '0 0', '0 -5px', 17, 1.6);
+A('#logo7', [{ scale: 0.9, rotate: '-4deg', opacity: 0 }, { scale: 1, rotate: '0deg', opacity: 1 }], 15.55, 0.55, 'pop');
+disegna('.raggio7', 16.0, 0.35, { stagger: 0.05 });
+txtIn('#scegli', 15.85);
+lettereIn(document.getElementById('handle'), 16.0, 0.03);
+A('#pill', [{ translate: '0 40px', rotate: '3deg', opacity: 0 }, { translate: '0 0', rotate: '0deg', opacity: 1 }], 16.25, 0.5, 'pop');
+A('.mini', [{ translate: '0 -60px', opacity: 0 }, { translate: '0 0', opacity: 1 }], 16.45, 0.45, 'pop', { stagger: 0.08 });
+oscilla('#pill', 'scale', 1, 1.03, 17, 1.2);
+oscilla('#freccia', 'translate', '0 0', '0 -6px', 17, 1.2);
 
-// ===== Parti calcolate a mano a ogni fotogramma: transizioni e contatore =====
+// ===== Parti calcolate a ogni fotogramma: transizioni, contatore, tratto che vibra =====
 function bez(x1, y1, x2, y2) {
   return (x) => {
     if (x <= 0) return 0; if (x >= 1) return 1;
@@ -342,6 +423,7 @@ const scene = [...document.querySelectorAll('.at-scena')];
 const WIPE = [2.75, 5.25, 7.75, 10.25, 12.75, 15.25];  // inizio transizione verso la scena k+1
 const nastro = document.getElementById('filo-wipe');
 const contatore = document.getElementById('contatore');
+const boil = document.getElementById('boil-turb');
 
 function disegnaManuale(t) {
   let nastroX = null;
@@ -350,17 +432,19 @@ function disegnaManuale(t) {
     const s0 = WIPE[k - 1], fineSucc = k < WIPE.length ? WIPE[k] + 0.5 : Infinity;
     if (t < s0 || t >= fineSucc) { s.style.visibility = 'hidden'; return; }
     s.style.visibility = 'visible';
-    const p = inout((t - s0) / 0.5), left = -300 + 1400 * p, X = left + 140;
+    const p = inout((t - s0) / 0.5), left = -320 + 1440 * p, X = left + 150;
     s.style.clipPath = p >= 1 ? 'none' : `inset(0 ${Math.max(0, 1080 - X).toFixed(1)}px 0 0)`;
     if (t < s0 + 0.5) nastroX = left;
   });
   nastro.style.visibility = nastroX === null ? 'hidden' : 'visible';
-  if (nastroX !== null) nastro.style.transform = `translateX(${nastroX.toFixed(1)}px)`;
+  if (nastroX !== null) nastro.style.transform = `translateX(${nastroX.toFixed(1)}px) rotate(4deg)`;
 
   const op = t < 3 || t >= 12.95 ? 0 : Math.min(1, (t - 3) / 0.25, (12.95 - t) / 0.2);
   contatore.style.opacity = op.toFixed(3);
   const att = Math.max(0, Math.min(3, Math.floor((t - 3) / 2.5)));
-  contatore.textContent = `0${att + 1} / 04`;
+  contatore.textContent = `0${att + 1}/04`;
+  // Tratto che vibra a 10 fotogrammi al secondo (stile animazione a mano), sempre uguale per lo stesso t
+  boil.setAttribute('seed', String(1 + (Math.floor(t * 10 + 1e-6) % 4)));
 }
 
 window.DURATA = DURATA;

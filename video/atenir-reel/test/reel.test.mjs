@@ -131,18 +131,18 @@ const rapporto = (a, b) => { const [x, y] = [lumRel(a), lumRel(b)].sort((p, q) =
 const visibile = (s) => s.scenaVisibile && s.opacita > 0.5 && !s.coperta && !s.ritagliata;
 
 // ---------------------------------------------------------------- 1
-test('1. caricamento senza errori, senza rete, con Fraunces e DM Sans caricati', async () => {
+test('1. caricamento senza errori, senza rete, con Bagel Fat One e Bricolage Grotesque caricati', async () => {
   assert.equal(await page.evaluate(() => window.DURATA), 19, 'window.DURATA');
   assert.equal(await page.evaluate(() => typeof window.vaiA), 'function', 'window.vaiA');
   assert.deepEqual(richiesteRete, [], `richieste di rete: ${richiesteRete.join(', ')}`);
   assert.deepEqual(errori, [], `errori nella pagina:\n${errori.join('\n')}`);
   const font = await page.evaluate(() => [...document.fonts].filter((f) => f.status === 'loaded').map((f) => f.family.replace(/"/g, '')));
-  for (const fam of ['Fraunces', 'DM Sans']) {
+  for (const fam of ['Bagel Fat One', 'Bricolage Grotesque']) {
     assert.ok(font.includes(fam), `font ${fam} non caricato (caricati: ${font.join(', ') || 'nessuno'})`);
   }
   // I testi usano davvero i font attesi (nessun ripiego silenzioso su system-ui).
-  const ok = await page.evaluate(() => [document.fonts.check('italic 400 116px Fraunces'), document.fonts.check('500 54px "DM Sans"')]);
-  assert.deepEqual(ok, [true, true], 'document.fonts.check per Fraunces corsivo / DM Sans 500');
+  const ok = await page.evaluate(() => [document.fonts.check('132px "Bagel Fat One"'), document.fonts.check('600 54px "Bricolage Grotesque"')]);
+  assert.deepEqual(ok, [true, true], 'document.fonts.check per Bagel Fat One / Bricolage 600');
 });
 
 // ---------------------------------------------------------------- 2
