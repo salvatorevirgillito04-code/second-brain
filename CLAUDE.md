@@ -75,6 +75,25 @@ Le stime di costo vanno indicate come stime, mai come addebiti. Commit: «Resoco
 - Istruzioni complete e testo da incollare nella sessione «Second Brain-Stato» (le attività si creano solo da lì): `automazioni/canale-coordinatore.md`.
 - Se l'utente in una chat o sessione chiede «scrivi al coordinatore: …», crea il file `PER-COORDINATORE` nella cartella seguendo il LEGGIMI. Niente segreti nei messaggi.
 
+## Uso automatico di skill, agenti e connettori (richiesta dell'utente del 15/11/2026)
+
+Usa **sempre e da solo** le skill, gli agenti e i connettori adatti al compito, senza che l'utente debba nominarli e senza chiedere il permesso di usarli. Prima di rispondere controlla l'elenco delle skill disponibili e i connettori attivi in questa sessione; dì in una riga quali stai usando. Restano valide le regole su costi, pubblicazione, eliminazioni e segreti: ciò che costa denaro o crediti a pagamento, pubblica o elimina va comunque confermato.
+
+Audio (giochi e video):
+| Compito | Usa |
+|---|---|
+| effetti sonori, suoni d'interfaccia | `sound-effects` (ElevenLabs), `sound-engineer`; per suoni già pronti con licenza: connettore Epidemic Sound (`SearchSoundEffects`) |
+| musica e loop | `music-gen` (gratis, in locale); con licenza: Epidemic Sound (`SearchRecordings`) |
+| voce narrante | `text-to-speech` (ElevenLabs) |
+| effetti sincronizzati a un video | connettore Mirelo, se collegato |
+| pulizia di una voce registrata | connettore Adobe (`media_enhance_speech`) |
+| mix di voce e musica, unione con il video | `media-utils` |
+| formato, volume, rumore, normalizzazione | `ffmpeg-audio-processing` |
+| audio di un gioco (progetto e integrazione) | `game-audio`; per un progetto completo `team-audio` con gli agenti audio-director, sound-designer, technical-artist, gameplay-programmer |
+| audio nell'app Android | `sound-engineer`, `mobile-android-design` |
+
+ElevenLabs: la chiave è un segreto di rete dell'ambiente (host `api.elevenlabs.io`, header `xi-api-key`), mai in un file. Suno non è collegato: non usarlo per lavori da pubblicare (cause sul copyright in corso).
+
 ## Strumenti di sviluppo (dal 14/11/2026)
 - Le **attività pianificate** («aggiorna stato», coordinatore, «Brain – automazioni», resoconto) seguono SOLO le proprie istruzioni: non avviano brainstorming, piani o flussi di Superpowers.
 - Nel lavoro di sviluppo:
