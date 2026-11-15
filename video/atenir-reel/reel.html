@@ -192,7 +192,7 @@ scena('s1-aggancio', 'cream', `
     </g></g></g>
   </svg>
   <img id="logo1" class="logo-img" src="assets/logo.png" alt="Atenir" style="left:90px;top:560px;width:900px">
-  <p class="at-testo titolo" id="tag1" style="top:1080px;height:200px">Un filo.<br>Mille colori.</p>`);
+  <p class="at-testo titolo" id="tag1" style="top:1065px;height:230px">Un filo.<br>Mille colori.</p>`);
 
 // Scene 2–5 – categorie
 const CATEGORIE = [
@@ -264,11 +264,11 @@ const txtOut = (el, t, dur = 0.2, root) => A(el, [{ opacity: 1, translate: '0 0'
 const oscilla = (el, prop, a, b, t, periodo, root) => A(el, [{ [prop]: a }, { [prop]: b }], t, periodo / 2, 'sine', { root, it: Infinity, dir: 'alternate', fill: 'forwards' });
 
 // Scena 1
-A('#gomitolo-in', [{ translate: '-350px 100px', rotate: '-360deg' }, { translate: '0 0', rotate: '0deg' }], 0, 0.6, 'out');
+A('#gomitolo-in', [{ translate: '-190px 60px', rotate: '-200deg' }, { translate: '0 0', rotate: '0deg' }], 0, 0.6, 'out');
 document.getElementById('gomitolo-in').style.cssText = 'transform-box:fill-box;transform-origin:center';
 A('#gomitolo-rot', [{ rotate: '0deg' }, { rotate: '-256.5deg' }], 0.15, 2.85, 'lin');
 A('#gomitolo-scala', [{ scale: 1 }, { scale: 0.85 }], 0.15, 1.4, 'lin');
-A('.coriandolo', [{ scale: 0 }, { scale: 1 }], 0, 0.3, 'back', { stagger: 0.04 });
+A('.coriandolo', [{ scale: 0.4 }, { scale: 1 }], 0, 0.3, 'back', { stagger: 0.04 });
 A('#filo1', [{ strokeDashoffset: 1 }, { strokeDashoffset: 0 }], 0.15, 0.6, 'inout');
 // Il logo dell'utente viene «scritto» da sinistra a destra, come se lo tracciasse il filo.
 A('#logo1', [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)' }], 0.55, 0.8, 'inout');

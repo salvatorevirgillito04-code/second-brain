@@ -51,22 +51,24 @@ after(async () => { await browser?.close(); });
 
 const vai = (t) => page.evaluate((x) => window.vaiA(x), t);
 
-/** Decodifica un PNG (Buffer) e restituisce { w, h, lum: Float64Array } con la luminanza relativa WCAG per pixel. */
-async function luminanze(png) {
-  const { w, h, dati } = await decoder.evaluate(async (b64) => {
-    const blob = await (await fetch(`data:image/png;base64,${b64}`)).blob();
-    const bmp = await createImageBitmap(blob);
-    const c = new OffscreenCanvas(bmp.width, bmp.height);
-    const ctx = c.getContext('2d');
-    ctx.drawImage(bmp, 0, 0);
-    const d = ctx.getImageData(0, 0, bmp.width, bmp.height).data;
-    const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; };
-    const out = new Array(bmp.width * bmp.height);
-    for (let i = 0; i < out.length; i++) out[i] = 0.2126 * lin(d[i * 4]) + 0.7152 * lin(d[i * 4 + 1]) + 0.0722 * lin(d[i * 4 + 2]);
-    return { w: bmp.width, h: bmp.height, dati: out };
-  }, png.toString('base64'));
-  return { w, h, lum: Float64Array.from(dati) };
-}
+/** Decodifica un PNG (Buffer) e restituisce le statistiche della luminanza relativa WCAG dei pixel. */
+const statLuminanza = (png) => decoder.evaluate(async (b64) => {
+  const blob = await (await fetch(`data:image/png;base64,${b64}`)).blob();
+  const bmp = await createImageBitmap(blob);
+  const c = new OffscreenCanvas(bmp.width, bmp.height);
+  const ctx = c.getContext('2d');
+  ctx.drawImage(bmp, 0, 0);
+  const d = ctx.getImageData(0, 0, bmp.width, bmp.height).data;
+  const tab = Array.from({ length: 256 }, (_, v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  const n = bmp.width * bmp.height;
+  let min = Infinity, max = -Infinity, s = 0, s2 = 0;
+  for (let i = 0; i < n; i++) {
+    const l = 0.2126 * tab[d[i * 4]] + 0.7152 * tab[d[i * 4 + 1]] + 0.0722 * tab[d[i * 4 + 2]];
+    if (l < min) min = l; if (l > max) max = l; s += l; s2 += l * l;
+  }
+  const media = s / n;
+  return { w: bmp.width, h: bmp.height, min, max, media, dev: Math.sqrt(Math.max(0, s2 / n - media * media)) };
+}, png.toString('base64'));
 
 /**
  * Stato di ogni `.at-testo` all'istante corrente: opacità effettiva (prodotto con gli antenati), scena visibile,
@@ -146,10 +148,7 @@ test('1. caricamento senza errori, senza rete, con Fredoka e Nunito caricati', a
 // ---------------------------------------------------------------- 2
 test('2. il fotogramma 0 non è vuoto', async () => {
   await vai(0);
-  const { lum } = await luminanze(await page.screenshot({ type: 'png' }));
-  let min = Infinity, max = -Infinity, s = 0, s2 = 0;
-  for (const v of lum) { min = Math.min(min, v); max = Math.max(max, v); s += v; s2 += v * v; }
-  const media = s / lum.length, dev = Math.sqrt(s2 / lum.length - media * media);
+  const { min, max, dev } = await statLuminanza(await page.screenshot({ type: 'png' }));
   assert.ok(max - min > 0.3, `fotogramma 0 quasi uniforme: luminanza ${min.toFixed(3)}–${max.toFixed(3)}`);
   assert.ok(dev > 0.01, `fotogramma 0 quasi uniforme: deviazione standard ${dev.toFixed(4)}`);
 });
@@ -205,7 +204,7 @@ test('5. ogni testo resta pienamente visibile per almeno 1,5 s (campionato a 30 
     await vai(f / FPS);
     for (const s of await leggiTesti()) {
       const c = corsa.get(s.i) ?? { testo: s.testo, max: 0, da: -1, a: -1, attuale: 0, inizio: -1 };
-      const pieno = s.scenaVisibile && !s.coperta && !s.ritagliata && s.opacita >= 0.98 && s.dy <= 2;
+      const pieno = s.scenaVisibile && !s.coperta && !s.ritagliata && s.opacita >= 0.995 && s.dy <= 1;
       if (pieno) {
         if (c.attuale === 0) c.inizio = f;
         c.attuale++;
@@ -233,8 +232,7 @@ test('6. nessun lampeggio: luminanza media senza più di 3 variazioni ≥ 10% in
     const L = [];
     for (let f = 0; f < n; f++) {
       await p.evaluate((t) => window.vaiA(t), f / FPS);
-      const { lum } = await luminanze(await p.screenshot({ type: 'png' }));
-      L.push(lum.reduce((a, b) => a + b, 0) / lum.length);
+      L.push((await statLuminanza(await p.screenshot({ type: 'png' }))).media);
     }
     // Variazioni significative con isteresi: si registra una variazione quando la luminanza si allontana
     // di ≥ SOGLIA dall'ultimo estremo; le oscillazioni piccole (movimenti) non contano.
