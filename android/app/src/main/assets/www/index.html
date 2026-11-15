@@ -629,12 +629,16 @@ input,select,textarea{background:var(--bg);border-radius:var(--r-s);padding:10px
     const c = (S.stato.stato_lavoro || []).find((x) => x.id === "coordinatore"), voci = c ? M.analizzaCanale(c.testo) : [], fatti = new Set(voci.map((v) => v.id));
     const coda = L("messaggi").filter((m) => !fatti.has(m.id)).sort((a, b) => (a.creato_il < b.creato_il ? 1 : -1));
     const tipo = (t) => esc(M.TIPI_MESSAGGIO[t] || t || "messaggio");
+    const bz = S.bozzaCoord || (S.bozzaCoord = { tipo: "domanda", scelta: "", sess: "", testo: "" }); // la bozza sopravvive ai ridisegni (sincronizzazione, pilota)
+    const ist = istantanea(), sessioni = ist ? (ist.sessioni || []).filter((x) => !x.rilevatore) : [];
     return `<div class="blocco"><b>Scrivi al coordinatore</b>
         <dl class="kv"><dt>chi</dt><dd>attività pianificata che guida gli agenti in Claude Code</dd><dt>quando</dt><dd>ogni 3 ore, 08:33–23:33 (ora di Roma); risponde qui</dd><dt>limiti</dt><dd>niente push fuori dai rami di lavoro, pubblicazioni, spese, eliminazioni, credenziali: quelle arrivano a te in «Risposte pronte»</dd></dl>
         <form id="f-coord" class="riga2" style="display:grid;gap:8px" autocomplete="off">
-          <label>Tipo <select id="co-tipo">${Object.entries(M.TIPI_MESSAGGIO).map(([k, l]) => `<option value="${k}">${esc(l)}</option>`).join("")}</select></label>
-          <label id="co-sess-l" hidden>Sessione di Claude Code (link o id) <input id="co-sess" placeholder="https://claude.ai/code/session_…"></label>
-          <label>Messaggio <textarea id="co-testo" maxlength="2000" placeholder="Es. Avvia una revisione della sicurezza dell'app sul ramo di lavoro"></textarea></label>
+          <label>Tipo <select id="co-tipo">${Object.entries(M.TIPI_MESSAGGIO).map(([k, l]) => `<option value="${k}"${bz.tipo === k ? " selected" : ""}>${esc(l)}</option>`).join("")}</select></label>
+          <div id="co-sess-l" style="display:grid;gap:8px"${bz.tipo === "inoltro" ? "" : " hidden"}>
+            ${sessioni.length ? `<label>Sessione <select id="co-scelta"><option value="">— incolla il link qui sotto —</option>${sessioni.map((x) => `<option value="${esc(x.id)}"${bz.scelta === x.id ? " selected" : ""}>${esc((x.titolo || "(senza titolo)").slice(0, 60))}</option>`).join("")}</select></label>` : ""}
+            <label>Oppure link o id della sessione <input id="co-sess" value="${esc(bz.sess)}" placeholder="https://claude.ai/code/…"></label></div>
+          <label>Messaggio <textarea id="co-testo" maxlength="2000" placeholder="Es. Avvia una revisione della sicurezza dell'app sul ramo di lavoro">${esc(bz.testo)}</textarea></label>
           <div class="azioni"><button type="button" class="btn" id="b-coord">Invia al coordinatore</button></div>
           <p class="stato" id="co-stato" role="status"></p></form></div>
       <section><h2>In coda · ${coda.length}</h2>${coda.length ? `<div class="canale">${coda.map((m) => `<article><div class="intest"><b>${tipo(m.tipo)}</b><span>${esc(quando(m.creato_il))}</span>${syncChip("messaggi", m.id) || `<span class="chip">inviato, in attesa del coordinatore</span>`}</div><p>${esc(m.testo)}</p>${m.sessione ? `<p class="small muted mono">${esc(m.sessione)}</p>` : ""}</article>`).join("")}</div>` : `<p class="vuoto">Nessun messaggio in attesa.</p>`}</section>
@@ -671,6 +675,7 @@ input,select,textarea{background:var(--bg);border-radius:var(--r-s);padding:10px
     V.innerHTML = VISTE[v]();
     rimettiMemo();
     for (const [k, sid, val] of scelte) { const el = document.querySelector(`[data-link-${k}="${CSS.escape(sid)}"]`); if (el && [...el.options].some((o) => o.value === val)) el.value = val; }
+    if (attivo === "co-testo" || attivo === "co-sess") { const el = $("#" + attivo); if (el) { el.focus({ preventScroll: true }); try { el.setSelectionRange(pos, pos); } catch (_) {} } }
     if (attivo === "cerca" || attivo === "cerca-note") { const el = $("#" + attivo); if (el) { el.focus(); try { el.setSelectionRange(pos, pos); } catch (_) {} } }
     $("#titolo").textContent = TITOLI[v];
     $("#indietro").hidden = !NAV[v] && v !== "impostazioni";
@@ -995,7 +1000,9 @@ input,select,textarea{background:var(--bg);border-radius:var(--r-s);padding:10px
     progetti: (id) => L("note").some((n) => n.progetto_id === id) ? "Il progetto ha note collegate: archivialo o scollega prima le note." : null,
   };
   document.addEventListener("submit", (e) => { if (e.target.id === "f-coord") { e.preventDefault(); $("#b-coord").click(); } });
-  document.addEventListener("change", (e) => { if (e.target.id === "co-tipo") $("#co-sess-l").hidden = e.target.value !== "inoltro"; });
+  // bozza del messaggio al coordinatore: salvata a ogni tasto, così un ridisegno non la cancella
+  const bozza = (e) => { const id = e.target.id; if (!/^co-(tipo|scelta|sess|testo)$/.test(id)) return; const bz = S.bozzaCoord || (S.bozzaCoord = { tipo: "domanda", scelta: "", sess: "", testo: "" }); bz[id.slice(3)] = e.target.value; if (id === "co-tipo") $("#co-sess-l").hidden = e.target.value !== "inoltro"; };
+  document.addEventListener("input", bozza); document.addEventListener("change", bozza);
   document.addEventListener("change", async (e) => {
     const c = e.target.closest("[data-spunta]"); if (!c || !S.nota) return;
     const n = T("note", S.nota); if (!n) return;
@@ -1051,7 +1058,7 @@ input,select,textarea{background:var(--bg);border-radius:var(--r-s);padding:10px
     if (b.id === "b-rimanda") { S.stato.impostazioni ||= {}; S.stato.impostazioni.chat_rimandato_fino = new Date(Date.now() + 7 * 86400000).toISOString(); await salva(); render(); toast("Te lo ricordo tra 7 giorni"); return; }
     if (b.id === "b-aggiorna-ora") { aggiornaOra(); return; }
     if (b.id === "b-coord") { e.preventDefault();
-      try { await M.scriviAlCoordinatore(S.stato, { testo: $("#co-testo").value, tipo: $("#co-tipo").value, sessione: $("#co-sess").value }); await salva(); programmaSync(); render(); stato("#co-stato", "Messaggio in coda: parte con la prossima sincronizzazione.", "ok"); }
+      try { const sc = $("#co-scelta"); await M.scriviAlCoordinatore(S.stato, { testo: $("#co-testo").value, tipo: $("#co-tipo").value, sessione: (sc && sc.value) || $("#co-sess").value }); S.bozzaCoord = null; await salva(); programmaSync(); render(); stato("#co-stato", "Messaggio in coda: parte con la prossima sincronizzazione.", "ok"); }
       catch (err) { stato("#co-stato", err.message || String(err), "err"); }
       return; }
     if (b.id === "b-togli-routine") { conferma(b, () => { if (A && A.rimuoviRoutine) A.rimuoviRoutine(); toast("Token rimosso dal telefono. Puoi revocarlo anche su claude.ai/code/routines."); render(); }); return; }

@@ -129,6 +129,11 @@ ok((await T("#co-stato")).includes("token"), "coordinatore: un messaggio con un 
 await page.selectOption("#co-tipo", "compito"); await page.fill("#co-testo", "Prepara il riepilogo della settimana"); await page.click("#b-coord"); await page.waitForTimeout(200);
 ok((await T("main")).includes("In coda · 1") && (await T("main")).includes("Prepara il riepilogo della settimana"), "coordinatore: messaggio in coda, pronto per la sincronizzazione");
 ok(Object.keys((await salvato()).collezioni.messaggi || {}).length === 1, "coordinatore: messaggio salvato nella raccolta messaggi");
+await page.selectOption("#co-tipo", "inoltro"); await page.fill("#co-sess", "https://claude.ai/code/cshk_01WFYYR7b1B2CRabc"); await page.fill("#co-testo", "Bozza da non perdere");
+await page.evaluate(() => window.dispatchEvent(new HashChangeEvent("hashchange"))); await page.waitForTimeout(150); // ridisegno, come dopo una sincronizzazione
+ok((await page.inputValue("#co-testo")) === "Bozza da non perdere" && (await page.inputValue("#co-sess")).includes("cshk_") && !(await page.isHidden("#co-sess")), "coordinatore: la bozza resta dopo un ridisegno");
+await page.click("#b-coord"); await page.waitForTimeout(200);
+ok((await T("main")).includes("In coda · 2") && (await page.inputValue("#co-testo")) === "", "coordinatore: inoltro con link cshk_ accettato, modulo svuotato");
 if (FOTO) await page.screenshot({ path: join(FOTO, "coordinatore.png") });
 await page.click('[data-sub="stanze"]'); await page.waitForTimeout(100);
 

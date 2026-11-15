@@ -507,6 +507,8 @@ test("1.10 canale coordinatore: il messaggio va in dati/app/messaggi, le rispost
   const id = await M.scriviAlCoordinatore(s, { testo: "Avvia una revisione\ndel codice", tipo: "compito" });
   const id2 = await M.scriviAlCoordinatore(s, { testo: "ciao", tipo: "inoltro", sessione: "https://claude.ai/code/session_01ABCDEFGHIJKLMN" });
   assert.match(id, /^msg-[a-z0-9]+-[0-9a-f]{8}$/);
+  const id3 = await M.scriviAlCoordinatore(s, { testo: "x", tipo: "inoltro", sessione: "https://claude.ai/code/cshk_01WFYYR7b1B2CRabc" });
+  assert.equal(s.collezioni.messaggi[id3].dati.sessione, "cshk_01WFYYR7b1B2CRabc"); // formato dei link di claude.ai/code del 2026
   await M.sincronizza(s, gh.api(), OPZ);
   const m = leggi(gh, "messaggi", id); assert.equal(m.testo, "Avvia una revisione\ndel codice"); assert.equal(m.tipo, "compito"); assert.equal(m.da, "app");
   assert.equal(leggi(gh, "messaggi", id2).sessione, "session_01ABCDEFGHIJKLMN");

@@ -1023,7 +1023,8 @@
     if (!M.TIPI_MESSAGGIO[tipo]) throw new Error("Tipo di messaggio non valido.");
     if (/github_pat_|sk-ant-|ghp_|-----BEGIN/i.test(t)) throw new Error("Il messaggio sembra contenere un token o una chiave: toglilo, il canale non è per i segreti.");
     let se = "";
-    if (tipo === "inoltro") { const m = String(sessione || "").match(/(?:session|cse)_[A-Za-z0-9]{10,40}/); if (!m) throw new Error("Per l'inoltro indica la sessione (link o id di Claude Code)."); se = m[0]; }
+    // inoltro: id della sessione da un link di claude.ai/code o incollato (session_…, cse_…, cshk_…)
+    if (tipo === "inoltro") { const m = String(sessione || "").match(/\b[a-z]{2,10}_[A-Za-z0-9]{10,60}\b/); if (!m) throw new Error("Per l'inoltro indica la sessione (link o id di Claude Code)."); se = m[0]; }
     const b = new Uint8Array(4); globalThis.crypto.getRandomValues(b);
     const id = "msg-" + Date.now().toString(36) + "-" + [...b].map((x) => x.toString(16).padStart(2, "0")).join("");
     await M.salvaRecord(stato, "messaggi", id, { testo: t, tipo, sessione: se || null, da: "app", creato_il: ora() });
