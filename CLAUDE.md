@@ -43,6 +43,8 @@ Regole:
 
 ## Agenti pianificati (nella sessione «Second Brain-Stato»)
 
+> **IN PAUSA dal 15/11/2026** su richiesta dell'utente: produzione di Second Brain sospesa e tutte le attività pianificate qui sotto disattivate («stato», «coordinatore», «canale coordinatore», «Brain – automazioni», «resoconto settimanale»). Per riprendere, riattivarle (update_trigger enabled=true). Resta attiva la regola sull'uso automatico di skill, agenti e connettori (script d'avvio dell'ambiente, `automazioni/setup-ambiente.sh`).
+
 Autorizzazione (data dall'utente il 14/11/2026): push consentito solo sul ramo `dati`, solo per `dati/stato/attese.md` e `dati/stato/resoconto-settimanale.md`. Mai force push. Se il rebase va in conflitto: `--abort` e niente pubblicazione. Il procedimento git è quello del passo 4 di «aggiorna stato».
 
 **«sblocca attese»** (ogni mattina): `list_sessions` (mine: true). Per ogni sessione con status_bucket BLOCKED, leggi l'ultima domanda con `list_events` (kinds user/assistant/result, limit 100).
