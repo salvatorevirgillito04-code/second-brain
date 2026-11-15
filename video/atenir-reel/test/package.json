@@ -1,0 +1,5 @@
+{
+  "private": true,
+  "description": "Permette «node --test video/atenir-reel/test/» anche con Node 22, che non espande le cartelle",
+  "main": "reel.test.mjs"
+}
